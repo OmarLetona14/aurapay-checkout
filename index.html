@@ -1,0 +1,1843 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Dashboard de Comercios - AuraPay</title>
+  
+  <!-- Check theme and apply early to prevent early flash -->
+  <script>
+    (function(){
+      try {
+        var s = localStorage.getItem('aurapay-admin-theme') || localStorage.getItem('aurapay-admin-theme');
+        var d = s || ((window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) ? 'dark' : 'light');
+        if (d === 'dark') {
+          document.documentElement.classList.add('dark');
+        } else {
+          document.documentElement.classList.remove('dark');
+        }
+        document.documentElement.setAttribute('data-theme', d);
+      } catch(e) {}
+    })();
+  </script>
+  
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  
+  <!-- Google Fonts - Inter -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  
+  <!-- Tailwind Configuration -->
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          colors: {
+            aura: {
+              primary: '#1F2937',      // Carbón Premium
+              primaryHover: '#111827', // Carbón Oscuro
+              emerald: '#D97706',      // Ámbar/Oro (Evitamos verde)
+              emeraldLight: '#FEF3C7',
+              emeraldText: '#B45309',
+              gold: '#D97706',         // Ámbar
+              goldLight: '#FEF3C7',
+              goldText: '#B45309',
+              yellowAccent: '#FEF08A',
+              yellowAccentBg: '#FEF9C3',
+              yellowAccentText: '#854D0E',
+            },
+            aura: {
+              primary: '#1F2937',
+              primaryHover: '#111827',
+              emerald: '#D97706',
+              emeraldLight: '#FEF3C7',
+              emeraldText: '#B45309',
+              gold: '#D97706',
+              goldLight: '#FEF3C7',
+              goldText: '#B45309',
+              yellowAccent: '#FEF08A',
+              yellowAccentBg: '#FEF9C3',
+              yellowAccentText: '#854D0E',
+            }
+          },
+          fontFamily: {
+            sans: ['Inter', 'system-ui', 'sans-serif'],
+          }
+        }
+      }
+    }
+  </script>
+
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body class="bg-gray-50 text-gray-800 font-sans antialiased min-h-screen flex overflow-hidden">
+
+  <!-- ================= APP LOGIN WRAPPER ================= -->
+  <!-- Responsive, centered Stripe-style login screen with radial mesh gradient background -->
+  <div id="app-login" class="w-full min-h-screen flex flex-col items-center justify-center bg-gray-50/50 p-4 relative z-layer-login transition-all duration-300 overflow-y-auto">
+    <!-- Mesh Gradients Glow -->
+    <div class="absolute top-[-25%] left-[-15%] w-[60%] h-[60%] rounded-full bg-aura-primary/6 filter blur-[120px] pointer-events-none"></div>
+    <div class="absolute bottom-[-25%] right-[-15%] w-[60%] h-[60%] rounded-full bg-[#FF5A00]/4 filter blur-[120px] pointer-events-none"></div>
+
+    <div class="bg-white max-w-sm w-full p-8 rounded-xl border border-gray-250/90 shadow-xl space-y-6 relative transition-all duration-300">
+      
+      <!-- Logo AuraPay -->
+      <div class="flex flex-col items-center text-center space-y-2 select-none">
+        <div class="flex items-center gap-1.5 select-none justify-center">
+          <svg class="h-9 w-auto" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+            <defs>
+              <linearGradient id="auraGoldGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+                <stop offset="0%" stop-color="#F59E0B" />
+                <stop offset="100%" stop-color="#D97706" />
+              </linearGradient>
+              <linearGradient id="auraCharcoalGrad" x1="0%" y1="100%" x2="100%" y2="0%">
+                <stop offset="0%" stop-color="#374151" />
+                <stop offset="100%" stop-color="#111827" />
+              </linearGradient>
+            </defs>
+            <circle cx="24" cy="24" r="22" fill="url(#auraCharcoalGrad)" />
+            <path d="M 24 8 L 36 34 L 28 34 L 24 24 L 20 24 L 16 34 L 8 34 Z M 24 16 L 26 21 L 22 21 Z" fill="url(#auraGoldGrad)" />
+          </svg>
+          <span class="font-sans tracking-tight text-xl">
+            <span class="font-extrabold text-aura-primary">Aura</span><span class="font-light text-gray-400">Pay</span>
+          </span>
+        </div>
+        <p class="text-[10px] text-gray-400 tracking-wide mt-0.5">Pasarela de Pagos y Cobros Integrados</p>
+      </div>
+
+      <!-- VIEW 1: CREDENTIALS FORM -->
+      <form id="login-credentials-form" onsubmit="handleLoginSubmit(event)" class="space-y-4">
+        <div class="text-center pb-1">
+          <h3 class="text-sm font-light text-gray-900 tracking-tight">Acceso Administrativo</h3>
+          <p class="text-[10.5px] text-gray-400 mt-0.5">Ingresa tus credenciales de colaborador autorizadas.</p>
+        </div>
+
+        <div class="border border-gray-200/80 rounded-lg px-3 py-2 bg-white focus-within:ring-4 focus-within:ring-aura-primary/5 focus-within:border-aura-primary transition-all duration-200">
+          <label class="block text-[8px] font-bold text-gray-400 uppercase tracking-widest">Correo Electrónico</label>
+          <input type="email" required id="login-email" placeholder="ej. admin@aurapay.com.gt" class="w-full bg-transparent border-none p-0 text-sm font-normal text-gray-900 focus:ring-0 focus:outline-none mt-1">
+        </div>
+
+        <div class="border border-gray-200/80 rounded-lg px-3 py-2 bg-white focus-within:ring-4 focus-within:ring-aura-primary/5 focus-within:border-aura-primary transition-all duration-200 relative">
+          <div class="flex justify-between items-center">
+            <label class="block text-[8px] font-bold text-gray-400 uppercase tracking-widest">Contraseña</label>
+            <a href="#" onclick="showToast('Enlace Enviado', 'Se ha enviado un enlace de recuperación.', 'warning')" class="text-[8px] text-aura-primary font-bold hover:underline focus:outline-none tracking-tight">¿Olvidaste la clave?</a>
+          </div>
+          <div class="flex items-center mt-1">
+            <input type="password" required id="login-password" placeholder="••••••••" class="w-full bg-transparent border-none p-0 text-sm font-mono text-gray-900 focus:ring-0 focus:outline-none">
+            <button type="button" onclick="togglePasswordVisibility('login-password')" class="text-gray-400 hover:text-gray-650 focus:outline-none pl-2">
+              <svg id="eye-icon-login-password" class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M2.036 12.322a1.012 1.012 0 010-.639C3.423 7.51 7.36 4.5 12 4.5c4.638 0 8.573 3.007 9.963 7.178.07.207.07.431 0 .639C20.577 16.49 16.64 19.5 12 19.5c-4.638 0-8.573-3.007-9.963-7.178z" /><circle cx="12" cy="12" r="3" /></svg>
+            </button>
+          </div>
+        </div>
+
+        <button type="submit" id="btn-login-submit" class="w-full bg-aura-primary hover:bg-aura-primaryHover text-white py-2.5 rounded-md font-semibold text-xs transition-colors shadow-sm flex items-center justify-center gap-1.5 active:scale-98">
+          <span>Continuar</span>
+          <div id="login-spinner" class="hidden w-3.5 h-3.5 border-2 border-white/20 border-t-white rounded-full animate-spin"></div>
+        </button>
+        
+        <!-- Clickable quick login pills -->
+        <div class="text-center pt-4 border-t border-gray-100">
+          <span class="text-[9px] text-gray-400 font-bold uppercase tracking-wider block mb-2">Acceso de prueba rápido</span>
+          <div class="flex justify-center gap-1.5">
+            <button type="button" onclick="fillDemoCredentials('admin')" class="px-2.5 py-1 border border-gray-250 hover:border-aura-goldText/30 hover:bg-amber-50/20 text-gray-500 hover:text-aura-goldText rounded-full text-[10px] font-semibold transition-all focus:outline-none active:scale-95">Admin</button>
+            <button type="button" onclick="fillDemoCredentials('cajero')" class="px-2.5 py-1 border border-gray-250 hover:border-aura-goldText/30 hover:bg-amber-50/20 text-gray-500 hover:text-aura-goldText rounded-full text-[10px] font-semibold transition-all focus:outline-none active:scale-95">Cajero</button>
+            <button type="button" onclick="fillDemoCredentials('operativo')" class="px-2.5 py-1 border border-gray-250 hover:border-aura-goldText/30 hover:bg-amber-50/20 text-gray-500 hover:text-aura-goldText rounded-full text-[10px] font-semibold transition-all focus:outline-none active:scale-95">Operativo</button>
+          </div>
+        </div>
+      </form>
+
+      <!-- VIEW 2: 2FA CODE FORM (HIDDEN BY DEFAULT) -->
+      <form id="login-2fa-form" onsubmit="handleLogin2FASubmit(event)" class="hidden space-y-4">
+        <div class="text-center pb-1">
+          <h3 class="text-sm font-light text-gray-900 tracking-tight">Verificación de Dos Factores</h3>
+          <p class="text-[10.5px] text-gray-400 mt-0.5">Ingresa el código temporal enviado a tu correo/celular.</p>
+        </div>
+
+        <!-- 6-digit PIN input with automatic focus shifting -->
+        <div class="flex justify-between gap-1.5 max-w-[260px] mx-auto py-2">
+          <input type="tel" inputmode="numeric" pattern="[0-9]*" maxlength="1" onkeydown="handle2FAKeyDown(event, 1)" oninput="focusNext2FACell(this, 1)" onpaste="handle2FAPaste(event)" id="pin-1" class="w-9 h-11 text-center bg-gray-50 border border-gray-200/80 rounded-lg text-lg font-normal text-gray-950 focus:outline-none focus:bg-white focus:ring-4 focus:ring-aura-primary/5 focus:border-aura-primary transition-all duration-200">
+          <input type="tel" inputmode="numeric" pattern="[0-9]*" maxlength="1" onkeydown="handle2FAKeyDown(event, 2)" oninput="focusNext2FACell(this, 2)" onpaste="handle2FAPaste(event)" id="pin-2" class="w-9 h-11 text-center bg-gray-50 border border-gray-200/80 rounded-lg text-lg font-normal text-gray-950 focus:outline-none focus:bg-white focus:ring-4 focus:ring-aura-primary/5 focus:border-aura-primary transition-all duration-200">
+          <input type="tel" inputmode="numeric" pattern="[0-9]*" maxlength="1" onkeydown="handle2FAKeyDown(event, 3)" oninput="focusNext2FACell(this, 3)" onpaste="handle2FAPaste(event)" id="pin-3" class="w-9 h-11 text-center bg-gray-50 border border-gray-200/80 rounded-lg text-lg font-normal text-gray-950 focus:outline-none focus:bg-white focus:ring-4 focus:ring-aura-primary/5 focus:border-aura-primary transition-all duration-200">
+          <input type="tel" inputmode="numeric" pattern="[0-9]*" maxlength="1" onkeydown="handle2FAKeyDown(event, 4)" oninput="focusNext2FACell(this, 4)" onpaste="handle2FAPaste(event)" id="pin-4" class="w-9 h-11 text-center bg-gray-50 border border-gray-200/80 rounded-lg text-lg font-normal text-gray-950 focus:outline-none focus:bg-white focus:ring-4 focus:ring-aura-primary/5 focus:border-aura-primary transition-all duration-200">
+          <input type="tel" inputmode="numeric" pattern="[0-9]*" maxlength="1" onkeydown="handle2FAKeyDown(event, 5)" oninput="focusNext2FACell(this, 5)" onpaste="handle2FAPaste(event)" id="pin-5" class="w-9 h-11 text-center bg-gray-50 border border-gray-200/80 rounded-lg text-lg font-normal text-gray-950 focus:outline-none focus:bg-white focus:ring-4 focus:ring-aura-primary/5 focus:border-aura-primary transition-all duration-200">
+          <input type="tel" inputmode="numeric" pattern="[0-9]*" maxlength="1" onkeydown="handle2FAKeyDown(event, 6)" oninput="focusNext2FACell(this, 6)" onpaste="handle2FAPaste(event)" id="pin-6" class="w-9 h-11 text-center bg-gray-50 border border-gray-200/80 rounded-lg text-lg font-normal text-gray-950 focus:outline-none focus:bg-white focus:ring-4 focus:ring-aura-primary/5 focus:border-aura-primary transition-all duration-200">
+        </div>
+
+        <button type="submit" id="btn-2fa-submit" class="w-full bg-aura-primary hover:bg-aura-primaryHover text-white py-2.5 rounded-md font-semibold text-xs transition-colors shadow-sm flex items-center justify-center gap-1.5 active:scale-98">
+          <span>Verificar y Acceder</span>
+          <div id="2fa-spinner" class="hidden w-3.5 h-3.5 border-2 border-white/20 border-t-white rounded-full animate-spin"></div>
+        </button>
+
+        <div class="flex justify-between text-[10px] pt-2">
+          <button type="button" onclick="resend2FACode()" class="text-aura-primary font-bold hover:underline focus:outline-none">Volver a enviar</button>
+          <button type="button" onclick="cancel2FA()" class="text-gray-400 font-semibold hover:text-gray-900 focus:outline-none">Regresar</button>
+        </div>
+      </form>
+
+    </div>
+
+    <!-- Encrypted Connection Microcopy -->
+    <div class="mt-5 flex items-center justify-center gap-1.5 text-gray-450 select-none">
+      <span class="w-1.5 h-1.5 rounded-full bg-amber-500 animate-pulse"></span>
+      <span class="text-[9.5px] font-medium tracking-tight text-gray-400">Conexión cifrada AES-256 · Servidores AuraPay activos</span>
+    </div>
+  </div>
+
+  <!-- ================= APP DASHBOARD WRAPPER ================= -->
+  <!-- Hidden by default, activated on successful login -->
+  <div id="app-dashboard" class="hidden w-full h-screen flex overflow-hidden relative">
+
+    <!-- ================= SIDEBAR ================= -->
+    <aside id="sidebar" class="fixed inset-y-0 left-0 w-64 bg-white border-r border-gray-200 flex flex-col justify-between z-layer-sidebar transform -translate-x-full lg:translate-x-0 transition-transform duration-300 ease-in-out">
+      <div>
+        <!-- Minimalist Logo -->
+        <div class="h-16 flex items-center px-4 border-b border-gray-200 justify-between">
+          <div class="flex items-center gap-1.5 select-none scale-90 origin-left">
+            <svg class="h-7 w-auto" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+              <defs>
+                <linearGradient id="auraGoldGradSidebar" x1="0%" y1="0%" x2="100%" y2="100%">
+                  <stop offset="0%" stop-color="#F59E0B" />
+                  <stop offset="100%" stop-color="#D97706" />
+                </linearGradient>
+                <linearGradient id="auraCharcoalGradSidebar" x1="0%" y1="100%" x2="100%" y2="0%">
+                  <stop offset="0%" stop-color="#374151" />
+                  <stop offset="100%" stop-color="#111827" />
+                </linearGradient>
+              </defs>
+              <circle cx="24" cy="24" r="22" fill="url(#auraCharcoalGradSidebar)" />
+              <path d="M 24 8 L 36 34 L 28 34 L 24 24 L 20 24 L 16 34 L 8 34 Z M 24 16 L 26 21 L 22 21 Z" fill="url(#auraGoldGradSidebar)" />
+            </svg>
+            <span class="font-sans tracking-tight text-lg">
+              <span class="font-extrabold text-aura-primary">Aura</span><span class="font-light text-gray-400">Pay</span>
+            </span>
+          </div>
+          <span class="text-[8px] font-semibold text-gray-400 bg-gray-100 px-1.5 py-0.5 rounded">Plataforma</span>
+          
+          <!-- Mobile Sidebar Close Button -->
+          <button onclick="closeSidebarMobile()" class="lg:hidden p-1 text-gray-455 hover:text-gray-900 focus:outline-none ml-2">
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" /></svg>
+          </button>
+        </div>
+
+        <!-- Navigation Menu -->
+        <nav class="p-3 space-y-0.5" id="sidebar-menu">
+          <a href="#" onclick="switchTab('dashboard')" class="flex items-center gap-3 px-3 py-2 text-sm font-semibold rounded-md transition-colors text-aura-goldText bg-amber-50" id="menu-dashboard">
+            <svg class="w-4 h-4 text-aura-goldText" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24">
+              <rect x="3" y="3" width="7" height="7" rx="1" />
+              <rect x="14" y="3" width="7" height="7" rx="1" />
+              <rect x="14" y="14" width="7" height="7" rx="1" />
+              <rect x="3" y="14" width="7" height="7" rx="1" />
+            </svg>
+            <span>Dashboard</span>
+          </a>
+          
+          <a href="#" onclick="switchTab('links')" class="flex items-center justify-between px-3 py-2 text-sm font-medium rounded-md transition-colors text-gray-500 hover:text-gray-900 hover:bg-gray-50" id="menu-links">
+            <div class="flex items-center gap-3">
+              <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M13.19 8.688a4.5 4.5 0 011.242 7.244l-4.5 4.5a4.5 4.5 0 01-6.364-6.364l1.757-1.757m13.35-.622l1.757-1.757a4.5 4.5 0 00-6.364-6.364l-4.5 4.5a4.5 4.5 0 001.242 7.244" />
+              </svg>
+              <span>Enlaces de Pago</span>
+            </div>
+            <span class="bg-gray-100 text-gray-500 text-[10px] font-bold px-2 py-0.5 rounded-full" id="badge-pending-count">2</span>
+          </a>
+
+          <a href="#" onclick="switchTab('transacciones')" class="flex items-center justify-between px-3 py-2 text-sm font-medium rounded-md transition-colors text-gray-500 hover:text-gray-900 hover:bg-gray-50" id="menu-transacciones">
+            <div class="flex items-center gap-3">
+              <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24">
+                <rect x="3" y="4" width="18" height="16" rx="2" />
+                <line x1="3" y1="10" x2="21" y2="10" />
+                <path d="M7 15h.01M11 15h.01M15 15h.01" stroke-linecap="round" stroke-linejoin="round" />
+              </svg>
+              <span>Transacciones</span>
+            </div>
+            <span class="bg-gray-100 text-gray-500 text-[10px] font-bold px-2 py-0.5 rounded-full" id="badge-paid-count">2</span>
+          </a>
+
+          <a href="#" onclick="switchTab('productos')" class="flex items-center gap-3 px-3 py-2 text-sm font-medium rounded-md transition-colors text-gray-500 hover:text-gray-900 hover:bg-gray-50" id="menu-productos">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M20.25 7.5l-.625 10.632a2.25 2.25 0 01-2.247 2.118H6.622a2.25 2.25 0 01-2.247-2.118L3.75 7.5M10 11.25h4M3.375 7.5h17.25c.621 0 1.125-.504 1.125-1.125v-1.5c0-.621-.504-1.125-1.125-1.125H3.375c-.621 0-1.125.504-1.125 1.125v1.5c0 .621.504 1.125 1.125 1.125z" />
+            </svg>
+            <span>Productos</span>
+          </a>
+
+          <a href="#" onclick="switchTab('informacion')" class="flex items-center gap-3 px-3 py-2 text-sm font-medium rounded-md transition-colors text-gray-500 hover:text-gray-900 hover:bg-gray-50" id="menu-informacion">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M13.5 6H5.25A2.25 2.25 0 003 8.25v10.5A2.25 2.25 0 005.25 21h10.5A2.25 2.25 0 0018 18.75V10.5m-10.5 6L21 3m0 0h-5.25M21 3v5.25" />
+            </svg>
+            <span>Información General</span>
+          </a>
+
+          <a href="#" onclick="switchTab('usuarios')" class="flex items-center gap-3 px-3 py-2 text-sm font-medium rounded-md transition-colors text-gray-500 hover:text-gray-900 hover:bg-gray-50" id="menu-usuarios">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" />
+              <circle cx="9" cy="7" r="4" stroke-linecap="round" stroke-linejoin="round" />
+              <path stroke-linecap="round" stroke-linejoin="round" d="M23 21v-2a4 4 0 0 0-3-3.87" />
+              <path stroke-linecap="round" stroke-linejoin="round" d="M16 3.13a4 4 0 0 1 0 7.75" />
+            </svg>
+            <span>Usuarios</span>
+          </a>
+
+          <a href="#" onclick="switchTab('logs')" class="flex items-center gap-3 px-3 py-2 text-sm font-medium rounded-md transition-colors text-gray-500 hover:text-gray-900 hover:bg-gray-50" id="menu-logs">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M9 12h3.75M9 15h3.75M9 18h3.75m3 .75H18a2.25 2.25 0 002.25-2.25V6.108c0-1.135-.845-2.098-1.976-2.192a48.424 48.424 0 00-1.123-.08m-5.801 0c-.065.21-.1.433-.1.664 0 .414.336.75.75.75h4.5a.75.75 0 00.75-.75 2.25 2.25 0 00-.1-.664m-5.8 0A2.251 2.251 0 0113.5 2.25H15c1.03 0 1.9.693 2.166 1.638m-7.377 2.24A9.018 9.018 0 012.25 12V18a2.25 2.25 0 002.25 2.25h2.25" />
+            </svg>
+            <span>Bitácora / Logs</span>
+          </a>
+
+          <a href="#" onclick="switchTab('ajustes')" class="flex items-center gap-3 px-3 py-2 text-sm font-medium rounded-md transition-colors text-gray-500 hover:text-gray-900 hover:bg-gray-50" id="menu-ajustes">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M9.594 3.94c.09-.542.56-.94 1.11-.94h2.593c.55 0 1.02.398 1.11.94l.213 1.281c.063.374.313.686.645.87.074.04.147.083.22.127.324.196.72.257 1.075.124l1.217-.456a1.125 1.125 0 011.37.49l1.296 2.247a1.125 1.125 0 01-.26 1.43l-1.003.828c-.293.241-.438.613-.43.992a7.723 7.723 0 010 .255c-.008.378.137.75.43.991l1.004.827c.424.35.534.954.26 1.43l-1.298 2.247a1.125 1.125 0 01-1.369.491l-1.217-.456c-.355-.133-.75-.072-1.076.124a6.47 6.47 0 01-.22.128c-.331.183-.581.495-.644.869l-.213 1.281c-.09.543-.56.94-1.11.94h-2.594c-.55 0-1.019-.398-1.11-.94l-.213-1.281c-.062-.374-.312-.686-.644-.87a6.52 6.52 0 01-.22-.127c-.325-.196-.72-.257-1.076-.124l-1.217.456a1.125 1.125 0 01-1.369-.49l-1.297-2.247a1.125 1.125 0 01.26-1.43l1.004-.827c.292-.24.437-.613.43-.991a6.932 6.932 0 010-.255c.007-.38-.138-.751-.43-.992l-1.004-.827a1.125 1.125 0 01-.26-1.43l1.297-2.247a1.125 1.125 0 011.37-.491l1.216.456c.356.133.751.072 1.076-.124.072-.044.146-.086.22-.128.332-.183.582-.495.645-.869L9.594 3.94z" />
+              <path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+            </svg>
+            <span>Ajustes</span>
+          </a>
+        </nav>
+      </div>
+
+      <!-- User Active Profile & Logout -->
+      <div class="p-4 border-t border-gray-200 bg-gray-50/50">
+        <div class="flex items-center gap-2.5 px-1">
+          <div class="w-7 h-7 rounded-md bg-aura-primary/10 flex items-center justify-center font-bold text-xs text-aura-primary" id="sidebar-role-avatar">
+            AD
+          </div>
+          <div class="flex-1 min-w-0">
+            <p class="text-xs font-semibold text-gray-900 truncate" id="sidebar-role-fullname">Administrador General</p>
+            <p class="text-[9px] text-gray-400 font-medium capitalize" id="sidebar-role-title">Admin</p>
+          </div>
+        </div>
+
+        <button onclick="logout()" class="w-full mt-3 flex items-center justify-center gap-2 px-3 py-1.5 border border-red-200/50 rounded-md text-xs font-semibold text-red-700 bg-red-50/20 hover:bg-red-50 hover:text-red-800 transition-colors focus:outline-none">
+          <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M15.75 9V5.25A2.25 2.25 0 0013.5 3h-6a2.25 2.25 0 00-2.25 2.25v13.5A2.25 2.25 0 007.5 21h6a2.25 2.25 0 002.25-2.25V15M12 9l-3 3m0 0l3 3m-3-3h12.75" />
+          </svg>
+          <span>Cerrar Sesión</span>
+        </button>
+      </div>
+    </aside>
+
+    <!-- Mobile Sidebar Backdrop Overlay -->
+    <div id="sidebar-overlay" onclick="closeSidebarMobile()" class="fixed inset-0 bg-gray-950/20 backdrop-blur-xs z-layer-sidebar-overlay hidden lg:hidden transition-opacity duration-300 opacity-0"></div>
+
+    <!-- ================= MAIN LAYOUT WRAPPER ================= -->
+    <div class="flex-1 flex flex-col min-w-0 overflow-hidden lg:pl-64">
+
+      <!-- Topbar Header -->
+      <header class="bg-white border-b border-gray-200 h-16 flex items-center justify-between px-4 sm:px-8 flex-shrink-0 z-20 gap-4">
+        
+        <!-- Left side: Hamburger button + Search -->
+        <div class="flex items-center gap-3">
+          <!-- Mobile Sidebar Hamburger Button -->
+          <button onclick="openSidebarMobile()" class="lg:hidden p-1.5 text-gray-500 hover:text-gray-900 focus:outline-none transition-colors">
+            <svg class="w-6 h-6" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M3.75 6.75h16.5M3.75 12h16.5m-16.5 5.25h16.5" />
+            </svg>
+          </button>
+
+          <!-- Command Bar Style Search -->
+          <div class="relative w-40 sm:w-80">
+            <span class="absolute inset-y-0 left-0 pl-2.5 flex items-center pointer-events-none text-gray-400">
+              <svg class="h-4 w-4" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-5.197-5.197m0 0A7.5 7.5 0 105.196 5.196a7.5 7.5 0 0010.602 10.602z" />
+              </svg>
+            </span>
+            <input type="text" id="table-search" oninput="filterTable(this.value)" placeholder="Buscar..." class="w-full pl-8 pr-10 py-1 bg-gray-50 border border-gray-200 rounded-md text-xs focus:outline-none focus:bg-white focus:ring-1 focus:ring-aura-primary focus:border-aura-primary transition-all">
+            <div class="hidden sm:absolute inset-y-0 right-0 pr-2.5 sm:flex items-center pointer-events-none">
+              <kbd class="text-[9px] font-semibold text-gray-400 bg-white px-1.5 py-0.5 border border-gray-200 rounded">⌘K</kbd>
+            </div>
+          </div>
+        </div>
+
+        <!-- Right side: Notifications + CTA -->
+        <div class="flex items-center gap-3">
+          <!-- Theme Toggle Button -->
+          <button onclick="toggleTheme()" id="theme-toggle" class="p-1.5 bg-white text-gray-400 hover:text-gray-900 rounded-md transition-colors focus:outline-none relative" aria-label="Cambiar entre modo claro y oscuro">
+          </button>
+
+          <!-- Notification Popover Trigger -->
+          <div class="relative">
+            <button onclick="toggleNotifications()" class="p-1.5 bg-white text-gray-400 hover:text-gray-900 rounded-md transition-colors focus:outline-none relative">
+              <span id="notif-badge-dot" class="hidden absolute top-1.5 right-1.5 h-2 w-2 bg-aura-gold rounded-full ring-2 ring-white"></span>
+              <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M14.857 17.082a9.049 9.049 0 0 1-5.12 0m-.008 0A3 3 0 0 0 6 15V8a6 6 0 0 1 12 0v7a3 3 0 0 0 2.25 2.583m-13.834.123A1.998 1.998 0 0 0 7.5 21h9a1.998 1.998 0 0 0 1.583-2.294" />
+              </svg>
+            </button>
+            
+            <!-- Dropdown menu -->
+            <div id="notifications-menu" class="hidden absolute right-0 mt-2 w-80 bg-white rounded-lg shadow-xl border border-gray-200 py-1 z-layer-modal transition-all duration-200 transform origin-top-right scale-95 opacity-0">
+              <div class="px-4 py-2.5 border-b border-gray-150 flex justify-between items-center bg-gray-50/50">
+                <span class="font-semibold text-xs text-gray-900 flex items-center gap-1.5">
+                  Notificaciones
+                  <span id="notif-count-badge" class="hidden bg-aura-primary text-white text-[9.5px] px-1.5 py-0.2 rounded-full font-bold">0</span>
+                </span>
+                <button onclick="markAllNotificationsAsRead()" class="text-[10px] text-aura-primary font-bold hover:underline focus:outline-none">Marcar todo leído</button>
+              </div>
+              <div class="max-h-64 overflow-y-auto divide-y divide-gray-100 text-xs" id="notifications-list-container">
+                <!-- JS Populated -->
+              </div>
+              <div class="p-2 border-t border-gray-100 text-center bg-gray-50/30">
+                <button onclick="clearAllNotifications()" class="text-[9.5px] text-gray-500 hover:text-gray-900 font-semibold focus:outline-none">Limpiar todas</button>
+              </div>
+            </div>
+          </div>
+
+          <!-- Primary Forest Green Button (Desktop only, mobile uses FAB) -->
+          <button onclick="openCreateModal()" id="btn-create-link" class="hidden sm:flex max-sm:!hidden bg-aura-primary hover:bg-aura-primaryHover text-white px-3.5 py-1.5 rounded-md font-semibold text-xs items-center gap-1.5 transition-colors shadow-sm active:scale-98 whitespace-nowrap">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
+            </svg>
+            <span>Nuevo Enlace</span>
+          </button>
+        </div>
+      </header>
+
+      <main class="flex-1 overflow-y-auto py-8">
+        <div class="w-full px-4 sm:px-8 space-y-8">
+          
+          <!-- VIEW A: OPERATIONAL DASHBOARD (KPIs & Transactions Table) -->
+          <div id="dashboard-view" class="space-y-8">
+            
+            <!-- Company / Merchant Identity Card -->
+            <div class="bg-gradient-to-r from-aura-primary/5 via-aura-emerald/5 to-white border border-gray-200 rounded-xl p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-4 shadow-sm">
+              <div class="flex items-center gap-3.5">
+                <div class="w-12 h-12 rounded-full overflow-hidden border-2 border-white shadow-md bg-white flex-shrink-0">
+                  <img src="logo_cafe_don_arturo.png" alt="Logo Café Don Arturo" class="w-full h-full object-cover">
+                </div>
+                <div>
+                  <div class="flex items-center gap-2">
+                    <span class="text-xs font-bold text-aura-goldText bg-amber-50 px-2 py-0.5 rounded border border-amber-200/50 uppercase tracking-wide">Comercio Activo</span>
+                    <span class="text-[11px] text-gray-400 font-mono">NIT: 3849102-5</span>
+                  </div>
+                  <h1 class="text-lg font-extrabold text-gray-950 tracking-tight mt-0.5">Café Don Arturo, S.A.</h1>
+                </div>
+              </div>
+              <div class="flex items-center gap-3 self-start sm:self-auto">
+                <div class="text-right hidden md:block">
+                  <p class="text-[10px] text-gray-400 font-bold uppercase tracking-wider">Terminal POS Virtual</p>
+                  <p class="text-xs font-semibold text-gray-700">Resumen de Operación</p>
+                </div>
+                <div class="flex items-center gap-2 text-xs text-gray-600 bg-white border border-gray-150 px-3 py-2 rounded-lg shadow-2xs">
+                  <span class="relative flex h-2 w-2">
+                    <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-aura-emerald opacity-75"></span>
+                    <span class="relative inline-flex rounded-full h-2 w-2 bg-aura-emerald"></span>
+                  </span>
+                  <span class="font-bold text-[11px] text-gray-800">Red: AuraPay Omnicanal</span>
+                </div>
+              </div>
+            </div>
+
+            <!-- RESPONSIVE KPI GRID -->
+            <section class="grid grid-cols-2 lg:grid-cols-3 gap-4" id="kpi-container">
+
+              <!-- 1. Total Recaudado -->
+              <div class="col-span-2 lg:col-span-1 bg-white border border-gray-200 rounded-xl p-5 shadow-sm flex flex-col gap-1">
+                <div class="flex items-center justify-between">
+                  <span class="text-xs font-semibold text-gray-400 uppercase tracking-wider">Total Recaudado</span>
+                  <div class="w-7 h-7 rounded-lg bg-amber-50 flex items-center justify-center">
+                    <svg class="w-4 h-4 text-aura-goldText" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 6v12m-3-2.818l.879.659c1.171.879 3.07.879 4.242 0 1.172-.879 1.172-2.303 0-3.182C13.536 12.219 12.768 12 12 12c-.725 0-1.45-.22-2.003-.659-1.106-.879-1.106-2.303 0-3.182s2.9-.879 4.006 0l.415.33M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+                  </div>
+                </div>
+                <span class="text-3xl font-bold text-gray-900 tracking-tight mt-1" id="kpi-net-sales">Q 0.00</span>
+                <span class="text-[11px] text-aura-goldText font-semibold" id="kpi-net-sales-subtext">0 pagos procesados</span>
+              </div>
+
+              <!-- 2. Cobros con Tarjeta -->
+              <div class="bg-white border border-gray-200 rounded-xl p-5 shadow-sm flex flex-col gap-1">
+                <div class="flex items-center justify-between">
+                  <span class="text-xs font-semibold text-gray-400 uppercase tracking-wider">Cobros Tarjeta</span>
+                  <div class="w-7 h-7 rounded-lg bg-amber-50 flex items-center justify-center">
+                    <svg class="w-4 h-4 text-aura-goldText" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M2.25 8.25h19.5M2.25 9h19.5m-16.5 5.25h6m-6 2.25h3m-3.75 3h15a2.25 2.25 0 002.25-2.25V6.75A2.25 2.25 0 0019.5 4.5h-15a2.25 2.25 0 00-2.25 2.25v10.5A2.25 2.25 0 004.5 19.5z" /></svg>
+                  </div>
+                </div>
+                <span class="text-2xl font-bold text-gray-900 tracking-tight mt-1" id="kpi-card-total">Q 0.00</span>
+                <span class="text-[11px] text-aura-goldText font-semibold" id="kpi-card-count">0 transacciones</span>
+              </div>
+
+              <!-- 3. Cobros en Efectivo / Banca -->
+              <div class="bg-white border border-gray-200 rounded-xl p-5 shadow-sm flex flex-col gap-1">
+                <div class="flex items-center justify-between">
+                  <span class="text-xs font-semibold text-gray-400 uppercase tracking-wider">Cobros Banca</span>
+                  <div class="w-7 h-7 rounded-lg bg-slate-100 flex items-center justify-center">
+                    <svg class="w-4 h-4 text-slate-600" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M2.25 18.75a60.07 60.07 0 0115.797 2.101c.727.198 1.453-.342 1.453-1.096V18.75M3.75 4.5v.75A.75.75 0 013 6h-.75m0 0v-.375c0-.621.504-1.125 1.125-1.125H20.25M2.25 6v9m18-10.5v.75c0 .414.336.75.75.75h.75m-1.5-1.5h.375c.621 0 1.125.504 1.125 1.125v9.75c0 .621-.504 1.125-1.125 1.125h-.375m1.5-1.5H21a.75.75 0 00-.75.75v.75m0 0H3.75m0 0h-.375a1.125 1.125 0 01-1.125-1.125V15m1.5 1.5v-.75A.75.75 0 003 15h-.75M15 10.5a3 3 0 11-6 0 3 3 0 016 0zm3 0h.008v.008H18V10.5zm-12 0h.008v.008H6V10.5z" /></svg>
+                  </div>
+                </div>
+                <span class="text-2xl font-bold text-gray-900 tracking-tight mt-1" id="kpi-cash-total">Q 0.00</span>
+                <span class="text-[11px] text-slate-600 font-semibold" id="kpi-cash-count">0 transacciones</span>
+              </div>
+
+              <!-- 4. Ticket Promedio -->
+              <div class="bg-white border border-gray-200 rounded-xl p-5 shadow-sm flex flex-col gap-1">
+                <div class="flex items-center justify-between">
+                  <span class="text-xs font-semibold text-gray-400 uppercase tracking-wider">Ticket Promedio</span>
+                  <div class="w-7 h-7 rounded-lg bg-slate-100 flex items-center justify-center">
+                    <svg class="w-4 h-4 text-slate-600" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M7.5 14.25v2.25m3-4.5v4.5m3-6.75v6.75m3-9v9M6 20.25h12A2.25 2.25 0 0020.25 18V6A2.25 2.25 0 0018 3.75H6A2.25 2.25 0 003.75 6v12A2.25 2.25 0 006 20.25z" /></svg>
+                  </div>
+                </div>
+                <span class="text-2xl font-bold text-gray-900 tracking-tight mt-1" id="kpi-avg-ticket">Q 0.00</span>
+                <span class="text-[11px] text-slate-600 font-semibold" id="kpi-avg-ticket-subtext">por cobro pagado</span>
+              </div>
+
+              <!-- 5. Producto más vendido -->
+              <div class="bg-white border border-gray-200 rounded-xl p-5 shadow-sm flex flex-col gap-1">
+                <div class="flex items-center justify-between">
+                  <span class="text-xs font-semibold text-gray-400 uppercase tracking-wider">Top Producto</span>
+                  <div class="w-7 h-7 rounded-lg bg-rose-50 flex items-center justify-center">
+                    <svg class="w-4 h-4 text-rose-500" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M11.48 3.499a.562.562 0 011.04 0l2.125 5.111a.563.563 0 00.475.345l5.518.442c.499.04.701.663.321.988l-4.204 3.602a.563.563 0 00-.182.557l1.285 5.385a.562.562 0 01-.84.61l-4.725-2.885a.563.563 0 00-.586 0L6.982 20.54a.562.562 0 01-.84-.61l1.285-5.386a.562.562 0 00-.182-.557l-4.204-3.602a.562.562 0 01.321-.988l5.518-.442a.563.563 0 00.475-.345L11.48 3.5z" /></svg>
+                  </div>
+                </div>
+                <span class="text-sm font-bold text-gray-900 mt-1 leading-snug line-clamp-2" id="kpi-top-product">—</span>
+                <span class="text-[11px] text-rose-500 font-semibold" id="kpi-top-product-count">0 ventas</span>
+              </div>
+
+              <!-- 6. Tasa de Cobro -->
+              <div class="bg-white border border-gray-200 rounded-xl p-5 shadow-sm flex flex-col gap-1">
+                <div class="flex items-center justify-between">
+                  <span class="text-xs font-semibold text-gray-400 uppercase tracking-wider">Tasa de Cobro</span>
+                  <div class="w-7 h-7 rounded-lg bg-teal-50 flex items-center justify-center">
+                    <svg class="w-4 h-4 text-teal-500" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+                  </div>
+                </div>
+                <span class="text-2xl font-bold text-gray-900 tracking-tight mt-1" id="kpi-conversion-rate">0.0%</span>
+                <div class="w-full bg-gray-100 rounded-full h-1 mt-1 overflow-hidden">
+                  <div class="bg-teal-500 h-1 rounded-full transition-all duration-500" style="width: 0%" id="conversion-progress-bar"></div>
+                </div>
+                <span class="text-[10px] text-gray-400 font-medium mt-1" id="kpi-conversion-subtext">0 de 0 cobros pagados</span>
+              </div>
+
+            </section>
+
+            <!-- TRANSACTIONS TABLE -->
+            <section class="bg-white border border-gray-200 rounded-xl shadow-sm overflow-hidden" id="table-container">
+              <div class="px-6 py-4 border-b border-gray-200 flex flex-col sm:flex-row gap-3 sm:justify-between sm:items-center bg-white">
+                <span class="font-semibold text-sm text-gray-900">Historial de Transacciones</span>
+                <div class="flex flex-wrap items-center gap-3">
+                  <!-- Date Range Filter -->
+                  <div class="flex items-center gap-1.5 text-xs text-gray-500 bg-gray-50/50 hover:bg-gray-50 border border-gray-200 rounded px-2.5 py-1.5 transition-all focus-within:bg-white focus-within:ring-1 focus-within:ring-aura-primary focus-within:border-aura-primary relative">
+                    <svg class="w-3.5 h-3.5 text-gray-400 flex-shrink-0" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24">
+                      <path stroke-linecap="round" stroke-linejoin="round" d="M6.75 3v2.25M17.25 3v2.25M3 18.75V7.5a2.25 2.25 0 012.25-2.25h13.5A2.25 2.25 0 0121 7.5v11.25m-18 0A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75m-18 0v-7.5A2.25 2.25 0 015.25 9h13.5A2.25 2.25 0 0121 11.25v7.5" />
+                    </svg>
+                    <input type="date" id="filter-start-date" onchange="applyDateFilters()" class="custom-date-input bg-transparent border-none p-0 text-[10.5px] font-semibold text-gray-700 focus:ring-0 focus:outline-none w-[90px] cursor-pointer">
+                    <span class="text-gray-400 font-medium px-0.5">al</span>
+                    <input type="date" id="filter-end-date" onchange="applyDateFilters()" class="custom-date-input bg-transparent border-none p-0 text-[10.5px] font-semibold text-gray-700 focus:ring-0 focus:outline-none w-[90px] cursor-pointer">
+                    <button onclick="clearDateFilter()" class="text-gray-400 hover:text-red-650 transition-colors ml-0.5 focus:outline-none" title="Limpiar fechas">
+                      <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" /></svg>
+                    </button>
+                  </div>
+                  
+                  <div class="flex gap-1 bg-gray-50 p-0.5 rounded border border-gray-200">
+                    <button onclick="filterTableByStatus('all')" class="px-2.5 py-1 text-[11px] font-semibold rounded bg-gray-100 text-gray-950 transition-colors" id="btn-status-all">Todos</button>
+                    <button onclick="filterTableByStatus('PAID')" class="px-2.5 py-1 text-[11px] font-semibold rounded text-gray-500 hover:text-gray-900 transition-colors" id="btn-status-paid">Pagados</button>
+                    <button onclick="filterTableByStatus('PENDING')" class="px-2.5 py-1 text-[11px] font-semibold rounded text-gray-500 hover:text-gray-900 transition-colors" id="btn-status-pending">Pendientes</button>
+                    <button onclick="filterTableByStatus('CANCELLED')" class="px-2.5 py-1 text-[11px] font-semibold rounded text-gray-500 hover:text-gray-900 transition-colors" id="btn-status-cancelled">Cancelados</button>
+                  </div>
+                  <button id="btn-export-dashboard" onclick="exportTransactionsExcel()" class="bg-white hover:bg-gray-50 text-gray-700 px-3 py-1.5 rounded-md font-semibold text-xs border border-gray-200 flex items-center gap-1.5 transition-colors shadow-sm active:scale-98">
+                    <svg class="w-4 h-4 text-emerald-600 animate-pulse" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24">
+                      <path stroke-linecap="round" stroke-linejoin="round" d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5M16.5 12L12 16.5m0 0L7.5 12m4.5 4.5V3" />
+                    </svg>
+                    <span>Exportar Excel</span>
+                  </button>
+                </div>
+              </div>
+
+              <div class="overflow-x-auto">
+                <table class="w-full text-left text-sm text-gray-500 min-w-[650px]">
+                  <thead class="bg-gray-50/50 border-b border-gray-200 text-xs text-gray-400 font-semibold uppercase tracking-wider">
+                    <tr>
+                      <th scope="col" class="px-6 py-3 whitespace-nowrap">Referencia</th>
+                      <th scope="col" class="px-6 py-3 whitespace-nowrap">Fecha</th>
+                      <th scope="col" class="px-6 py-3 whitespace-nowrap">Cliente</th>
+                      <th scope="col" class="px-6 py-3 whitespace-nowrap">Tipo de Pago</th>
+                      <th scope="col" class="px-6 py-3 text-right whitespace-nowrap">Monto</th>
+                      <th scope="col" class="px-6 py-3 text-center whitespace-nowrap">Estado</th>
+                    </tr>
+                  </thead>
+                  <tbody class="divide-y divide-gray-100 text-gray-700" id="transaction-table-body">
+                    <!-- JS Populated -->
+                  </tbody>
+                </table>
+              </div>
+
+              <div class="px-6 py-3.5 border-t border-gray-200 bg-white flex justify-between items-center text-xs text-gray-500">
+                <span id="table-total-count">Mostrando 5 de 5 transacciones</span>
+                <div class="flex gap-1">
+                  <button class="px-2 py-1 border border-gray-200 rounded text-gray-400 cursor-not-allowed text-[11px] font-medium bg-white">Anterior</button>
+                  <button class="px-2 py-1 border border-gray-200 rounded text-gray-600 hover:bg-gray-50 transition-colors text-[11px] font-medium bg-white">Siguiente</button>
+                </div>
+              </div>
+            </section>
+          </div>
+
+          <!-- VIEW C: COMPLETED TRANSACTIONS REPORT -->
+          <div id="transacciones-view" class="hidden space-y-6">
+            <div class="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3">
+              <div>
+                <h1 class="text-xl font-bold text-gray-900 tracking-tight">Transacciones Realizadas</h1>
+                <p class="text-xs text-gray-500 mt-0.5">Reporte consolidado de links pagados con éxito que generaron transacciones financieras.</p>
+              </div>
+              <div class="flex flex-wrap items-center gap-3">
+                <!-- Date Range Filter -->
+                <div class="flex items-center gap-1.5 text-xs text-gray-500 bg-gray-50/50 hover:bg-gray-50 border border-gray-200 rounded px-2.5 py-1.5 transition-all focus-within:bg-white focus-within:ring-1 focus-within:ring-aura-primary focus-within:border-aura-primary relative">
+                  <svg class="w-3.5 h-3.5 text-gray-400 flex-shrink-0" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M6.75 3v2.25M17.25 3v2.25M3 18.75V7.5a2.25 2.25 0 012.25-2.25h13.5A2.25 2.25 0 0121 7.5v11.25m-18 0A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75m-18 0v-7.5A2.25 2.25 0 015.25 9h13.5A2.25 2.25 0 0121 11.25v7.5" />
+                  </svg>
+                  <input type="date" id="report-start-date" onchange="renderTransactionsReport()" class="custom-date-input bg-transparent border-none p-0 text-[10.5px] font-semibold text-gray-700 focus:ring-0 focus:outline-none w-[90px] cursor-pointer">
+                  <span class="text-gray-400 font-medium px-0.5">al</span>
+                  <input type="date" id="report-end-date" onchange="renderTransactionsReport()" class="custom-date-input bg-transparent border-none p-0 text-[10.5px] font-semibold text-gray-700 focus:ring-0 focus:outline-none w-[90px] cursor-pointer">
+                  <button onclick="clearReportDateFilter()" class="text-gray-400 hover:text-red-650 transition-colors ml-0.5 focus:outline-none" title="Limpiar fechas">
+                    <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" /></svg>
+                  </button>
+                </div>
+
+                <button id="btn-export-trans" onclick="exportPaidTransactionsExcel()" class="bg-white hover:bg-gray-50 text-gray-700 px-3.5 py-1.5 rounded-md font-semibold text-xs border border-gray-200 flex items-center gap-1.5 transition-colors shadow-sm active:scale-98">
+                  <svg class="w-4 h-4 text-emerald-600" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5M16.5 12L12 16.5m0 0L7.5 12m4.5 4.5V3" />
+                  </svg>
+                  <span>Exportar Reporte (Excel)</span>
+                </button>
+              </div>
+            </div>
+
+            <!-- Table of Transactions -->
+            <section class="bg-white border border-gray-200 rounded-xl shadow-sm overflow-hidden">
+              <div class="overflow-x-auto">
+                <table class="w-full text-left text-sm text-gray-500 min-w-[800px]">
+                  <thead class="bg-gray-50/50 border-b border-gray-200 text-xs text-gray-400 font-semibold uppercase tracking-wider">
+                    <tr>
+                      <th scope="col" class="px-6 py-3 whitespace-nowrap">Código Autorización</th>
+                      <th scope="col" class="px-6 py-3 whitespace-nowrap">Código Auditoría</th>
+                      <th scope="col" class="px-6 py-3 whitespace-nowrap">Referencia de Pago</th>
+                      <th scope="col" class="px-6 py-3 whitespace-nowrap">Enlace de Origen</th>
+                      <th scope="col" class="px-6 py-3 whitespace-nowrap">Cliente</th>
+                      <th scope="col" class="px-6 py-3 text-right whitespace-nowrap">Monto</th>
+                      <th scope="col" class="px-6 py-3 whitespace-nowrap">Fecha de Pago</th>
+                    </tr>
+                  </thead>
+                  <tbody class="divide-y divide-gray-100 text-gray-700" id="transactions-report-table-body">
+                    <!-- Javascript populated -->
+                  </tbody>
+                </table>
+              </div>
+              <div class="px-6 py-3.5 border-t border-gray-200 bg-white text-xs text-gray-500 text-right" id="transactions-report-count">
+                Mostrando 0 transacciones
+              </div>
+            </section>
+          </div>
+
+          <!-- VIEW D: USERS MANAGEMENT PANEL (HIDDEN BY DEFAULT) -->
+          <div id="usuarios-view" class="hidden space-y-6">
+            <!-- Header Info for Users -->
+            <div class="flex flex-col items-start sm:flex-row sm:justify-between sm:items-center gap-3">
+              <div>
+                <h1 class="text-xl font-bold text-gray-900 tracking-tight">Gestión de Usuarios</h1>
+                <p class="text-xs text-gray-500 mt-0.5">Control de accesos y permisos para usuarios y administradores del comercio.</p>
+              </div>
+              <button onclick="openUserModal()" id="btn-create-user" class="bg-aura-primary hover:bg-aura-primaryHover text-white px-3.5 py-1.5 rounded-md font-semibold text-xs flex items-center gap-1.5 transition-colors shadow-sm active:scale-98">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" d="M19 7.5v3m0 0v3m0-3h3m-3 0h-3m-2.25-4.125a3.375 3.375 0 11-6.75 0 3.375 3.375 0 016.75 0zM4 19.235v-.11a6.375 6.375 0 0112.75 0v.109A12.318 12.318 0 0110.374 21c-2.34 0-4.544-.223-6.624-.652z" />
+                </svg>
+                <span>Crear Usuario</span>
+              </button>
+            </div>
+
+            <!-- Users List Table Wrapper -->
+            <section class="bg-white border border-gray-200 rounded-xl shadow-sm overflow-hidden">
+              <div class="overflow-x-auto">
+                <table class="w-full text-left text-sm text-gray-550 min-w-[650px]">
+                  <thead class="bg-gray-50/50 border-b border-gray-200 text-xs text-gray-400 font-semibold uppercase tracking-wider">
+                    <tr>
+                      <th scope="col" class="px-6 py-3 whitespace-nowrap">Usuario</th>
+                      <th scope="col" class="px-6 py-3 whitespace-nowrap">Rol de Acceso</th>
+                      <th scope="col" class="px-6 py-3 text-center whitespace-nowrap">Estado</th>
+                      <th scope="col" class="px-6 py-3 whitespace-nowrap">Última Conexión</th>
+                      <th scope="col" class="px-6 py-3 text-right whitespace-nowrap">Acciones</th>
+                    </tr>
+                  </thead>
+                  <tbody class="divide-y divide-gray-100 text-gray-700" id="users-table-body">
+                    <!-- Javascript populated -->
+                  </tbody>
+                </table>
+              </div>
+            </section>
+          </div>
+
+          <!-- VIEW D: SYSTEM LOGS & AUDIT TRAIL -->
+          <div id="logs-view" class="hidden space-y-6">
+            <!-- Header Info for Logs -->
+            <div class="flex flex-col items-start sm:flex-row sm:justify-between sm:items-center gap-3">
+              <div>
+                <h1 class="text-xl font-bold text-gray-900 tracking-tight">Bitácora de Auditoría</h1>
+                <p class="text-xs text-gray-500 mt-0.5">Historial detallado de operaciones, transacciones y seguridad del comercio.</p>
+              </div>
+              <button id="btn-export-logs" onclick="exportLogsExcel()" class="bg-white hover:bg-gray-50 text-gray-700 px-3.5 py-1.5 rounded-md font-semibold text-xs border border-gray-200 flex items-center gap-1.5 transition-colors shadow-sm active:scale-98">
+                <svg class="w-4 h-4 text-gray-500" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5M16.5 12L12 16.5m0 0L7.5 12m4.5 4.5V3" />
+                </svg>
+                <span>Exportar Logs (Excel)</span>
+              </button>
+            </div>
+
+            <!-- Filters & Search Bar -->
+            <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4 bg-white p-4 border border-gray-200 rounded-xl shadow-sm">
+              <!-- Category Filter Pills -->
+              <div class="flex flex-wrap gap-1.5" id="log-category-filters">
+                <button onclick="filterLogsByCategory('all')" class="px-2.5 py-1 text-[11px] font-semibold rounded bg-gray-100 text-gray-950 transition-colors" id="btn-log-cat-all">Todos</button>
+                <button onclick="filterLogsByCategory('seguridad')" class="px-2.5 py-1 text-[11px] font-semibold rounded text-gray-500 hover:text-gray-900 transition-colors" id="btn-log-cat-seguridad">Seguridad</button>
+                <button onclick="filterLogsByCategory('transaccion')" class="px-2.5 py-1 text-[11px] font-semibold rounded text-gray-500 hover:text-gray-900 transition-colors" id="btn-log-cat-transaccion">Transacciones</button>
+                <button onclick="filterLogsByCategory('vendedor')" class="px-2.5 py-1 text-[11px] font-semibold rounded text-gray-500 hover:text-gray-900 transition-colors" id="btn-log-cat-vendedor">Usuarios</button>
+              </div>
+
+              <!-- Search Box -->
+              <div class="relative w-full md:w-64">
+                <span class="absolute inset-y-0 left-0 pl-2.5 flex items-center pointer-events-none text-gray-400">
+                  <svg class="h-3.5 w-3.5" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-5.197-5.197m0 0A7.5 7.5 0 105.196 5.196a7.5 7.5 0 0010.602 10.602z" />
+                  </svg>
+                </span>
+                <input type="text" id="log-search" oninput="searchLogs(this.value)" placeholder="Buscar por actor, evento..." class="w-full pl-8 pr-3 py-1 bg-gray-50 border border-gray-200 rounded-md text-xs focus:outline-none focus:bg-white focus:ring-1 focus:ring-aura-primary focus:border-aura-primary transition-all">
+              </div>
+            </div>
+
+            <!-- Logs List Table Wrapper -->
+            <section class="bg-white border border-gray-200 rounded-xl shadow-sm overflow-hidden">
+              <div class="overflow-x-auto">
+                <table class="w-full text-left text-sm text-gray-500 min-w-[750px]">
+                  <thead class="bg-gray-50/50 border-b border-gray-200 text-xs text-gray-400 font-semibold uppercase tracking-wider">
+                    <tr>
+                      <th scope="col" class="px-6 py-3 w-[160px] whitespace-nowrap">Fecha / Hora</th>
+                      <th scope="col" class="px-6 py-3 w-[150px] whitespace-nowrap">Evento</th>
+                      <th scope="col" class="px-6 py-3 w-[180px] whitespace-nowrap">Actor</th>
+                      <th scope="col" class="px-6 py-3 text-center w-[120px] whitespace-nowrap">Categoría</th>
+                      <th scope="col" class="px-6 py-3 whitespace-nowrap">Detalles</th>
+                    </tr>
+                  </thead>
+                  <tbody class="divide-y divide-gray-100 text-gray-700" id="logs-table-body">
+                    <!-- Javascript populated -->
+                  </tbody>
+                </table>
+              </div>
+              <div class="px-6 py-3.5 border-t border-gray-200 bg-white text-xs text-gray-500 text-right" id="logs-total-count">
+                Mostrando 0 registros
+              </div>
+            </section>
+          </div>
+
+          <!-- VIEW F: PRODUCTS CATALOG -->
+          <div id="productos-view" class="hidden space-y-6">
+            <div class="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3">
+              <div>
+                <h1 class="text-xl font-bold text-gray-900 tracking-tight">Catálogo de Productos</h1>
+                <p class="text-xs text-gray-500 mt-0.5">Administra tus artículos y servicios para generar enlaces de pago de forma inmediata.</p>
+              </div>
+              <div class="flex flex-wrap gap-2.5 self-start">
+                <button id="btn-import-products" onclick="triggerProductCSVImport()" class="bg-white hover:bg-gray-50 text-gray-700 px-3.5 py-1.5 rounded-md font-semibold text-xs border border-gray-200 flex items-center gap-1.5 transition-colors shadow-sm active:scale-98">
+                  <svg class="w-4 h-4 text-aura-primary" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5m-13.5-9L12 3m0 0l4.5 4.5M12 3v13.5" />
+                  </svg>
+                  <span>Importar CSV</span>
+                </button>
+                <input type="file" id="product-csv-file-input" class="hidden" accept=".csv" onchange="handleProductCSVImport(event)">
+
+                <button id="btn-export-products" onclick="exportProductsExcel()" class="bg-white hover:bg-gray-50 text-gray-700 px-3.5 py-1.5 rounded-md font-semibold text-xs border border-gray-200 flex items-center gap-1.5 transition-colors shadow-sm active:scale-98">
+                  <svg class="w-4 h-4 text-emerald-600" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5M16.5 12L12 16.5m0 0L7.5 12m4.5 4.5V3" />
+                  </svg>
+                  <span>Exportar Excel</span>
+                </button>
+
+                <button onclick="openProductModal()" class="bg-aura-primary hover:bg-aura-primaryHover text-white px-3.5 py-1.5 rounded-md font-semibold text-xs flex items-center gap-1.5 transition-colors shadow-sm active:scale-98">
+                  <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
+                  </svg>
+                  <span>Nuevo Producto</span>
+                </button>
+              </div>
+            </div>
+
+            <!-- Grid container for products -->
+            <div id="products-catalog-grid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+              <!-- JS Populated -->
+            </div>
+            
+            <!-- Empty State for products -->
+            <div id="products-catalog-empty" class="hidden bg-white border border-gray-200 rounded-xl p-12 text-center shadow-sm max-w-lg mx-auto">
+              <div class="w-12 h-12 bg-slate-100 rounded-full flex items-center justify-center mx-auto text-aura-primary mb-4">
+                <svg class="w-6 h-6" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" d="M20.25 7.5l-.625 10.632a2.25 2.25 0 01-2.247 2.118H6.622a2.25 2.25 0 01-2.247-2.118L3.75 7.5M10 11.25h4M3.375 7.5h17.25c.621 0 1.125-.504 1.125-1.125v-1.5c0-.621-.504-1.125-1.125-1.125H3.375c-.621 0-1.125.504-1.125 1.125v1.5c0 .621.504 1.125 1.125 1.125z" />
+                </svg>
+              </div>
+              <h3 class="font-bold text-sm text-gray-900">Tu catálogo está vacío</h3>
+              <p class="text-xs text-gray-500 mt-1 mb-4">Agrega productos o servicios para que puedas seleccionarlos al momento de emitir un cobro y llenar los datos al instante.</p>
+              <button onclick="openProductModal()" class="bg-aura-primary hover:bg-aura-primaryHover text-white px-3 py-1.5 rounded-md font-semibold text-xs transition-colors shadow-sm">
+                Crear Primer Producto
+              </button>
+            </div>
+
+          </div><!-- /productos-view -->
+
+          <!-- VIEW F: INFORMACIÓN GENERAL -->
+          <div id="informacion-view" class="hidden space-y-6">
+            <div>
+              <h1 class="text-xl font-bold text-gray-900 tracking-tight">Información General</h1>
+              <p class="text-xs text-gray-500 mt-0.5">Resumen de comisiones, ventas y condiciones comerciales de tu cuenta AuraPay.</p>
+            </div>
+
+            <!-- Row 1: Summary KPIs -->
+            <div class="grid grid-cols-2 lg:grid-cols-4 gap-4" id="info-kpi-grid">
+              <!-- populated by JS -->
+            </div>
+
+            <!-- Row 2: Comisión al contado + tabla cuotas -->
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-5">
+
+              <!-- Comisión Contado -->
+              <div class="bg-white border border-gray-200 rounded-xl shadow-sm p-5">
+                <h3 class="text-xs font-bold text-gray-400 uppercase tracking-wider mb-4">Comisión — Pago al Contado con Tarjeta</h3>
+                <div class="flex items-center gap-4">
+                  <div class="w-16 h-16 rounded-full bg-amber-50 border-2 border-aura-goldText flex items-center justify-center flex-shrink-0">
+                    <span class="text-xl font-bold text-aura-goldText">4.5%</span>
+                  </div>
+                  <div class="space-y-1 text-xs text-gray-600">
+                    <p>Se aplica sobre el monto base del cobro en cada transacción pagada con tarjeta al contado.</p>
+                    <p class="text-gray-400">Esta comisión es absorbida internamente por el comercio y no se muestra al cliente.</p>
+                  </div>
+                </div>
+                <div class="mt-4 pt-4 border-t border-gray-100">
+                  <div class="flex justify-between text-xs text-gray-500 mb-1.5">
+                    <span>Contado con Tarjeta</span><span class="font-semibold text-gray-900">4.50 %</span>
+                  </div>
+                  <div class="flex justify-between text-xs text-gray-500 mb-1.5">
+                    <span>Banca Virtual / Efectivo</span><span class="font-semibold text-gray-900">0.00 %</span>
+                  </div>
+                  <div class="flex justify-between text-xs text-gray-500">
+                    <span>Cuik</span><span class="font-semibold text-gray-900">0.00 %</span>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Tabla de tasas por cuotas -->
+              <div class="bg-white border border-gray-200 rounded-xl shadow-sm p-5">
+                <h3 class="text-xs font-bold text-gray-400 uppercase tracking-wider mb-4">Tabla de Intereses — Cuotas con Tarjeta</h3>
+                <div class="overflow-hidden rounded-lg border border-gray-100">
+                  <table class="w-full text-xs">
+                    <thead>
+                      <tr class="bg-aura-primary text-white">
+                        <th class="px-3 py-2 text-left font-semibold">Plazo</th>
+                        <th class="px-3 py-2 text-right font-semibold">Tasa</th>
+                        <th class="px-3 py-2 text-left font-semibold">Plazo</th>
+                        <th class="px-3 py-2 text-right font-semibold">Tasa</th>
+                      </tr>
+                    </thead>
+                    <tbody class="divide-y divide-gray-100">
+                      <tr class="hover:bg-gray-50"><td class="px-3 py-2 text-gray-700">2 meses</td><td class="px-3 py-2 text-right font-semibold text-aura-emerald">5.25 %</td><td class="px-3 py-2 text-gray-700">15 meses</td><td class="px-3 py-2 text-right font-semibold text-aura-emerald">10.00 %</td></tr>
+                      <tr class="hover:bg-gray-50 bg-gray-50/50"><td class="px-3 py-2 text-gray-700">3 meses</td><td class="px-3 py-2 text-right font-semibold text-aura-emerald">5.75 %</td><td class="px-3 py-2 text-gray-700">18 meses</td><td class="px-3 py-2 text-right font-semibold text-aura-emerald">12.00 %</td></tr>
+                      <tr class="hover:bg-gray-50"><td class="px-3 py-2 text-gray-700">6 meses</td><td class="px-3 py-2 text-right font-semibold text-aura-emerald">7.00 %</td><td class="px-3 py-2 text-gray-700">24 meses</td><td class="px-3 py-2 text-right font-semibold text-aura-emerald">12.50 %</td></tr>
+                      <tr class="hover:bg-gray-50 bg-gray-50/50"><td class="px-3 py-2 text-gray-700">10 meses</td><td class="px-3 py-2 text-right font-semibold text-aura-emerald">7.25 %</td><td class="px-3 py-2 text-gray-700">36 meses</td><td class="px-3 py-2 text-right font-semibold text-aura-emerald">13.50 %</td></tr>
+                      <tr class="hover:bg-gray-50"><td class="px-3 py-2 text-gray-700">12 meses</td><td class="px-3 py-2 text-right font-semibold text-aura-emerald">8.00 %</td><td class="px-3 py-2 text-gray-700">48 meses</td><td class="px-3 py-2 text-right font-semibold text-aura-emerald">16.75 %</td></tr>
+                    </tbody>
+                  </table>
+                </div>
+                <p class="text-[10px] text-gray-400 mt-2">Los intereses se calculan sobre el precio base del producto y son incluidos en el total al cliente.</p>
+              </div>
+            </div>
+
+            <!-- Row 3: Desglose de ventas por método -->
+            <div class="bg-white border border-gray-200 rounded-xl shadow-sm p-5">
+              <h3 class="text-xs font-bold text-gray-400 uppercase tracking-wider mb-4">Desglose de Ventas por Método de Pago</h3>
+              <div id="info-metodo-breakdown" class="space-y-3">
+                <!-- populated by JS -->
+              </div>
+            </div>
+
+            <!-- Row 4: Info de cuenta -->
+            <div class="bg-white border border-gray-200 rounded-xl shadow-sm p-5">
+              <h3 class="text-xs font-bold text-gray-400 uppercase tracking-wider mb-4">Datos de la Cuenta</h3>
+              <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 text-xs">
+                <div><span class="text-gray-400 block mb-0.5">Comercio</span><span class="font-semibold text-gray-900">Academia de Barismo</span></div>
+                <div><span class="text-gray-400 block mb-0.5">Moneda</span><span class="font-semibold text-gray-900">Quetzales (GTQ)</span></div>
+                <div><span class="text-gray-400 block mb-0.5">Tipo de cuenta</span><span class="font-semibold text-gray-900">AuraPay Omnicanal</span></div>
+                <div><span class="text-gray-400 block mb-0.5">Vigencia del link</span><span class="font-semibold text-gray-900">48 horas</span></div>
+                <div><span class="text-gray-400 block mb-0.5">Intentos máximos por link</span><span class="font-semibold text-gray-900">3 intentos</span></div>
+                <div><span class="text-gray-400 block mb-0.5">Cuotas máximas por defecto</span><span class="font-semibold text-gray-900">48 meses</span></div>
+              </div>
+            </div>
+          </div><!-- /informacion-view -->
+
+
+          <div id="ajustes-view" class="hidden space-y-6">
+            <div>
+              <h1 class="text-xl font-bold text-gray-900 tracking-tight">Configuración del Comercio</h1>
+              <p class="text-xs text-gray-500 mt-0.5">Administra los parámetros globales, claves de API y respuestas de webhooks del Hosted Checkout.</p>
+            </div>
+
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+              
+              <!-- Left Sidebar: Settings Navigation Menu -->
+              <div class="space-y-2">
+                <button onclick="switchSettingsSection('general')" id="btn-set-general" class="w-full text-left px-4 py-2.5 rounded-lg text-xs font-semibold bg-gray-100 text-gray-950 flex items-center gap-2.5 transition-colors">
+                  <svg class="w-4 h-4 text-gray-600" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" /><path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /></svg>
+                  <span>General</span>
+                </button>
+                <button onclick="switchSettingsSection('branding')" id="btn-set-branding" class="w-full text-left px-4 py-2.5 rounded-lg text-xs font-semibold text-gray-600 hover:bg-gray-50 flex items-center gap-2.5 transition-colors">
+                  <svg class="w-4 h-4 text-gray-500" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M9.53 16.122a3 3 0 00-5.78 1.128 2.25 2.25 0 01-2.4 2.245 4.5 4.5 0 008.4-2.245c0-.399-.078-.78-.22-1.128zm0 0a15.998 15.998 0 003.388-1.62m-5.043-.025a15.994 15.994 0 011.622-3.395m3.42 3.42a15.995 15.995 0 004.764-4.648l3.876-5.814a1.151 1.151 0 00-1.597-1.597L14.146 6.32a15.996 15.996 0 00-4.649 4.763m3.42 3.42a15.995 15.995 0 00-3.42-3.42" /></svg>
+                  <span>Personalización & Marca</span>
+                </button>
+                <button onclick="switchSettingsSection('webhooks')" id="btn-set-webhooks" class="w-full text-left px-4 py-2.5 rounded-lg text-xs font-semibold text-gray-600 hover:bg-gray-50 flex items-center gap-2.5 transition-colors">
+                  <svg class="w-4 h-4 text-gray-500" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M13.19 8.688a4.5 4.5 0 011.242 7.244l-4.5 4.5a4.5 4.5 0 01-6.364-6.364l1.757-1.757m13.35-.622l1.757-1.757a4.5 4.5 0 00-6.364-6.364l-4.5 4.5a4.5 4.5 0 001.242 7.244" /></svg>
+                  <span>Webhooks del Checkout</span>
+                </button>
+              </div>
+
+              <!-- Right Panel: Section Content Cards -->
+              <div class="lg:col-span-2 space-y-6">
+                
+                <!-- SECTION A: GENERAL SETTINGS -->
+                <div id="settings-section-general" class="bg-white border border-gray-200 rounded-xl shadow-sm p-6 space-y-6">
+                  <h3 class="text-xs font-bold text-gray-400 uppercase tracking-wider">Configuración General</h3>
+                  
+                  <div class="space-y-4 text-xs">
+                    <div>
+                      <label class="block text-gray-700 font-semibold mb-1.5">Nombre Comercial del Comercio</label>
+                      <input type="text" value="Academia de Barismo" class="w-full px-3 py-2 bg-gray-50 border border-gray-250 rounded-md focus:outline-none focus:bg-white focus:ring-1 focus:ring-aura-primary focus:border-aura-primary transition-all text-xs" readonly>
+                      <span class="text-[10px] text-gray-400 mt-1 block">Para cambiar el nombre comercial registrado ante Aura, contacta a tu asesor.</span>
+                    </div>
+
+                    <div>
+                      <label class="block text-gray-700 font-semibold mb-1.5">Moneda Base</label>
+                      <select class="w-full px-3 py-2 bg-gray-50 border border-gray-250 rounded-md focus:outline-none focus:bg-white focus:ring-1 focus:ring-aura-primary focus:border-aura-primary transition-all text-xs" disabled>
+                        <option value="GTQ" selected>Quetzales (GTQ)</option>
+                        <option value="USD">Dólares (USD)</option>
+                      </select>
+                    </div>
+
+                    <div>
+                      <label class="block text-gray-700 font-semibold mb-1.5">Tasa de Cambio (USD a GTQ) — Ajuste Super-Admin</label>
+                      <div class="flex">
+                        <span class="bg-gray-100 border border-gray-250 border-r-0 rounded-l-md px-3 py-2 text-xs flex items-center font-mono text-gray-500">Q</span>
+                        <input type="number" step="0.01" id="exchange-rate-usd" value="7.90" onchange="updateExchangeRate(this.value)" class="w-full px-3 py-2 bg-gray-50 border border-gray-250 rounded-r-md focus:outline-none focus:bg-white focus:ring-1 focus:ring-aura-primary focus:border-aura-primary transition-all text-xs">
+                      </div>
+                      <span class="text-[9.5px] text-gray-400 mt-1 block">Tasa de cambio administrable para calcular dinámicamente el costo fijo de Gateway Fee ($0.15 USD) en moneda local.</span>
+                    </div>
+
+                    <div class="flex items-center gap-3 bg-blue-50/50 p-3 rounded-lg border border-blue-150 text-[10.5px] text-blue-750">
+                      <svg class="w-5 h-5 text-blue-600 flex-shrink-0" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M11.25 11.25l.041-.02a.75.75 0 111.083.985l-.04.02L12 12.75l-.041.02a.75.75 0 11-1.083-.985l.04-.02.5-.25zM12 9a.75.75 0 100-1.5.75.75 0 000 1.5z" /><path stroke-linecap="round" stroke-linejoin="round" d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+                      <div>
+                        <span class="font-bold">Moneda configurada:</span> Quetzales guatemaltecos (GTQ). Para cambios de configuración avanzada contacta a tu asesor Aura.
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- SECTION B: WEBHOOKS SETTINGS -->
+                <div id="settings-section-webhooks" class="hidden bg-white border border-gray-200 rounded-xl shadow-sm p-6 space-y-6">
+                  <div class="flex justify-between items-start">
+                    <div>
+                      <h3 class="text-xs font-bold text-gray-400 uppercase tracking-wider">Webhooks del Hosted Checkout</h3>
+                      <p class="text-[10px] text-gray-500 mt-1">Configura URLs seguras para recibir notificaciones HTTP POST instantáneas sobre el ciclo de pago.</p>
+                    </div>
+                    
+                    <!-- Webhook Status Switch Toggle -->
+                    <label class="relative inline-flex items-center cursor-pointer select-none">
+                      <input type="checkbox" id="webhook-enabled" onchange="toggleWebhookStatus(this.checked)" class="sr-only peer">
+                      <!-- Track -->
+                      <div class="w-9 h-5 bg-gray-300 dark:bg-gray-700 rounded-full peer peer-checked:bg-aura-primary transition-colors duration-200"></div>
+                      <!-- Knob -->
+                      <div class="absolute left-0.5 top-0.5 w-4 h-4 bg-white rounded-full shadow transition-transform duration-200 peer-checked:translate-x-4"></div>
+                    </label>
+                  </div>
+
+                  <!-- Webhook Configuration Fields -->
+                  <div id="webhook-fields" class="opacity-50 pointer-events-none transition-opacity duration-200 space-y-5 text-xs">
+                    <div>
+                      <label class="block text-gray-700 font-semibold mb-1.5">URL del Endpoint</label>
+                      <div class="flex flex-col sm:flex-row gap-2">
+                        <input type="url" id="webhook-url" placeholder="https://tu-comercio.com/api/aurapay-webhook" class="w-full px-3 py-2 bg-gray-50 border border-gray-250 rounded-md focus:outline-none focus:bg-white focus:ring-1 focus:ring-aura-primary focus:border-aura-primary transition-all text-xs">
+                        <button onclick="testWebhookConnection()" class="bg-gray-100 hover:bg-gray-200 text-gray-700 px-4 py-2 rounded-md font-semibold text-xs border border-gray-250 transition-colors shadow-sm whitespace-nowrap active:scale-98">
+                          Probar Conexión
+                        </button>
+                      </div>
+                      <span class="text-[9.5px] text-gray-400 mt-1 block">AuraPay enviará un ping POST con una firma cifrada para validar tu endpoint.</span>
+                    </div>
+
+                    <!-- Signing Secret Key -->
+                    <div>
+                      <label class="block text-gray-700 font-semibold mb-1.5">Firma Secreta del Webhook (Signing Secret)</label>
+                      <div class="flex flex-col sm:flex-row gap-2">
+                        <input type="text" id="webhook-secret" value="whsec_aurapay_checkout_9918a38bcd512" class="w-full px-3 py-2 bg-gray-150 border border-gray-250 rounded-md font-mono text-gray-600 focus:outline-none text-xs" readonly>
+                        <button onclick="regenerateWebhookSecret()" class="bg-white hover:bg-gray-50 text-gray-700 px-3 py-2 rounded-md font-semibold text-xs border border-gray-200 transition-colors shadow-sm whitespace-nowrap active:scale-98">
+                          Regenerar
+                        </button>
+                      </div>
+                    </div>
+
+                    <!-- Event Subscriptions -->
+                    <div>
+                      <label class="block text-gray-700 font-semibold mb-2">Eventos Suscritos</label>
+                      <div class="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+                        <label class="flex items-center gap-2 p-2.5 bg-gray-50/50 hover:bg-gray-50 border border-gray-200 rounded-lg cursor-pointer transition-all">
+                          <input type="checkbox" id="evt-success" class="rounded border-gray-300 text-aura-primary focus:ring-aura-primary" checked>
+                          <div>
+                            <span class="font-bold text-[10.5px] block text-gray-950">checkout.payment_success</span>
+                            <span class="text-[9px] text-gray-400 block mt-0.5">Se dispara cuando el cliente completa un pago.</span>
+                          </div>
+                        </label>
+
+                        <label class="flex items-center gap-2 p-2.5 bg-gray-50/50 hover:bg-gray-50 border border-gray-200 rounded-lg cursor-pointer transition-all">
+                          <input type="checkbox" id="evt-failed" class="rounded border-gray-300 text-aura-primary focus:ring-aura-primary" checked>
+                          <div>
+                            <span class="font-bold text-[10.5px] block text-gray-950">checkout.payment_failed</span>
+                            <span class="text-[9px] text-gray-400 block mt-0.5">Se dispara ante transacciones rechazadas/fallidas.</span>
+                          </div>
+                        </label>
+
+                        <label class="flex items-center gap-2 p-2.5 bg-gray-50/50 hover:bg-gray-50 border border-gray-200 rounded-lg cursor-pointer transition-all">
+                          <input type="checkbox" id="evt-created" class="rounded border-gray-300 text-aura-primary focus:ring-aura-primary">
+                          <div>
+                            <span class="font-bold text-[10.5px] block text-gray-950">link.created</span>
+                            <span class="text-[9px] text-gray-400 block mt-0.5">Notifica al instante la creación de un nuevo cobro.</span>
+                          </div>
+                        </label>
+
+                        <label class="flex items-center gap-2 p-2.5 bg-gray-50/50 hover:bg-gray-50 border border-gray-200 rounded-lg cursor-pointer transition-all">
+                          <input type="checkbox" id="evt-expired" class="rounded border-gray-300 text-aura-primary focus:ring-aura-primary">
+                          <div>
+                            <span class="font-bold text-[10.5px] block text-gray-950">link.expired</span>
+                            <span class="text-[9px] text-gray-400 block mt-0.5">Avisa cuando expira un enlace sin haber sido pagado.</span>
+                          </div>
+                        </label>
+                      </div>
+                    </div>
+                  </div>
+
+                  <!-- Webhook Test Log Response Simulator Terminal -->
+                  <div id="webhook-simulator-terminal" class="hidden space-y-2.5 text-xs border-t border-gray-150 pt-5">
+                    <div class="flex justify-between items-center">
+                      <span class="font-bold text-gray-800">Resultado de la Última Transmisión (Ping)</span>
+                      <span class="px-2 py-0.5 bg-amber-50 border border-amber-200 text-aura-goldText text-[9px] font-semibold rounded" id="web-sim-status">STATUS: OK</span>
+                    </div>
+                    <div class="bg-gray-950 text-amber-200 font-mono p-3 rounded-lg text-[9.5px] leading-relaxed shadow-inner overflow-x-auto">
+                      <p class="text-gray-500">&gt; POST <span class="text-white" id="web-sim-url">https://tu-comercio.com/api/...</span></p>
+                      <p class="text-gray-500">&gt; Content-Type: application/json</p>
+                      <p class="text-gray-500">&gt; X-AuraPay-Signature: sha256=2b189ff78ac76bde1e882aef1...</p>
+                      <p class="mt-1.5 text-yellow-350">Request Body:</p>
+                      <pre class="text-amber-300 mt-1" id="web-sim-payload">{
+  "event": "webhook.test_ping",
+  "created_at": "2026-07-11 23:10:15",
+  "livemode": false,
+  "data": {
+    "ping": "pong",
+    "merchant_id": "mrc_99281a",
+    "status": "active"
+  }
+}</pre>
+                      <p class="mt-2 text-yellow-300">Response Header:</p>
+                      <p class="text-white">&lt; <span class="text-amber-400 font-bold" id="web-sim-response-code">HTTP/1.1 200 OK</span></p>
+                      <p class="text-gray-500">&lt; Content-Type: application/json</p>
+                      <p class="mt-1 text-amber-400">&lt; {"status": "received", "code": 200}</p>
+                    </div>
+                  </div>
+
+                  <!-- Save Button for Webhooks -->
+                  <div class="flex justify-end pt-3 border-t border-gray-100">
+                    <button onclick="saveWebhookSettings()" class="bg-aura-primary hover:bg-aura-primaryHover text-white px-5 py-2 rounded-md font-semibold text-xs transition-colors shadow-md active:scale-98">
+                      Guardar Cambios
+                    </button>
+                  </div>
+                </div>
+
+                <!-- SECTION C: BRANDING & LEGAL SETTINGS -->
+                <div id="settings-section-branding" class="hidden bg-white border border-gray-200 rounded-xl shadow-sm p-6 space-y-6">
+                  <div>
+                    <h3 class="text-xs font-bold text-gray-400 uppercase tracking-wider">Personalización de Marca & Legales</h3>
+                    <p class="text-[10px] text-gray-500 mt-1">Configura la apariencia de tus Links de Pago con tus colores corporativos, logotipo y términos legales.</p>
+                  </div>
+
+                  <div class="space-y-5 text-xs">
+                    <!-- Brand Colors -->
+                    <div>
+                      <label class="block text-gray-700 font-semibold mb-1.5">Color Primario del Comercio</label>
+                      <div class="flex items-center gap-3">
+                        <input type="color" id="brand-color-picker" value="#1F2937" onchange="onBrandColorPickerChange(this.value)" class="w-10 h-10 rounded border border-gray-250 cursor-pointer p-0.5 bg-white">
+                        <input type="text" id="brand-color-hex" value="#1F2937" oninput="onBrandColorHexInput(this.value)" placeholder="#1F2937" class="w-28 px-3 py-2 bg-gray-50 border border-gray-250 rounded-md font-mono text-xs font-semibold focus:outline-none focus:bg-white focus:ring-1 focus:ring-aura-primary">
+                        
+                        <!-- Quick Color Presets -->
+                        <div class="flex items-center gap-1.5 ml-auto">
+                          <span class="text-[10px] text-gray-400 font-medium mr-1">Paleta:</span>
+                          <button type="button" onclick="selectBrandColorPreset('#111827')" class="w-6 h-6 rounded-full bg-[#111827] border border-white shadow-sm ring-1 ring-gray-200 active:scale-95" title="Carbón"></button>
+                          <button type="button" onclick="selectBrandColorPreset('#1E40AF')" class="w-6 h-6 rounded-full bg-[#1E40AF] border border-white shadow-sm ring-1 ring-gray-200 active:scale-95" title="Azul Cobalto"></button>
+                          <button type="button" onclick="selectBrandColorPreset('#065F46')" class="w-6 h-6 rounded-full bg-[#065F46] border border-white shadow-sm ring-1 ring-gray-200 active:scale-95" title="Verde Esmeralda"></button>
+                          <button type="button" onclick="selectBrandColorPreset('#831843')" class="w-6 h-6 rounded-full bg-[#831843] border border-white shadow-sm ring-1 ring-gray-200 active:scale-95" title="Vino / Burdeos"></button>
+                          <button type="button" onclick="selectBrandColorPreset('#5B21B6')" class="w-6 h-6 rounded-full bg-[#5B21B6] border border-white shadow-sm ring-1 ring-gray-200 active:scale-95" title="Púrpura Imperial"></button>
+                          <button type="button" onclick="selectBrandColorPreset('#78350F')" class="w-6 h-6 rounded-full bg-[#78350F] border border-white shadow-sm ring-1 ring-gray-200 active:scale-95" title="Café Gourmet"></button>
+                        </div>
+                      </div>
+                      <span class="text-[9.5px] text-gray-400 mt-1 block">Este color tiñe los botones principales, badges de la pasarela y estados de selección.</span>
+                    </div>
+
+                    <!-- Subtitle / Tagline -->
+                    <div>
+                      <label class="block text-gray-700 font-semibold mb-1.5">Lema / Subtítulo Comercial</label>
+                      <input type="text" id="brand-subtext" placeholder="ej. Tostaduría de especialidad y café gourmet" class="w-full px-3 py-2 bg-gray-50 border border-gray-250 rounded-md focus:outline-none focus:bg-white focus:ring-1 focus:ring-aura-primary transition-all text-xs" oninput="updateLiveBrandPreview()">
+                      <span class="text-[9.5px] text-gray-400 mt-1 block">Aparece debajo del nombre de tu comercio en el encabezado del Hosted Checkout.</span>
+                    </div>
+
+                    <!-- Legal Terms & Conditions Dedicated Studio Box -->
+                    <div class="border border-gray-200 rounded-xl p-5 bg-white shadow-sm space-y-4">
+                      <div class="flex items-center justify-between border-b border-gray-150 pb-3">
+                        <div class="flex items-center gap-2">
+                          <svg class="w-4 h-4 text-aura-goldText" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M19.5 14.25v-2.625a3.375 3.375 0 00-3.375-3.375h-1.5A1.125 1.125 0 0113.5 7.125v-1.5a3.375 3.375 0 00-3.375-3.375H8.25m0 12.75h7.5m-7.5 3H12M10.5 2.25H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 00-9-9z" /></svg>
+                          <h4 class="font-bold text-gray-900 text-xs tracking-tight">Editor de Términos Legales & Políticas</h4>
+                        </div>
+                        <button type="button" onclick="loadDefaultLegalTemplates()" class="text-[10px] text-amber-700 hover:text-amber-800 bg-amber-50 hover:bg-amber-100 border border-amber-200 font-semibold px-2.5 py-1 rounded transition-colors flex items-center gap-1.5">
+                          <svg class="w-3 h-3" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M16.023 9.348h4.992v-.001M2.985 19.644v-4.992m0 0h4.992m-4.993 0l3.181 3.183a8.25 8.25 0 0013.803-3.7M4.031 9.865a8.25 8.25 0 0113.803-3.7l3.181 3.182m0-4.991v4.99" /></svg>
+                          Cargar Plantilla Estándar
+                        </button>
+                      </div>
+
+                      <!-- Terms & Conditions Textarea -->
+                      <div class="space-y-1.5">
+                        <div class="flex justify-between items-center">
+                          <label class="block text-gray-800 font-bold text-xs">Términos y Condiciones de Venta & Servicio</label>
+                          <span class="text-[9.5px] text-gray-400 font-medium">Se muestra en el modal de checkout del cliente</span>
+                        </div>
+                        <textarea id="brand-custom-terms" rows="7" placeholder="Redacta las políticas detalladas de venta, garantías, devoluciones, condiciones de entrega y políticas de cambio del comercio..." class="w-full p-3.5 bg-gray-50/70 border border-gray-250 rounded-lg focus:outline-none focus:bg-white focus:ring-2 focus:ring-aura-primary/20 focus:border-aura-primary transition-all text-xs leading-relaxed font-sans text-gray-800 shadow-inner resize-y min-h-[160px]"></textarea>
+                        <span class="text-[9.5px] text-gray-400 block">Soporta saltos de línea y formateado por párrafos claros.</span>
+                      </div>
+
+                      <!-- Privacy Policy Textarea -->
+                      <div class="space-y-1.5 pt-2">
+                        <div class="flex justify-between items-center">
+                          <label class="block text-gray-800 font-bold text-xs">Aviso de Privacidad y Descargos Legales</label>
+                          <span class="text-[9.5px] text-gray-400 font-medium">Se muestra en la sección de privacidad</span>
+                        </div>
+                        <textarea id="brand-custom-privacy" rows="4" placeholder="Información sobre tratamiento de datos personales, confidencialidad, derechos ARCO y descargos de responsabilidad..." class="w-full p-3.5 bg-gray-50/70 border border-gray-250 rounded-lg focus:outline-none focus:bg-white focus:ring-2 focus:ring-aura-primary/20 focus:border-aura-primary transition-all text-xs leading-relaxed font-sans text-gray-800 shadow-inner resize-y min-h-[110px]"></textarea>
+                      </div>
+                    </div>
+
+                    <!-- Live Checkout Preview Card -->
+                    <div class="border border-gray-200 rounded-xl p-4 bg-gray-50/50 space-y-3">
+                      <div class="flex items-center justify-between">
+                        <span class="text-[9px] font-bold text-gray-400 uppercase tracking-widest">Vista Previa de Pasarela (En Vivo)</span>
+                        <span class="text-[9px] bg-white border border-gray-200 px-2 py-0.5 rounded font-semibold text-gray-500">Checkout Preview</span>
+                      </div>
+                      
+                      <div class="bg-white border border-gray-200 rounded-lg p-4 shadow-sm space-y-3">
+                        <div class="flex items-center justify-between border-b border-gray-100 pb-2.5">
+                          <div>
+                            <p class="font-bold text-xs text-gray-900" id="preview-brand-merchant-name">Café Don Arturo</p>
+                            <p class="text-[10px] text-gray-400" id="preview-brand-merchant-sub">Tostaduría de especialidad y café gourmet</p>
+                          </div>
+                          <span class="text-[9px] font-bold text-amber-600 bg-amber-50 px-2 py-0.5 rounded-full border border-amber-100">OFICIAL</span>
+                        </div>
+
+                        <div class="flex justify-between items-center text-xs">
+                          <span class="text-gray-500 font-medium">Total a Pagar</span>
+                          <span class="font-extrabold text-gray-900 text-sm">Q 145.00</span>
+                        </div>
+
+                        <button type="button" id="preview-brand-btn" class="w-full py-2 text-white font-bold text-xs rounded-md shadow-sm transition-all text-center" style="background-color: #1F2937;">
+                          Pagar Q 145.00
+                        </button>
+
+                        <div class="flex items-center justify-center gap-2 text-[10px] text-gray-400 pt-1">
+                          <span class="hover:underline cursor-pointer">Términos y Condiciones</span>
+                          <span>·</span>
+                          <span class="hover:underline cursor-pointer">Privacidad</span>
+                        </div>
+                      </div>
+                    </div>
+
+                    <!-- Action buttons -->
+                    <div class="flex justify-end gap-2 pt-3 border-t border-gray-100">
+                      <button onclick="resetMerchantBranding()" class="bg-gray-100 hover:bg-gray-200 text-gray-700 px-4 py-2 rounded-md font-semibold text-xs border border-gray-250 transition-colors active:scale-98">
+                        Restablecer por Defecto
+                      </button>
+                      <button onclick="saveMerchantBranding()" class="bg-aura-primary hover:bg-aura-primaryHover text-white px-5 py-2 rounded-md font-semibold text-xs transition-colors shadow-md active:scale-98">
+                        Guardar Personalización
+                      </button>
+                    </div>
+                  </div>
+                </div>
+
+              </div>
+            </div>
+          </div>
+
+        </div>
+      </main>
+    </div>
+
+  </div>
+
+  <!-- ================= MODAL: NUEVO LINK DE PAGO ================= -->
+  <div id="modal-backdrop" class="hidden fixed inset-0 bg-gray-900/30 backdrop-blur-xs z-layer-backdrop overflow-y-auto p-4 md:py-12 flex justify-center items-start opacity-0 modal-backdrop-transition">
+    <div class="bg-white w-full h-full lg:h-auto lg:max-w-sm rounded-none lg:rounded-xl p-6 shadow-xl border border-gray-200 transform scale-95 transition-transform duration-300 flex flex-col space-y-6 mx-0 lg:mx-4 relative overflow-y-auto" id="create-modal-content" onclick="event.stopPropagation()">
+      
+      <!-- Close Button (Desktop) -->
+      <button onclick="closeCreateModal()" class="hidden lg:block absolute top-4 right-4 text-gray-400 hover:text-gray-900 transition-colors focus:outline-none">
+        <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" /></svg>
+      </button>
+
+      <!-- VIEW A: FORMULARIO DE CREACION -->
+      <div id="create-modal-form-view" class="flex flex-col space-y-6">
+        <!-- Back Header (Mobile) -->
+        <div class="flex items-center justify-between lg:hidden border-b border-gray-100 pb-4 mb-2 flex-shrink-0">
+          <button type="button" onclick="closeCreateModal()" class="text-gray-500 font-semibold text-xs flex items-center gap-1 focus:outline-none">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M15.75 19.5L8.25 12l7.5-7.5" /></svg>
+            <span>Volver</span>
+          </button>
+          <span class="font-bold text-sm text-gray-900">Crear enlace</span>
+          <div class="w-8"></div>
+        </div>
+
+        <div class="flex-shrink-0">
+          <h3 class="text-sm font-semibold text-gray-900">Crear enlace de cobro AuraPay</h3>
+        </div>
+
+        <!-- Modal Form -->
+        <form id="create-link-form" onsubmit="handleCreateLink(event)" class="space-y-4 flex-1 lg:flex-none">
+          
+          <div class="border border-gray-200 rounded-lg p-3 bg-white space-y-2">
+            <label class="block text-[9px] font-bold text-gray-400 uppercase tracking-widest">Productos del Catálogo (Opcional)</label>
+            <div class="border border-gray-200 rounded-lg px-3 py-2 bg-white focus-within:ring-1 focus-within:ring-aura-primary focus-within:border-aura-primary transition-all flex items-center">
+              <select id="link-product-select" onchange="onLinkProductSelect(this.value)" class="w-full bg-transparent border-none p-0 text-xs font-semibold text-gray-700 focus:ring-0 focus:outline-none cursor-pointer">
+                <!-- JS Populated -->
+              </select>
+            </div>
+            
+            <!-- List of selected products -->
+            <div id="link-selected-products-list" class="space-y-1.5 max-h-36 overflow-y-auto pt-1 divide-y divide-gray-100">
+              <div class="text-[10px] text-gray-400 text-center py-2" id="link-products-empty-msg">Ningún producto seleccionado (Enlace normal)</div>
+            </div>
+          </div>
+
+          <div class="grid grid-cols-2 gap-3.5">
+            <!-- Monto Neto -->
+            <div class="border border-gray-200 rounded-lg px-3 py-2 bg-white focus-within:ring-1 focus-within:ring-aura-primary focus-within:border-aura-primary transition-all">
+              <label class="block text-[9px] font-bold text-gray-400 uppercase tracking-widest">Monto Neto (Efectivo)</label>
+              <div class="flex items-center mt-1">
+                <select id="link-currency" class="bg-transparent border-none p-0 text-xs font-semibold text-gray-500 mr-1 focus:ring-0 cursor-pointer outline-none w-auto pr-3">
+                  <option value="GTQ">Q (GTQ)</option>
+                  <option value="USD">$ (USD)</option>
+                </select>
+                <input type="number" step="0.01" required min="1" id="link-amount" oninput="updateCalculatedLinkPrice()" placeholder="0.00" class="w-full bg-transparent border-none p-0 text-xs font-semibold text-gray-900 focus:ring-0 focus:outline-none">
+              </div>
+            </div>
+            
+            <!-- Plazo Máximo -->
+            <div id="link-installments-container" class="border border-gray-200 rounded-lg px-3 py-2 bg-white focus-within:ring-1 focus-within:ring-aura-primary focus-within:border-aura-primary transition-all">
+              <label class="block text-[9px] font-bold text-gray-400 uppercase tracking-widest">Plazo Máximo</label>
+              <select id="link-max-installments" onchange="updateCalculatedLinkPrice()" class="w-full bg-transparent border-none p-0 text-xs font-semibold text-gray-700 focus:ring-0 focus:outline-none cursor-pointer mt-1">
+                <option value="1">1 mes (Tarjeta Corr. - 4.50%)</option>
+                <option value="2">2 meses (5.25%)</option>
+                <option value="3">3 meses (5.75%)</option>
+                <option value="6" selected>6 meses (7.00%)</option>
+                <option value="10">10 meses (7.25%)</option>
+                <option value="12">12 meses (8.00%)</option>
+              </select>
+            </div>
+          </div>
+
+          <!-- Precio de Lista Inline -->
+          <div class="flex items-center justify-between px-3 py-2 text-[10px] text-gray-500 font-semibold bg-gray-50/50 rounded-lg border border-dashed border-gray-200">
+            <span>Precio de Lista (Normal/Tarjeta):</span>
+            <div class="flex items-center text-aura-primary font-bold">
+              <span class="mr-0.5 text-xs">Q</span>
+              <input type="text" readonly id="link-list-price" placeholder="0.00" class="w-16 bg-transparent border-none p-0 text-[10px] font-bold text-aura-primary focus:ring-0 focus:outline-none text-right">
+            </div>
+          </div>
+
+          <div class="grid grid-cols-2 gap-3.5">
+            <!-- Cliente -->
+            <div class="border border-gray-200 rounded-lg px-3 py-2 bg-white focus-within:ring-1 focus-within:ring-aura-primary focus-within:border-aura-primary transition-all">
+              <label class="block text-[9px] font-bold text-gray-400 uppercase tracking-widest">Cliente</label>
+              <input type="text" required id="link-client" placeholder="ej. Carlos Mendoza" class="w-full bg-transparent border-none p-0 text-xs font-semibold text-gray-900 focus:ring-0 focus:outline-none mt-0.5">
+            </div>
+
+            <!-- Teléfono -->
+            <div class="border border-gray-200 rounded-lg px-3 py-2 bg-white focus-within:ring-1 focus-within:ring-aura-primary focus-within:border-aura-primary transition-all">
+              <label class="block text-[9px] font-bold text-gray-400 uppercase tracking-widest">Teléfono <span class="text-gray-400 font-normal lowercase">(opc)</span></label>
+              <input type="tel" id="link-phone" placeholder="5012-3456" class="w-full bg-transparent border-none p-0 text-xs font-semibold text-gray-900 focus:ring-0 focus:outline-none mt-0.5" pattern="[34567][0-9]{3}-?[0-9]{4}" title="8 dígitos de Guatemala">
+            </div>
+          </div>
+
+          <!-- Concepto -->
+          <div class="border border-gray-200 rounded-lg px-3 py-2 bg-white focus-within:ring-1 focus-within:ring-aura-primary focus-within:border-aura-primary transition-all">
+            <label class="block text-[9px] font-bold text-gray-400 uppercase tracking-widest">Concepto del Cobro <span class="text-gray-400 font-normal lowercase">(opcional)</span></label>
+            <input type="text" id="link-product-title" placeholder="ej. Café de Especialidad Huehuetenango" class="w-full bg-transparent border-none p-0 text-xs font-semibold text-gray-900 focus:ring-0 focus:outline-none mt-0.5">
+          </div>
+
+          <!-- Collapsible Advanced Options -->
+          <details class="group border border-gray-200 rounded-lg bg-gray-50/20 overflow-hidden">
+            <summary class="flex items-center justify-between px-3 py-2.5 text-[9px] font-bold text-gray-450 uppercase tracking-widest cursor-pointer list-none select-none hover:bg-gray-100/50 transition-colors">
+              <span>Opciones Avanzadas & Métodos</span>
+              <svg class="w-3.5 h-3.5 text-gray-400 transform group-open:rotate-180 transition-transform duration-200" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M19.5 8.25l-7.5 7.5-7.5-7.5" /></svg>
+            </summary>
+            <div class="p-3 border-t border-gray-200 space-y-3 bg-white">
+              <!-- Métodos -->
+              <div>
+                <label class="block text-[8px] font-bold text-gray-400 uppercase tracking-widest mb-1.5">Métodos Permitidos</label>
+                <div class="grid grid-cols-2 gap-x-3 gap-y-1.5 text-[10px] font-semibold text-gray-700">
+                  <label class="flex items-center gap-1.5 cursor-pointer">
+                    <input type="checkbox" id="method-card" checked class="rounded border-gray-300 text-aura-primary focus:ring-aura-primary w-3.5 h-3.5">
+                    <span>Pago con Tarjeta</span>
+                  </label>
+                  <label class="flex items-center gap-1.5 cursor-pointer">
+                    <input type="checkbox" id="method-virtual" checked class="rounded border-gray-300 text-aura-primary focus:ring-aura-primary w-3.5 h-3.5">
+                    <span>Banca Virtual</span>
+                  </label>
+                  <label class="flex items-center gap-1.5 cursor-pointer">
+                    <input type="checkbox" id="method-cash" checked class="rounded border-gray-300 text-aura-primary focus:ring-aura-primary w-3.5 h-3.5">
+                    <span>Caja Rural</span>
+                  </label>
+                  <label class="flex items-center gap-1.5 cursor-pointer">
+                    <input type="checkbox" id="method-cuik" checked class="rounded border-gray-300 text-aura-primary focus:ring-aura-primary w-3.5 h-3.5">
+                    <span>Pago con Cuik</span>
+                  </label>
+                  <label class="flex items-center gap-1.5 cursor-pointer col-span-2 pt-1 border-t border-gray-100">
+                    <input type="checkbox" id="method-wallet" checked class="rounded border-gray-300 text-aura-primary focus:ring-aura-primary w-3.5 h-3.5">
+                    <span>Billeteras Digitales</span>
+                  </label>
+                </div>
+              </div>
+              
+              <!-- Descripción -->
+              <div class="border-t border-gray-100 pt-2.5">
+                <label class="block text-[8px] font-bold text-gray-400 uppercase tracking-widest mb-1">Descripción</label>
+                <textarea id="link-desc" rows="2" placeholder="Detalle adicional del cobro..." class="w-full bg-transparent border border-gray-200 rounded p-1.5 text-xs font-semibold text-gray-900 focus:ring-1 focus:ring-aura-primary focus:border-aura-primary focus:outline-none resize-none"></textarea>
+              </div>
+            </div>
+          </details>
+
+
+          <div class="pt-4 flex justify-end gap-2 text-xs">
+            <button type="button" onclick="closeCreateModal()" class="w-full sm:w-auto px-4 py-2.5 border border-gray-200 rounded-md text-gray-500 font-semibold hover:bg-gray-50 transition-colors active:scale-98">Cancelar</button>
+            <button type="submit" class="w-full sm:w-auto px-4 py-2.5 bg-aura-primary hover:bg-aura-primaryHover text-white rounded-md font-semibold transition-colors shadow-sm active:scale-98">Generar link</button>
+          </div>
+        </form>
+      </div>
+
+      <!-- VIEW B: VISTA DE EXITO CON RETORNO DE LINK -->
+      <div id="create-modal-success-view" class="hidden flex flex-col space-y-5 text-center py-4">
+        <div class="w-12 h-12 bg-amber-50 text-aura-goldText rounded-full flex items-center justify-center mx-auto shadow-inner">
+          <svg class="w-6 h-6 text-aura-goldText" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M4.5 12.75l6 6 9-13.5" />
+          </svg>
+        </div>
+        <div class="space-y-1.5">
+          <h3 class="text-sm font-bold text-gray-900">¡Enlace Creado con Éxito!</h3>
+          <p class="text-xs text-gray-500 leading-relaxed">El enlace de pago ya está listo para compartirse con tu cliente.</p>
+        </div>
+        
+        <div class="bg-gray-50 border border-gray-200 rounded-lg p-3 flex items-center justify-between gap-2">
+          <input type="text" id="generated-link-input" readonly class="flex-1 bg-transparent border-none p-0 text-[11px] text-gray-700 focus:ring-0 focus:outline-none select-all font-mono font-medium min-w-0 overflow-x-auto">
+          <button onclick="copyGeneratedLink()" class="px-3 py-1.5 bg-gray-100 hover:bg-gray-200 text-gray-700 hover:text-gray-900 rounded-md border border-gray-200 transition-colors font-bold text-xs flex items-center gap-1 focus:outline-none shrink-0" title="Copiar enlace">
+            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M15.75 17.25v3.375c0 .621-.504 1.125-1.125 1.125h-9.75a1.125 1.125 0 01-1.125-1.125V7.875c0-.621.504-1.125 1.125-1.125H5.4M7.5 7.5h.008v.008H7.5V7.5zM7.5 10.5h.008v.008H7.5V10.5zm0 3h.008v.008H7.5v-.008zm0 3h.008v.008H7.5v-.008zm3-6h.008v.008h-.008v-.008zm0 3h.008v.008h-.008v-.008zm0 3h.008v.008h-.008v-.008zm3-6h.008v.008h-.008v-.008zm0 3h.008v.008h-.008v-.008z" /></svg>
+            <span>Copiar</span>
+          </button>
+        </div>
+        
+        <div class="flex flex-col gap-2 pt-2 text-xs">
+          <button onclick="openClientCheckoutFromSuccess()" class="w-full py-2.5 bg-aura-primary hover:bg-aura-primaryHover text-white rounded-md font-semibold transition-colors flex items-center justify-center gap-1.5 active:scale-98">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M13.5 6H5.25A2.25 2.25 0 003 8.25v10.5A2.25 2.25 0 005.25 21h10.5A2.25 2.25 0 0018 18.75V10.5m-10.5 6L21 3m0 0h-5.25M21 3v5.25" /></svg>
+            <span>Ver Pantalla Cliente (Probar)</span>
+          </button>
+          <button onclick="closeCreateModal()" class="w-full py-2.5 border border-gray-200 hover:bg-gray-50 text-gray-600 rounded-md font-semibold transition-colors active:scale-98">
+            Listo, volver al Dashboard
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ================= MODAL: CREAR/EDITAR PRODUCTO ================= -->
+  <div id="modal-product-backdrop" class="hidden fixed inset-0 bg-gray-900/30 backdrop-blur-xs z-layer-backdrop overflow-y-auto p-4 md:py-12 flex justify-center items-start opacity-0 modal-backdrop-transition">
+    <div class="bg-white w-full h-full lg:h-auto lg:max-w-sm rounded-none lg:rounded-xl p-6 shadow-xl border border-gray-200 transform scale-95 transition-transform duration-300 flex flex-col space-y-6 mx-0 lg:mx-4 relative overflow-y-auto" id="product-modal-content" onclick="event.stopPropagation()">
+      
+      <!-- Close Button (Desktop) -->
+      <button onclick="closeProductModal()" class="hidden lg:block absolute top-4 right-4 text-gray-400 hover:text-gray-900 transition-colors focus:outline-none">
+        <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" /></svg>
+      </button>
+
+      <!-- Back Header (Mobile) -->
+      <div class="flex items-center justify-between lg:hidden border-b border-gray-100 pb-4 mb-2 flex-shrink-0">
+        <button type="button" onclick="closeProductModal()" class="text-gray-500 font-semibold text-xs flex items-center gap-1 focus:outline-none">
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M15.75 19.5L8.25 12l7.5-7.5" /></svg>
+          <span>Volver</span>
+        </button>
+        <span class="font-bold text-sm text-gray-900" id="product-modal-mobile-title">Nuevo Producto</span>
+        <div class="w-8"></div>
+      </div>
+
+      <div class="flex-shrink-0">
+        <h3 class="text-sm font-semibold text-gray-900" id="product-modal-title">Registrar Producto en Catálogo</h3>
+        <p class="text-xs text-gray-500 mt-1">Completa los campos para crear o actualizar un producto del inventario.</p>
+      </div>
+
+      <!-- Modal Form -->
+      <form id="create-product-form" onsubmit="handleSaveProduct(event)" class="space-y-4 flex-1 lg:flex-none">
+        <input type="hidden" id="edit-product-id">
+
+        <div class="border border-gray-200 rounded-lg px-3 py-2 bg-white focus-within:ring-1 focus-within:ring-aura-primary focus-within:border-aura-primary transition-all">
+          <label class="block text-[9px] font-bold text-gray-400 uppercase tracking-widest">Nombre del Producto</label>
+          <input type="text" required id="product-name" placeholder="ej. Café Premium de Antigua" class="w-full bg-transparent border-none p-0 text-sm font-medium text-gray-900 focus:ring-0 focus:outline-none mt-1">
+        </div>
+
+        <div class="grid grid-cols-2 gap-4">
+          <div class="border border-gray-200 rounded-lg px-3 py-2 bg-white focus-within:ring-1 focus-within:ring-aura-primary focus-within:border-aura-primary transition-all">
+            <label class="block text-[9px] font-bold text-gray-400 uppercase tracking-widest">Referencia (SKU)</label>
+            <input type="text" id="product-ref" placeholder="ej. SKU-12345" class="w-full bg-transparent border-none p-0 text-sm font-medium text-gray-900 focus:ring-0 focus:outline-none mt-1">
+          </div>
+          <div class="border border-gray-200 rounded-lg px-3 py-2 bg-white focus-within:ring-1 focus-within:ring-aura-primary focus-within:border-aura-primary transition-all">
+            <label class="block text-[9px] font-bold text-gray-400 uppercase tracking-widest">Inventario</label>
+            <input type="number" id="product-stock" min="0" placeholder="Ilimitado" class="w-full bg-transparent border-none p-0 text-sm font-medium text-gray-900 focus:ring-0 focus:outline-none mt-1">
+          </div>
+        </div>
+
+        <div class="border border-gray-200 rounded-lg p-3 bg-white space-y-3">
+          <div class="border border-gray-200 rounded-lg px-3 py-2 bg-white focus-within:ring-1 focus-within:ring-aura-primary focus-within:border-aura-primary transition-all">
+            <label class="block text-[9px] font-bold text-gray-400 uppercase tracking-widest">Monto Neto a Recibir (Efectivo)</label>
+            <div class="flex items-center mt-1">
+              <span class="text-gray-400 text-sm font-medium mr-1">Q</span>
+              <input type="number" step="0.01" required min="1" id="product-base-amount" oninput="updateCalculatedProductPrice()" placeholder="0.00" class="w-full bg-transparent border-none p-0 text-sm font-semibold text-gray-900 focus:ring-0 focus:outline-none">
+            </div>
+          </div>
+          
+          <div class="border-t border-gray-100 pt-2.5">
+            <label class="block text-[9px] font-bold text-gray-400 uppercase tracking-widest mb-1.5">Plazo Máximo de Cuotas</label>
+            <div class="border border-gray-200 rounded px-2.5 py-1.5 flex items-center bg-white focus-within:ring-1 focus-within:ring-aura-primary focus-within:border-aura-primary transition-all">
+              <select id="product-max-installments" onchange="updateCalculatedProductPrice()" class="w-full bg-transparent border-none p-0 text-xs font-semibold text-gray-700 focus:ring-0 focus:outline-none cursor-pointer">
+                <option value="1">1 mes (Tarjeta Corriente - 4.50%)</option>
+                <option value="2">2 meses (Cuotas - 5.25%)</option>
+                <option value="3">3 meses (Cuotas - 5.75%)</option>
+                <option value="6" selected>6 meses (Cuotas - 7.00%)</option>
+                <option value="10">10 meses (Cuotas - 7.25%)</option>
+                <option value="12">12 meses (Cuotas - 8.00%)</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="border-t border-gray-100 pt-2.5 bg-gray-50/50 rounded-b p-2">
+            <label class="block text-[9px] font-bold text-gray-450 uppercase tracking-widest">Precio de Lista Calculado (Normal/Tarjeta)</label>
+            <div class="flex items-center mt-1">
+              <span class="text-gray-400 text-sm font-medium mr-1">Q</span>
+              <input type="text" readonly id="product-list-price" placeholder="0.00" class="w-full bg-transparent border-none p-0 text-sm font-bold text-gray-750 focus:ring-0 focus:outline-none">
+            </div>
+            <p class="text-[9px] text-gray-400 mt-1 leading-tight">Calculado automáticamente mediante Gross-up para cubrir comisiones.</p>
+          </div>
+        </div>
+
+        <div class="border border-gray-200 rounded-lg px-3 py-2 bg-white focus-within:ring-1 focus-within:ring-aura-primary focus-within:border-aura-primary transition-all">
+          <label class="block text-[9px] font-bold text-gray-400 uppercase tracking-widest">Descripción</label>
+          <textarea id="product-desc" rows="2" placeholder="Detalles de este artículo..." class="w-full bg-transparent border-none p-0 text-sm font-medium text-gray-900 focus:ring-0 focus:outline-none mt-1 resize-none"></textarea>
+        </div>
+
+        <div class="border border-gray-200 rounded-lg px-3 py-2 bg-white transition-all">
+          <label class="block text-[9px] font-bold text-gray-400 uppercase tracking-widest">Imagen de Portada</label>
+          <!-- Tab toggle -->
+          <div class="flex gap-1 mt-1.5 mb-3">
+            <button type="button" id="img-tab-file" onclick="switchImgTab('file')" class="px-2.5 py-1 text-[10px] font-semibold rounded transition-colors bg-aura-primary text-white">Subir Archivo</button>
+            <button type="button" id="img-tab-url" onclick="switchImgTab('url')" class="px-2.5 py-1 text-[10px] font-semibold rounded transition-colors bg-gray-100 text-gray-500 hover:bg-gray-200">URL de imagen</button>
+          </div>
+
+          <!-- File upload panel -->
+          <div id="img-panel-file" class="space-y-2">
+            <input type="file" id="product-image-file" accept="image/*" class="hidden" onchange="previewProductImage(event)">
+            
+            <!-- File Empty State (Clickable Dropzone) -->
+            <div id="img-file-empty-state" class="border-2 border-dashed border-gray-200 hover:border-aura-primary rounded-lg p-5 flex flex-col items-center justify-center cursor-pointer transition-all hover:bg-gray-50/50" onclick="document.getElementById('product-image-file').click()">
+              <svg class="w-6 h-6 text-gray-400 mb-1.5 transition-colors" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M12 16.5V9.75m0 0l3 3m-3-3l-3 3M6.75 19.5h10.5a2.25 2.25 0 002.25-2.25v-6.75a2.25 2.25 0 00-2.25-2.25H6.75a2.25 2.25 0 00-2.25 2.25v6.75a2.25 2.25 0 002.25 2.25z" />
+              </svg>
+              <span class="text-xs font-semibold text-gray-600">Subir imagen de portada</span>
+              <span class="text-[9px] text-gray-400 mt-0.5">Formatos recomendados: JPG, PNG</span>
+            </div>
+
+            <!-- File Filled State (Preview + Actions) -->
+            <div id="img-file-filled-state" class="hidden flex items-center gap-3 border border-gray-150 rounded-lg p-2.5 bg-gray-50/50">
+              <div id="product-img-preview-file" class="w-12 h-12 rounded border border-gray-250 bg-white overflow-hidden flex-shrink-0 flex items-center justify-center">
+                <!-- Image tag will go here dynamically -->
+              </div>
+              <div class="flex-1 min-w-0">
+                <p class="text-xs font-bold text-gray-700 truncate" id="product-image-filename">Imagen seleccionada</p>
+                <div class="flex gap-2.5 mt-0.5">
+                  <button type="button" onclick="document.getElementById('product-image-file').click()" class="text-[10px] font-bold text-aura-primary hover:underline focus:outline-none">Cambiar</button>
+                  <span class="text-gray-300 text-[10px] select-none">|</span>
+                  <button type="button" onclick="clearProductImage()" class="text-[10px] font-bold text-red-600 hover:underline focus:outline-none">Eliminar</button>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- URL input panel -->
+          <div id="img-panel-url" class="hidden space-y-2.5">
+            <input type="url" id="product-image-url" placeholder="https://ejemplo.com/imagen.jpg"
+              class="w-full border border-gray-200 rounded px-2.5 py-1.5 text-[11px] font-medium text-gray-800 focus:ring-1 focus:ring-aura-primary focus:border-aura-primary focus:outline-none transition"
+              oninput="previewProductImageUrl(this.value)">
+            
+            <!-- URL Preview Block -->
+            <div id="img-url-preview-state" class="hidden flex items-center gap-3 border border-gray-150 rounded-lg p-2.5 bg-gray-50/50">
+              <div id="product-img-preview-url" class="w-12 h-12 rounded border border-gray-250 bg-white overflow-hidden flex-shrink-0 flex items-center justify-center">
+                <!-- Image tag will go here dynamically -->
+              </div>
+              <div class="flex-1 min-w-0">
+                <p class="text-xs font-bold text-gray-700 truncate">Vista previa de URL</p>
+                <button type="button" onclick="clearProductImage()" class="text-[10px] font-bold text-red-600 hover:underline focus:outline-none mt-0.5 block">Eliminar</button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="pt-4 flex justify-end gap-2 text-xs">
+          <button type="button" onclick="closeProductModal()" class="w-full sm:w-auto px-4 py-2.5 border border-gray-200 rounded-md text-gray-500 font-semibold hover:bg-gray-50 transition-colors active:scale-98">Cancelar</button>
+          <button type="submit" class="w-full sm:w-auto px-4 py-2.5 bg-aura-primary hover:bg-aura-primaryHover text-white rounded-md font-semibold transition-colors shadow-sm active:scale-98" id="btn-save-product">Guardar Producto</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- ================= MODAL: CREAR/EDITAR USUARIO ================= -->
+  <!-- Responsive user creation modal overlay with visible password strength meter -->
+  <div id="modal-user-backdrop" class="hidden fixed inset-0 bg-gray-900/30 backdrop-blur-xs z-layer-backdrop overflow-y-auto p-4 md:py-12 flex justify-center items-start opacity-0 modal-backdrop-transition">
+    <div class="bg-white w-full h-full lg:h-auto lg:max-w-sm rounded-none lg:rounded-xl p-6 shadow-xl border border-gray-200 transform scale-95 transition-transform duration-300 flex flex-col space-y-6 mx-0 lg:mx-4 relative overflow-y-auto" id="user-modal-content" onclick="event.stopPropagation()">
+      
+      <!-- Close Button (Desktop) -->
+      <button onclick="closeUserModal()" class="hidden lg:block absolute top-4 right-4 text-gray-400 hover:text-gray-900 transition-colors focus:outline-none">
+        <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" /></svg>
+      </button>
+
+      <!-- Back Header (Mobile) -->
+      <div class="flex items-center justify-between lg:hidden border-b border-gray-100 pb-4 mb-2 flex-shrink-0">
+        <button type="button" onclick="closeUserModal()" class="text-gray-500 font-semibold text-xs flex items-center gap-1 focus:outline-none">
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M15.75 19.5L8.25 12l7.5-7.5" /></svg>
+          <span>Volver</span>
+        </button>
+        <span class="font-bold text-sm text-gray-900" id="user-modal-mobile-title">Crear Usuario</span>
+        <div class="w-8"></div>
+      </div>
+
+      <div class="flex-shrink-0">
+        <h3 class="text-sm font-semibold text-gray-900" id="user-modal-title">Crear Usuario</h3>
+        <p class="text-xs text-gray-500 mt-1" id="user-modal-desc">Completa los datos del usuario para autorizar sus accesos.</p>
+      </div>
+
+      <!-- Form -->
+      <form id="user-form" onsubmit="handleUserSubmit(event)" class="space-y-4 flex-1 lg:flex-none">
+        <input type="hidden" id="user-edit-id">
+        
+        <div class="border border-gray-200 rounded-lg px-3 py-2 bg-white focus-within:ring-1 focus-within:ring-aura-primary focus-within:border-aura-primary transition-all">
+          <label class="block text-[9px] font-bold text-gray-400 uppercase tracking-widest">Nombre Completo</label>
+          <input type="text" required id="user-fullname" placeholder="ej. Eduardo Asturias" class="w-full bg-transparent border-none p-0 text-sm font-semibold text-gray-900 focus:ring-0 focus:outline-none mt-1">
+        </div>
+
+        <div class="border border-gray-200 rounded-lg px-3 py-2 bg-white focus-within:ring-1 focus-within:ring-aura-primary focus-within:border-aura-primary transition-all">
+          <label class="block text-[9px] font-bold text-gray-400 uppercase tracking-widest">Correo Electrónico</label>
+          <input type="email" required id="user-email" placeholder="ej. eduardo@aurapay.com.gt" class="w-full bg-transparent border-none p-0 text-sm font-medium text-gray-900 focus:ring-0 focus:outline-none mt-1">
+        </div>
+
+        <div class="border border-gray-200 rounded-lg px-3 py-2 bg-white focus-within:ring-1 focus-within:ring-aura-primary focus-within:border-aura-primary transition-all flex flex-col justify-center">
+          <label class="block text-[9px] font-bold text-gray-400 uppercase tracking-widest">Rol de Permisos</label>
+          <select id="user-role" class="w-full bg-transparent border-none p-0 text-xs font-semibold text-gray-700 focus:ring-0 focus:outline-none cursor-pointer mt-1">
+            <option value="admin">Administrador</option>
+            <option value="cajero">Vendedor / Cajero</option>
+            <option value="operativo">Operativo</option>
+          </select>
+        </div>
+
+        <div id="user-password-container" class="space-y-2">
+          <div class="border border-gray-200 rounded-lg px-3 py-2 bg-white focus-within:ring-1 focus-within:ring-aura-primary focus-within:border-aura-primary transition-all relative">
+            <label class="block text-[9px] font-bold text-gray-400 uppercase tracking-widest">Contraseña</label>
+            <div class="flex items-center mt-1">
+              <input type="password" id="user-password" oninput="onPasswordInput(this.value)" placeholder="Ingresa contraseña" class="w-full bg-transparent border-none p-0 text-sm font-mono text-gray-900 focus:ring-0 focus:outline-none">
+              <button type="button" onclick="togglePasswordVisibility('user-password')" class="text-gray-400 hover:text-gray-650 focus:outline-none pl-2">
+                <svg id="eye-icon-user-password" class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M2.036 12.322a1.012 1.012 0 010-.639C3.423 7.51 7.36 4.5 12 4.5c4.638 0 8.573 3.007 9.963 7.178.07.207.07.431 0 .639C20.577 16.49 16.64 19.5 12 19.5c-4.638 0-8.573-3.007-9.963-7.178z" /><circle cx="12" cy="12" r="3" /></svg>
+              </button>
+            </div>
+          </div>
+
+          <!-- Password Strength Visual Meter -->
+          <div class="space-y-1">
+            <div class="flex justify-between text-[9px] font-bold text-gray-400 uppercase">
+              <span>Robustez</span>
+              <span id="strength-label" class="text-red-500">Muy Débil</span>
+            </div>
+            <div class="grid grid-cols-3 gap-1">
+              <div id="strength-bar-1" class="h-1 bg-gray-200 rounded-sm transition-colors"></div>
+              <div id="strength-bar-2" class="h-1 bg-gray-200 rounded-sm transition-colors"></div>
+              <div id="strength-bar-3" class="h-1 bg-gray-200 rounded-sm transition-colors"></div>
+            </div>
+          </div>
+        </div>
+
+        <div class="pt-4 flex justify-end gap-2 text-xs">
+          <button type="button" onclick="closeUserModal()" class="w-full sm:w-auto px-4 py-2.5 border border-gray-200 rounded-md text-gray-500 font-semibold hover:bg-gray-50 transition-colors active:scale-98">Cancelar</button>
+          <button type="submit" class="w-full sm:w-auto px-4 py-2.5 bg-aura-primary hover:bg-aura-primaryHover text-white rounded-md font-semibold transition-colors shadow-sm active:scale-98" id="user-submit-btn">Guardar</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <div id="drawer-backdrop" onclick="closeDrawer()" class="hidden fixed inset-0 bg-gray-900/10 backdrop-blur-xs z-layer-backdrop opacity-0 transition-opacity duration-350">
+    
+    <!-- Sliding Panel -->
+    <div id="drawer-container" onclick="event.stopPropagation()" class="fixed right-0 top-0 bottom-0 w-full h-full lg:max-w-md bg-white border-l border-gray-200 shadow-2xl flex flex-col translate-x-full drawer-transition z-layer-drawer-container">
+      
+      <!-- Drawer Header -->
+      <div class="p-6 border-b border-gray-200 flex justify-between items-center">
+        <div>
+          <span class="text-[9px] font-semibold text-gray-400 uppercase tracking-wider block" id="drawer-subtitle">Código de Cobro</span>
+          <div class="flex items-center gap-2">
+            <h3 class="text-sm font-bold text-gray-900 mt-0.5" id="drawer-title">chk_7x89ab</h3>
+            <button id="drawer-free-inventory-btn" onclick="freeInventory(selectedTransaction)" class="hidden bg-white hover:bg-red-50 text-red-600 border border-red-200 text-[10px] font-bold px-2.5 py-1 rounded shadow-sm transition-colors mt-0.5 flex items-center gap-1"><svg width="12" height="12" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h10a8 8 0 018 8v2M3 10l6 6m-6-6l6-6"/></svg> Liberar Inventario</button>
+          </div>
+        </div>
+        <button onclick="closeDrawer()" class="text-gray-400 hover:text-gray-900 transition-colors focus:outline-none">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" /></svg>
+        </button>
+      </div>
+
+
+      <!-- Drawer Body -->
+      <div class="flex-1 overflow-y-auto p-6">
+        
+        <!-- SECTION A: TECHNICAL DATA -->
+        <div id="drawer-tab-content-technical" class="space-y-6 text-xs">
+          
+          <!-- Lifecycle timeline -->
+          <div>
+            <h4 class="text-[9px] font-bold text-gray-400 uppercase tracking-wider mb-4">Ciclo del Pago</h4>
+            <div class="relative pl-5 border-l border-gray-200 space-y-5 py-0.5">
+              
+              <!-- Created -->
+              <div class="relative">
+                <div class="absolute -left-[24.5px] top-1 w-2 h-2 rounded-full bg-aura-emerald border-2 border-white ring-1 ring-aura-emerald"></div>
+                <div>
+                  <h5 class="font-semibold text-gray-900">Enlace Emitido</h5>
+                  <p class="text-[10px] text-gray-400 mt-0.5" id="timeline-created-time">2026-07-11 10:15</p>
+                </div>
+              </div>
+
+              <!-- Opened -->
+              <div class="relative">
+                <div class="absolute -left-[24.5px] top-1 w-2 h-2 rounded-full bg-gray-300 border-2 border-white" id="timeline-opened-node"></div>
+                <div>
+                  <h5 class="font-semibold text-gray-900" id="timeline-opened-title">Abierto por Cliente</h5>
+                  <p class="text-[10px] text-gray-400 mt-0.5" id="timeline-opened-time">Pendiente</p>
+                </div>
+              </div>
+
+              <!-- Authorized -->
+              <div class="relative">
+                <div class="absolute -left-[24.5px] top-1 w-2 h-2 rounded-full bg-gray-300 border-2 border-white" id="timeline-authorized-node"></div>
+                <div>
+                  <h5 class="font-semibold text-gray-900" id="timeline-authorized-title">Pago Procesado</h5>
+                  <p class="text-[10px] text-gray-400 mt-0.5" id="timeline-authorized-time">Esperando Hosted Fields</p>
+                </div>
+              </div>
+
+
+
+            </div>
+          </div>
+
+          <!-- Basic Data -->
+          <div class="border-t border-gray-100 pt-5 space-y-4">
+            <div class="flex justify-between items-center">
+              <h4 class="text-[9px] font-bold text-gray-400 uppercase tracking-wider">Detalles de Operación</h4>
+              <button onclick="openClientCheckoutPage()" class="text-[10px] text-aura-primary font-bold hover:underline flex items-center gap-1 focus:outline-none">
+                <svg class="w-3.5 h-3.5 text-aura-primary" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M13.5 6H5.25A2.25 2.25 0 003 8.25v10.5A2.25 2.25 0 005.25 21h10.5A2.25 2.25 0 0018 18.75V10.5m-10.5 6L21 3m0 0h-5.25M21 3v5.25" /></svg>
+                <span>Ver Pantalla Cliente</span>
+              </button>
+            </div>
+            <div class="grid grid-cols-2 gap-y-3.5 gap-x-2">
+              <div>
+                <span class="text-gray-400 block mb-0.5">Cliente</span>
+                <span class="font-medium text-gray-900" id="detail-client">-</span>
+              </div>
+              <div>
+                <span class="text-gray-400 block mb-0.5">Teléfono</span>
+                <span class="font-medium text-gray-900" id="detail-phone">-</span>
+              </div>
+              <div class="col-span-2">
+                <span class="text-gray-400 block mb-0.5">Establecimiento</span>
+                <span class="font-medium text-gray-950" id="detail-merchant">-</span>
+              </div>
+              <div class="col-span-2">
+                <span class="text-gray-400 block mb-0.5">Concepto del Cobro</span>
+                <div class="flex items-center gap-2 mt-1">
+                  <div id="detail-product-img-container" class="w-8 h-8 rounded border border-gray-200 bg-gray-50 flex items-center justify-center text-[9px] text-gray-400 overflow-hidden flex-shrink-0 hidden"></div>
+                  <span class="font-medium text-gray-950" id="detail-desc">-</span>
+                </div>
+              </div>
+              <div>
+                <span class="text-gray-400 block mb-0.5">Moneda de Pago</span>
+                <span class="font-semibold text-gray-900" id="detail-currency">GTQ</span>
+              </div>
+              <div>
+                <span class="text-gray-400 block mb-0.5">Monto de Operación</span>
+                <span class="font-bold text-gray-900 text-sm" id="detail-amount">Q 0.00</span>
+              </div>
+              <div>
+                <span class="text-gray-400 block mb-0.5">Modalidad de Pago</span>
+                <span class="font-semibold text-gray-900 animate-fade-in" id="detail-modality">Contado</span>
+              </div>
+              <div>
+                <span class="text-gray-400 block mb-0.5 text-emerald-600 font-semibold">Líquido a Recibir</span>
+                <span class="font-extrabold text-emerald-700 text-sm" id="detail-net-received">Q 0.00</span>
+              </div>
+              
+              <div class="col-span-2 border-t border-dashed border-gray-150 pt-2.5 mt-1 grid grid-cols-2 gap-2 text-left">
+                <div>
+                  <span class="text-gray-400 block mb-0.5">Monto Neto (Efectivo/ACH)</span>
+                  <span class="font-semibold text-gray-800 text-[11px]" id="detail-base-amount">Q 0.00</span>
+                </div>
+                <div>
+                  <span class="text-gray-400 block mb-0.5">Precio de Lista (Tarjeta)</span>
+                  <span class="font-semibold text-gray-800 text-[11px]" id="detail-list-price">Q 0.00</span>
+                </div>
+                <div class="col-span-2">
+                  <span class="text-gray-400 block mb-0.5">Comisión / Plazo Máximo</span>
+                  <span class="font-medium text-gray-700 text-[11px]" id="detail-fee-rate">1 mes (3.50%)</span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Products Itemized List (Dynamic) -->
+          <div class="border-t border-gray-100 pt-5 space-y-3 hidden" id="detail-products-section">
+            <h4 class="text-[9px] font-bold text-gray-400 uppercase tracking-wider">Productos Incluidos</h4>
+            <div id="detail-products-list" class="space-y-2 divide-y divide-gray-50 pt-1">
+              <!-- Dynamically populated -->
+            </div>
+          </div>
+
+          <!-- Billing and Order Metadata -->
+          <div class="border-t border-gray-100 pt-5 space-y-4" id="billing-specs-card">
+            <h4 class="text-[9px] font-bold text-gray-400 uppercase tracking-wider">Facturación y Pedido</h4>
+            <div class="grid grid-cols-2 gap-y-3.5 gap-x-2">
+              <div>
+                <span class="text-gray-400 block mb-0.5">Requiere Factura</span>
+                <span class="font-semibold text-gray-900" id="detail-need-invoice">No</span>
+              </div>
+              <div>
+                <span class="text-gray-400 block mb-0.5">Número de Orden</span>
+                <span class="font-semibold text-gray-900" id="detail-order-number">-</span>
+              </div>
+              <div>
+                <span class="text-gray-400 block mb-0.5">NIT</span>
+                <span class="font-semibold text-gray-900 font-mono" id="detail-nit">-</span>
+              </div>
+              <div>
+                <span class="text-gray-400 block mb-0.5">Razón Social</span>
+                <span class="font-semibold text-gray-900" id="detail-billing-name">-</span>
+              </div>
+              <div class="col-span-2">
+                <span class="text-gray-400 block mb-0.5">Correo de Contacto</span>
+                <span class="font-semibold text-gray-950" id="detail-contact-email">-</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Security Metadata (Token & Idempotency) -->
+          <div class="border-t border-gray-100 pt-5 space-y-4 relative" id="tech-specs-card">
+            
+            <div id="tech-specs-restriction-overlay" class="hidden absolute inset-0 bg-white/95 rounded-lg flex flex-col items-center justify-center p-6 text-center z-10">
+              <svg class="w-6 h-6 text-aura-gold mb-1.5" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M16.5 10.5V6.75a4.5 4.5 0 10-9 0v3.75m-.75 11.25h10.5a2.25 2.25 0 002.25-2.25v-6.75a2.25 2.25 0 00-2.25-2.25H6.75a2.25 2.25 0 00-2.25 2.25v6.75a2.25 2.25 0 002.25 2.25z" /></svg>
+              <h5 class="text-xs font-semibold text-gray-900">Acceso restringido</h5>
+              <p class="text-[11px] text-gray-400 mt-1 max-w-[220px]">El rol de Cajero no tiene permisos para visualizar metadatos del API ni tokens bancarios.</p>
+            </div>
+
+            <h4 class="text-[9px] font-bold text-gray-400 uppercase tracking-wider">Metadatos de Seguridad</h4>
+            <div class="space-y-3">
+              <div>
+                <span class="text-gray-400 block mb-1">Token de Tarjeta / Referencia de Pago</span>
+                <div class="bg-gray-50 border border-gray-200 rounded px-2.5 py-1.5 font-mono text-[11px] text-gray-700 select-all block truncate" id="detail-token">
+                  -
+                </div>
+              </div>
+
+              <div>
+                <span class="text-gray-400 block mb-1">Llave de Idempotencia (Idempotency-Key)</span>
+                <div class="flex gap-1.5">
+                  <div class="flex-1 bg-gray-50 border border-gray-200 rounded px-2.5 py-1.5 font-mono text-[11px] text-gray-700 select-all truncate" id="detail-idempotency">
+                    -
+                  </div>
+                  <button onclick="copyIdempotency()" class="px-2.5 bg-gray-50 border border-gray-200 rounded hover:bg-gray-100 text-gray-500 hover:text-gray-800 transition-colors focus:outline-none relative">
+                    <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M15.75 17.25v3.375c0 .621-.504 1.125-1.125 1.125h-9.75a1.125 1.125 0 01-1.125-1.125V7.875c0-.621.504-1.125 1.125-1.125H5.4M7.5 7.5h.008v.008H7.5V7.5zM7.5 10.5h.008v.008H7.5V10.5zm0 3h.008v.008H7.5v-.008zm0 3h.008v.008H7.5v-.008zm3-6h.008v.008h-.008v-.008zm0 3h.008v.008h-.008v-.008zm0 3h.008v.008h-.008v-.008zm3-6h.008v.008h-.008v-.008zm0 3h.008v.008h-.008v-.008z" /></svg>
+                    <span id="copy-tooltip" class="absolute -top-7 left-1/2 transform -translate-x-1/2 bg-gray-900 text-white text-[9px] px-1.5 py-0.5 rounded opacity-0 transition-opacity pointer-events-none">Copiado</span>
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+      </div>
+
+    </div>
+  </div>
+
+  <!-- ================= NOTIFICATION TOAST ================= -->
+  <div id="toast-notification" class="hidden fixed top-6 right-6 left-6 sm:left-auto sm:w-80 bg-gray-900 text-white rounded-lg px-4 py-3 shadow-xl flex items-center gap-3 z-layer-toast transform -translate-y-8 opacity-0 transition-all duration-200">
+    <div class="w-6 h-6 rounded bg-aura-primary text-white flex items-center justify-center shadow-inner" id="toast-icon">
+      <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M4.5 12.75l6 6 9-13.5" /></svg>
+    </div>
+    <div>
+      <h5 class="font-semibold text-xs" id="toast-title">Notificación</h5>
+      <p class="text-[10px] text-gray-400 mt-0.5" id="toast-msg">Detalle del suceso.</p>
+    </div>
+  </div>
+
+  <!-- ================= MODAL: ERROR DE AUTENTICACION ================= -->
+  <div id="modal-login-error" class="hidden fixed inset-0 bg-gray-900/30 backdrop-blur-xs z-layer-modal flex items-center justify-center opacity-0 modal-backdrop-transition">
+    <div class="bg-white rounded-xl max-w-xs w-full p-6 shadow-xl border border-gray-200 transform scale-95 transition-transform duration-300 flex flex-col space-y-4 text-center mx-4" id="login-error-content">
+      <div class="w-12 h-12 bg-red-50 text-red-600 rounded-full flex items-center justify-center mx-auto shadow-inner">
+        <svg class="w-6 h-6 text-red-600" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126zM12 15.75h.007v.008H12v-.008z" />
+        </svg>
+      </div>
+      <div class="space-y-1.5">
+        <h4 class="text-sm font-bold text-gray-950" id="login-error-title">Acceso Denegado</h4>
+        <p class="text-xs text-gray-500 leading-relaxed" id="login-error-msg">El correo electrónico o la contraseña ingresados no coinciden.</p>
+      </div>
+      <button type="button" onclick="closeLoginErrorModal()" class="w-full bg-gray-50 border border-gray-200 hover:bg-gray-100 text-gray-800 py-2 rounded-md font-semibold text-xs transition-colors focus:outline-none active:scale-98">
+        Entendido
+      </button>
+    </div>
+  </div>
+
+  <!-- ================= MODAL: CONFIRMACION PERSONALIZADA ================= -->
+  <div id="modal-confirm-backdrop" class="hidden fixed inset-0 bg-gray-900/30 backdrop-blur-xs z-layer-modal flex items-center justify-center opacity-0 modal-backdrop-transition">
+    <div class="bg-white rounded-xl max-w-sm w-full p-6 shadow-xl border border-gray-200 transform scale-95 transition-transform duration-300 flex flex-col space-y-4 text-center mx-4" id="confirm-modal-content">
+      <div class="w-12 h-12 bg-amber-50 dark:bg-amber-950/20 text-amber-600 rounded-full flex items-center justify-center mx-auto shadow-inner">
+        <svg class="w-6 h-6 text-amber-650" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126zM12 15.75h.007v.008H12v-.008z" />
+        </svg>
+      </div>
+      <div class="space-y-1.5">
+        <h4 class="text-sm font-bold text-gray-950" id="confirm-modal-title">Confirmar Acción</h4>
+        <p class="text-xs text-gray-500 leading-relaxed" id="confirm-modal-text">¿Estás seguro de que deseas continuar con esta acción?</p>
+      </div>
+      <div class="flex gap-3 text-xs pt-1">
+        <button type="button" onclick="handleCustomConfirm(false)" class="flex-1 bg-gray-50 border border-gray-200 hover:bg-gray-100 text-gray-800 py-2.5 rounded-md font-semibold transition-colors focus:outline-none active:scale-98">
+          Cancelar
+        </button>
+        <button type="button" onclick="handleCustomConfirm(true)" class="flex-1 bg-red-600 hover:bg-red-700 text-white py-2.5 rounded-md font-semibold transition-colors focus:outline-none active:scale-98 shadow-sm">
+          Confirmar
+        </button>
+      </div>
+    </div>
+  </div>
+
+
+  <!-- ================= JAVASCRIPT STATE & LOGIC ================= -->
+  <script src="main.js"></script>
+  <!-- Floating Action Button (FAB) for Mobile Link Creation -->
+  <button onclick="openCreateModal()" id="mobile-fab" class="hidden fixed bottom-6 right-6 sm:hidden w-12 h-12 bg-aura-primary hover:bg-aura-primaryHover text-white rounded-full flex items-center justify-center shadow-lg active:scale-95 transition-all z-40" aria-label="Nuevo Link de Pago">
+    <svg class="w-6.5 h-6.5" fill="none" stroke="currentColor" stroke-width="2.8" viewBox="0 0 24 24">
+      <path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
+    </svg>
+  </button>
+</body>
+</html>

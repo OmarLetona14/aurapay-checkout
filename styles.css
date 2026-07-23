@@ -1,0 +1,284 @@
+/* Premium custom scrollbar (very thin and minimal) */
+    ::-webkit-scrollbar {
+      width: 6px;
+      height: 6px;
+    }
+    ::-webkit-scrollbar-track {
+      background: transparent;
+    }
+    ::-webkit-scrollbar-thumb {
+      background: #cbd5e1;
+      border-radius: 3px;
+    }
+    ::-webkit-scrollbar-thumb:hover {
+      background: #94a3b8;
+    }
+    
+    /* Animation helper classes */
+    .drawer-transition {
+      transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+    .modal-backdrop-transition {
+      transition: opacity 0.2s ease-out;
+    }
+    .accordion-transition {
+      transition: max-height 0.25s cubic-bezier(0, 1, 0, 1);
+    }
+
+    /* Layer hierarchy (Z-Index definitions) */
+    .z-layer-login           { z-index: 100 !important; }
+    .z-layer-sidebar-overlay { z-index: 190 !important; }
+    .z-layer-sidebar         { z-index: 200 !important; }
+    .z-layer-drawer-container{ z-index: 300 !important; }
+    .z-layer-backdrop        { z-index: 400 !important; }
+    .z-layer-modal           { z-index: 500 !important; }
+    .z-layer-toast           { z-index: 999 !important; }
+
+    /* ================= DARK MODE OVERRIDES ================= */
+    html[data-theme="dark"] {
+      color-scheme: dark;
+    }
+    
+    html[data-theme="dark"] body {
+      background-color: #0b0f19 !important;
+      color: #e5e7eb !important;
+    }
+    
+    html[data-theme="dark"] header,
+    html[data-theme="dark"] aside,
+    html[data-theme="dark"] section,
+    html[data-theme="dark"] #create-modal-content,
+    html[data-theme="dark"] #user-modal-content,
+    html[data-theme="dark"] #drawer-content,
+    html[data-theme="dark"] .bg-white {
+      background-color: #111827 !important;
+      border-color: #1f2937 !important;
+    }
+    
+    html[data-theme="dark"] .bg-gray-50,
+    html[data-theme="dark"] .bg-gray-100 {
+      background-color: #1f2937 !important;
+    }
+
+    html[data-theme="dark"] .bg-gray-150 {
+      background-color: #111827 !important;
+    }
+    
+    html[data-theme="dark"] .bg-gray-50\/50,
+    html[data-theme="dark"] .bg-gray-50\/30 {
+      background-color: rgba(31, 41, 55, 0.4) !important;
+    }
+    
+    html[data-theme="dark"] .text-gray-900,
+    html[data-theme="dark"] .text-gray-950,
+    html[data-theme="dark"] .text-gray-800,
+    html[data-theme="dark"] .text-gray-700,
+    html[data-theme="dark"] h1,
+    html[data-theme="dark"] h2,
+    html[data-theme="dark"] h3,
+    html[data-theme="dark"] h4 {
+      color: #f3f4f6 !important;
+    }
+    
+    html[data-theme="dark"] .text-gray-600,
+    html[data-theme="dark"] .text-gray-500 {
+      color: #9ca3af !important;
+    }
+    
+    /* Sidebar menu active/inactive texts visibility in Dark Mode */
+    html[data-theme="dark"] #sidebar-menu a:not(.text-aura-primary) {
+      color: #d1d5db !important;
+    }
+    html[data-theme="dark"] #sidebar-menu a:not(.text-aura-primary) svg {
+      color: #9ca3af !important;
+    }
+    html[data-theme="dark"] #sidebar-menu a:not(.text-aura-primary):hover {
+      color: #ffffff !important;
+      background-color: rgba(255, 255, 255, 0.08) !important;
+    }
+    html[data-theme="dark"] #sidebar-menu a:not(.text-aura-primary):hover svg {
+      color: #ffffff !important;
+    }
+    
+    /* Active sidebar tab in Dark Mode */
+    html[data-theme="dark"] #sidebar-menu a.bg-amber-50 {
+      background-color: rgba(217, 119, 6, 0.15) !important;
+      color: #f59e0b !important;
+    }
+    html[data-theme="dark"] #sidebar-menu a.bg-amber-50 svg {
+      color: #f59e0b !important;
+    }
+    html[data-theme="dark"] #sidebar-menu a.bg-amber-50 span {
+      color: #f59e0b !important;
+    }
+    html[data-theme="dark"] #sidebar-menu a.bg-amber-50 span[id*="badge"] {
+      background-color: rgba(217, 119, 6, 0.3) !important;
+      color: #fef3c7 !important;
+    }
+    
+    /* Sidebar footer profile details in Dark Mode */
+    html[data-theme="dark"] #sidebar-role-avatar {
+      background-color: rgba(217, 119, 6, 0.15) !important;
+      color: #f59e0b !important;
+    }
+    html[data-theme="dark"] #sidebar-role-title {
+      color: #9ca3af !important;
+    }
+    html[data-theme="dark"] aside button[onclick="logout()"] {
+      background-color: rgba(239, 68, 68, 0.08) !important;
+      border-color: rgba(239, 68, 68, 0.25) !important;
+      color: #fca5a5 !important;
+    }
+    html[data-theme="dark"] aside button[onclick="logout()"]:hover {
+      background-color: rgba(239, 68, 68, 0.2) !important;
+      color: #ffffff !important;
+    }
+
+    html[data-theme="dark"] #badge-pending-count {
+      background-color: rgba(255, 255, 255, 0.1) !important;
+      color: #e5e7eb !important;
+    }
+    
+    html[data-theme="dark"] .text-gray-400 {
+      color: #6b7280 !important;
+    }
+    
+    html[data-theme="dark"] .border-gray-200,
+    html[data-theme="dark"] .border-gray-100,
+    html[data-theme="dark"] .border-gray-150,
+    html[data-theme="dark"] .border-gray-200\/80,
+    html[data-theme="dark"] .border-gray-250\/90,
+    html[data-theme="dark"] .divide-gray-100 > * + * {
+      border-color: #1f2937 !important;
+    }
+
+    html[data-theme="dark"] .divide-gray-200 > * + * {
+      border-color: #374151 !important;
+    }
+    
+    html[data-theme="dark"] input:not(.bg-transparent),
+    html[data-theme="dark"] select,
+    html[data-theme="dark"] textarea:not(.bg-transparent) {
+      background-color: #1f2937 !important;
+      color: #f3f4f6 !important;
+      border-color: #374151 !important;
+    }
+    
+    html[data-theme="dark"] input.bg-transparent,
+    html[data-theme="dark"] textarea.bg-transparent {
+      background-color: transparent !important;
+      color: #f3f4f6 !important;
+    }
+    
+    html[data-theme="dark"] thead,
+    html[data-theme="dark"] thead th {
+      background-color: #1f2937 !important;
+      color: #9ca3af !important;
+      border-color: #374151 !important;
+    }
+    
+    html[data-theme="dark"] tbody tr {
+      border-color: #1f2937 !important;
+    }
+    
+    html[data-theme="dark"] tbody tr:hover {
+      background-color: rgba(31, 41, 55, 0.4) !important;
+    }
+    
+    html[data-theme="dark"] .hover\:bg-gray-50:hover,
+    html[data-theme="dark"] .hover\:bg-gray-100:hover {
+      background-color: #1f2937 !important;
+    }
+    
+    html[data-theme="dark"] .hover\:bg-gray-50\/50:hover {
+      background-color: rgba(31, 41, 55, 0.3) !important;
+    }
+
+    html[data-theme="dark"] #modal-backdrop,
+    html[data-theme="dark"] #modal-user-backdrop {
+      background-color: rgba(0, 0, 0, 0.6) !important;
+    }
+    
+    html[data-theme="dark"] .bg-aura-primary {
+      background-color: #374151 !important;
+    }
+    
+    html[data-theme="dark"] .bg-aura-primary:hover {
+      background-color: #1F2937 !important;
+    }
+    
+    html[data-theme="dark"] .text-aura-primary {
+      color: #ffffff !important;
+    }
+    
+    html[data-theme="dark"] ::-webkit-scrollbar-thumb {
+      background: #374151;
+    }
+    html[data-theme="dark"] ::-webkit-scrollbar-thumb:hover {
+      background: #4b5563;
+    }
+    
+    html[data-theme="dark"] #settings-sidebar button:not([class*="bg-amber"]) {
+      color: #9ca3af;
+    }
+    
+    html[data-theme="dark"] #settings-sidebar button:hover {
+      background-color: #1f2937;
+    }
+
+    html[data-theme="dark"] #app-login button.bg-gray-100 {
+      background-color: #1f2937 !important;
+      border-color: #374151 !important;
+    }
+    html[data-theme="dark"] #app-login button.bg-gray-100:hover {
+      background-color: #374151 !important;
+    }
+    
+    html[data-theme="dark"] .bg-slate-900 {
+      background-color: #0f172a !important;
+    }
+
+    /* Custom date input styling to remove native calendar icons and make it 100% clickable */
+    .custom-date-input {
+      position: relative;
+      -webkit-appearance: none;
+      appearance: none;
+    }
+    .custom-date-input::-webkit-calendar-picker-indicator {
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      width: 100%;
+      height: 100%;
+      margin: 0;
+      padding: 0;
+      opacity: 0;
+      cursor: pointer;
+      z-index: 10;
+    }
+    .custom-date-input::-webkit-inner-spin-button,
+    .custom-date-input::-webkit-clear-button {
+      display: none;
+      -webkit-appearance: none;
+    }
+
+    /* Prevent flex lock scrolling bugs on mobile browsers */
+    @media (max-width: 1023px) {
+      body, html {
+        overflow: auto !important;
+        height: auto !important;
+      }
+      #app-dashboard {
+        overflow: visible !important;
+        height: auto !important;
+        min-height: 100vh;
+      }
+      .flex-1.flex.flex-col.min-w-0.overflow-hidden {
+        overflow: visible !important;
+      }
+      main {
+        overflow: visible !important;
+      }
+    }
