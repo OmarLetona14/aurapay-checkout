@@ -5,35 +5,35 @@
 <meta charset="utf-8"/>
 <meta content="width=device-width, initial-scale=1.0, viewport-fit=cover" name="viewport"/>
 <title>Cumbre Café · Pago seguro</title>
-<meta name="title" content="AuraPay · Enlace de Pago Oficial">
-<meta name="description" content="Completa tu pago de forma rápida y 100% segura con tarjeta de crédito/débito o transferencia bancaria. Procesado por AuraPay.">
-<meta name="theme-color" content="#1F2937">
+<meta name="title" content="EthosPay · Enlace de Pago Oficial">
+<meta name="description" content="Completa tu pago de forma rápida y 100% segura con tarjeta de crédito/débito o transferencia bancaria. Procesado por EthosPay.">
+<meta name="theme-color" content="#272757">
 
 <!-- Open Graph / WhatsApp / Telegram / Messenger / iMessage -->
 <meta property="og:type" content="website">
-<meta property="og:site_name" content="AuraPay Hosted Checkout">
-<meta property="og:title" content="AuraPay · Enlace de Pago Oficial">
-<meta property="og:description" content="Completa tu pago de forma rápida y 100% segura con tarjeta o transferencia. Procesado por AuraPay.">
+<meta property="og:site_name" content="EthosPay Hosted Checkout">
+<meta property="og:title" content="EthosPay · Enlace de Pago Oficial">
+<meta property="og:description" content="Completa tu pago de forma rápida y 100% segura con tarjeta o transferencia. Procesado por EthosPay.">
 <meta property="og:image" content="logo_cafe_don_arturo.png">
 <meta property="og:image:width" content="1200">
 <meta property="og:image:height" content="630">
 
 <!-- Twitter Card -->
 <meta name="twitter:card" content="summary_large_image">
-<meta name="twitter:title" content="AuraPay · Enlace de Pago Oficial">
-<meta name="twitter:description" content="Completa tu pago de forma rápida y 100% segura con tarjeta o transferencia. Procesado por AuraPay.">
+<meta name="twitter:title" content="EthosPay · Enlace de Pago Oficial">
+<meta name="twitter:description" content="Completa tu pago de forma rápida y 100% segura con tarjeta o transferencia. Procesado por EthosPay.">
 <meta name="twitter:image" content="logo_cafe_don_arturo.png">
 
 <script>(function(){try{var s=localStorage.getItem('paylink-theme');var d=s||((window.matchMedia&&window.matchMedia('(prefers-color-scheme: dark)').matches)?'dark':'light');document.documentElement.setAttribute('data-theme',d);}catch(e){}})();</script>
 <style>
   :root{
-    --navy-900:#111827;
-    --navy-800:#1F2937;
-    --teal-500:#B45309;
-    --teal-100:#FEF3C7;
-    --blue-500:#D97706;
-    --amber-500:#D97706;
-    --amber-100:#FEF3C7;
+    --navy-900:#272757;
+    --navy-800:#272757;
+    --teal-500:#272757;
+    --teal-100:#EEF2FF;
+    --blue-500:#272757;
+    --amber-500:#272757;
+    --amber-100:#EEF2FF;
     --gold-300:#FCD34D;
     --red-600:#D92D20;
     --ink-900:#101828;
@@ -622,9 +622,9 @@
 
   /* ================= Modo oscuro ================= */
   html[data-theme="dark"]{
-    --navy-900:#E2E8F0; --navy-800:#94A3B8; --teal-500:#D97706; --teal-100:#33280F;
-    --blue-500:#F59E0B; --amber-500:#F2A039; --amber-100:#33280F; --gold-300:#F6C877;
-    --red-600:#F04438; --ink-900:#E7ECF3; --ink-600:#9AA7B6; --ink-400:#68737F;
+    --navy-900:#F4EBDD; --navy-800:#F4EBDD; --teal-500:#3B3B7A; --teal-100:#1E1E45;
+    --blue-500:#3B3B7A; --amber-500:#3B3B7A; --amber-100:#1E1E45; --gold-300:#FCD34D;
+    --red-600:#F04438; --ink-900:#F4EBDD; --ink-600:#CBD5E1; --ink-400:#94A3B8;
     --line:#2A333F; --bg:#0E1319; --card:#171E27;
   }
   html[data-theme="dark"] .checkout{border:1px solid #232C38;}
@@ -751,7 +751,15 @@
 </div>
 </div>
 <div class="merchant">
-<div class="seller"><span class="seller-logo"><svg aria-label="Cumbre Café" height="44" role="img" viewbox="0 0 44 44" width="44"><rect fill="#4A3122" height="44" rx="12" width="44"></rect><path d="M8 32 L17 18 L21.5 25 L27 14 L36 32 Z" fill="#F4EBDD"></path><path d="M17 18 L21.5 25 L18.6 25 L17 21.5 Z" fill="#D8C4AC"></path><circle cx="32.5" cy="13" fill="#E6A23C" r="3"></circle></svg></span><div class="seller-meta"><p class="seller-name">Cumbre Café</p><p class="seller-sub">Tostaduría de especialidad</p></div></div>
+<div class="seller">
+  <span class="seller-logo" id="seller-logo-container" style="background:transparent;padding:0;display:flex;align-items:center;justify-content:center;">
+    <img id="merchant-logo-img" src="logo_cafe_don_arturo.png" alt="Logo del Comercio" style="width:44px;height:44px;border-radius:12px;object-fit:cover;background:#fff;border:1px solid var(--line);padding:2px;">
+  </span>
+  <div class="seller-meta">
+    <p class="seller-name" id="merchant-name-display">Café Don Arturo</p>
+    <p class="seller-sub" id="merchant-subtext">Tostaduría de especialidad y café gourmet</p>
+  </div>
+</div>
 </div>
 <div class="product-hero">
 <svg aria-label="Bolsa de café de especialidad Cumbre Café" height="230" preserveaspectratio="xMidYMid slice" role="img" viewbox="0 0 400 230" width="100%"><defs><lineargradient id="cumbreBg" x1="0" x2="0" y1="0" y2="1"><stop offset="0" stop-color="#F7EFE4"></stop><stop offset="1" stop-color="#ECDFCC"></stop></lineargradient><lineargradient id="bagBody" x1="0" x2="1" y1="0" y2="0"><stop offset="0" stop-color="#3E2A1D"></stop><stop offset="0.5" stop-color="#4A3122"></stop><stop offset="1" stop-color="#5A3D2A"></stop></lineargradient></defs><rect fill="url(#cumbreBg)" height="230" width="400"></rect><ellipse cx="200" cy="118" fill="#FFFFFF" opacity="0.35" rx="122" ry="96"></ellipse><ellipse cx="200" cy="197" fill="#7A5B3E" opacity="0.22" rx="72" ry="10"></ellipse><rect fill="url(#bagBody)" height="146" rx="8" width="96" x="152" y="52"></rect><rect fill="#2F2015" height="14" rx="4" width="100" x="150" y="40"></rect><rect fill="#FFFFFF" height="134" opacity="0.06" rx="4.5" width="9" x="158" y="58"></rect><rect fill="#F4EBDD" height="72" rx="7" width="72" x="164" y="92"></rect><path d="M180 130 L190 114 L196 123 L203 110 L214 130 Z" fill="#4A3122"></path><circle cx="208" cy="109" fill="#E6A23C" r="3"></circle><text fill="#4A3122" font-family="Segoe UI, sans-serif" font-size="9" font-weight="700" letter-spacing="1.5" text-anchor="middle" x="200" y="146">CUMBRE</text><text fill="#8A6A4F" font-family="Segoe UI, sans-serif" font-size="5.5" letter-spacing="1.6" text-anchor="middle" x="200" y="156">HUEHUETENANGO</text><circle cx="200" cy="178" fill="#2E1F15" r="6"></circle><circle cx="200" cy="178" fill="#6B4B33" r="2.4"></circle><g fill="#4A3122"><g transform="translate(120 188) rotate(-20)"><ellipse cx="0" cy="0" rx="11" ry="7"></ellipse><path d="M0 -6 Q3 0 0 6" fill="none" stroke="#2E1F15" stroke-width="1.4"></path></g><g transform="translate(286 189) rotate(25)"><ellipse cx="0" cy="0" rx="11" ry="7"></ellipse><path d="M0 -6 Q3 0 0 6" fill="none" stroke="#2E1F15" stroke-width="1.4"></path></g><g transform="translate(300 206) rotate(-10)"><ellipse cx="0" cy="0" rx="10" ry="6.5"></ellipse><path d="M0 -5 Q3 0 0 5" fill="none" stroke="#2E1F15" stroke-width="1.3"></path></g></g></svg>
@@ -772,9 +780,9 @@
 <div id="cash-benefit-badge" style="display: none; margin-top: 6px; text-align: right;">
 <span style="display: inline-block; background-color: var(--amber-100); color: var(--amber-500); font-size: 9.5px; font-weight: 700; padding: 2.5px 8px; border-radius: 9999px; text-transform: uppercase; letter-spacing: 0.5px;">Beneficio de pago en efectivo aplicado</span>
 </div>
-<div class="aurapay-footer">
-<span>Pagos procesados de forma segura por</span>
-<span aria-label="AuraPay" class="aurapay-wordmark" role="img"><span class="ap-a">Aura</span><span class="ap-b">Pay</span><span class="ap-dot"></span></span>
+<div class="ethospay-footer" style="display:flex;align-items:center;justify-content:center;gap:6px;padding:12px 0 4px;font-size:11px;color:var(--ink-400);">
+<span>Procesado por</span>
+<img class="ethos-logo-full" src="ethos_logo_dark_full.png" alt="EthosPay" style="height:15px;width:auto;vertical-align:middle;">
 </div>
 <div class="commerce-links">
 <a href="#" onclick="showInfo('terms');return false;">Términos y Condiciones</a>
@@ -1060,16 +1068,16 @@
 </div>
 </div>
 <!-- TARJETA NUEVA -->
-<!-- AURAPAY VIRTUAL -->
+<!-- PAGO CON BANCA -->
 <div class="method-item" data-method="bi-linea">
 <button aria-expanded="false" class="method-header" type="button">
 <span class="m-icon"><svg aria-hidden="true" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" viewbox="0 0 24 24"><path d="M3 10l9-6 9 6"></path><path d="M5 10v9M10 10v9M14 10v9M19 10v9"></path><path d="M3 21h18"></path></svg></span>
-<span class="m-label">AuraPay Virtual</span>
+<span class="m-label">Pago con banca</span>
 <span class="m-chevron"><svg aria-hidden="true" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" viewbox="0 0 24 24"><path d="M6 9l6 6 6-6"></path></svg></span>
 </button>
 <div class="method-body">
 <div class="method-body-inner" id="bi-linea">
-<p class="section-title">Paga con AuraPay Virtual</p>
+<p class="section-title">Transferencia o Banca en línea</p>
 <div class="qr-only">
 <div class="qr-box">
 <svg aria-label="Código QR de AuraPay Virtual" role="img" viewbox="0 0 210 210" xmlns="http://www.w3.org/2000/svg">
@@ -1125,20 +1133,20 @@
 </div>
 </div>
 </div>
-<!-- CAJA RURAL (pago en efectivo) -->
+<!-- PAGOS EN EFECTIVO -->
 <div class="method-item" data-method="agente-bi">
 <button aria-expanded="false" class="method-header" type="button">
 <span class="m-icon"><svg aria-hidden="true" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" viewbox="0 0 24 24"><rect height="12" rx="2" width="20" x="2" y="6"></rect><circle cx="12" cy="12" r="3"></circle><path d="M6 9v.01M18 15v.01"></path></svg></span>
-<span class="m-label">Caja Rural</span>
+<span class="m-label">Pagos en efectivo</span>
 <span class="m-chevron"><svg aria-hidden="true" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" viewbox="0 0 24 24"><path d="M6 9l6 6 6-6"></path></svg></span>
 </button>
 <div class="method-body">
 <div class="method-body-inner" id="agente-bi">
 <div class="reveal open" id="agente-generate-step">
-<p class="section-title">Pago en efectivo con Caja Rural</p>
+<p class="section-title">Pagos en efectivo (Puntos autorizados)</p>
 <ul class="steps">
 <li><span class="n">1</span> Genera tu código de pago.</li>
-<li><span class="n">2</span> Acude a un Caja Rural cercano con tu código.</li>
+<li><span class="n">2</span> Acude a un punto de pago en efectivo autorizado con tu código.</li>
 <li><span class="n">3</span> Paga en efectivo antes de la fecha límite.</li>
 </ul>
 <div class="field">
@@ -1169,19 +1177,19 @@
 </div>
 </div>
 </div>
-<!-- CUIK -->
+<!-- BILLETERA ELECTRÓNICA -->
 <div class="method-item" data-method="zigi">
 <button aria-expanded="false" class="method-header" type="button">
 <span class="m-icon"><svg aria-hidden="true" fill="currentColor" viewbox="0 0 24 24"><path d="M3 3h7v7H3V3zm2 2v3h3V5H5zm9-2h7v7h-7V3zm2 2v3h3V5h-3zM3 14h7v7H3v-7zm2 2v3h3v-3H5zm9-2h3v3h-3v-3zm4 0h3v3h-3v-3zm-4 4h3v3h-3v-3zm4 0h3v3h-3v-3z"></path></svg></span>
-<span class="m-label">Cuik</span>
+<span class="m-label">Billetera electrónica</span>
 <span class="m-chevron"><svg aria-hidden="true" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" viewbox="0 0 24 24"><path d="M6 9l6 6 6-6"></path></svg></span>
 </button>
 <div class="method-body">
 <div class="method-body-inner" id="zigi">
-<p class="section-title">Paga con Cuik</p>
+<p class="section-title">Paga con Billetera electrónica</p>
 <div class="qr-only">
 <div class="qr-box" style="background:#124734;">
-<svg aria-label="Código QR de Cuik" role="img" viewbox="0 0 210 210" xmlns="http://www.w3.org/2000/svg">
+<svg aria-label="Código QR de Billetera electrónica" role="img" viewbox="0 0 210 210" xmlns="http://www.w3.org/2000/svg">
 <rect fill="#124734" height="210" width="210"></rect>
 <defs>
 <pattern height="20" id="qrNoiseCuik" patternunits="userSpaceOnUse" width="20">
@@ -1203,18 +1211,18 @@
 <g transform="translate(0,140)"><rect fill="#C2D500" height="70" width="70"></rect><rect fill="#124734" height="50" width="50" x="10" y="10"></rect><rect fill="#C2D500" height="30" width="30" x="20" y="20"></rect></g>
 </svg>
 </div>
-<p class="qr-caption">Escanea este código con tu app bancaria para pagar con Cuik, o continúa aquí:</p>
+<p class="qr-caption">Escanea este código con tu app para pagar con Billetera electrónica, o continúa aquí:</p>
 <ul class="steps qr-only">
-<li><span class="n">1</span> Abre tu app bancaria con soporte Cuik.</li>
+<li><span class="n">1</span> Abre tu app de billetera electrónica.</li>
 <li><span class="n">2</span> Escanea el c&oacute;digo QR.</li>
 <li><span class="n">3</span> Confirma el pago en tu tel&eacute;fono.</li>
 </ul>
 <ul class="steps mobile-only">
-<li><span class="n">1</span> Presiona "Abrir mi app bancaria".</li>
+<li><span class="n">1</span> Presiona "Abrir mi billetera electrónica".</li>
 <li><span class="n">2</span> Completa el pago desde tu app.</li>
 </ul>
 </div>
-<p class="mobile-redirect-note">Te llevaremos a tu app bancaria para completar el pago con Cuik desde tu teléfono.</p>
+<p class="mobile-redirect-note">Te llevaremos a tu app para completar el pago con Billetera electrónica desde tu teléfono.</p>
 <div class="field">
 <span class="field-label">Monto a pagar</span>
 <div class="amount-fixed">Q 145.00</div>
@@ -2707,7 +2715,7 @@
   const INFO_EN = {
     terms: { title: 'Terms & Conditions', body:
       '<h3>Terms & Conditions</h3>' +
-      '<p>This purchase is processed by Cumbre Café through the Pay Rural gateway. By completing the payment you accept these terms.</p>' +
+      '<p>This purchase is processed through EthosPay. By completing the payment you accept these terms.</p>' +
       '<p><b>Product and price:</b> the amount shown includes taxes. Availability is subject to stock.</p>' +
       '<p><b>Refunds:</b> you may request a refund within the periods stated on your receipt, per the merchant policy.</p>' +
       '<p><b>Saved cards:</b> if you authorize saving your card, it is stored tokenized for payments you initiate; you can remove it anytime.</p>' +
@@ -2731,25 +2739,40 @@
       const urlParams = new URLSearchParams(window.location.search);
       let brandColor = urlParams.get('brand_color');
       let customSubtext = urlParams.get('subtext');
+      let customLogo = urlParams.get('logo_url');
       
       const storedBranding = localStorage.getItem('aurapay_merchant_branding');
       if (storedBranding) {
         const branding = JSON.parse(storedBranding);
         if (!brandColor && branding.primary_color) brandColor = branding.primary_color;
         if (!customSubtext && branding.subtext) customSubtext = branding.subtext;
+        if (!customLogo && branding.logo_url) customLogo = branding.logo_url;
         window.customMerchantTerms = branding.custom_terms;
         window.customMerchantPrivacy = branding.custom_privacy;
       }
       
+      if (customLogo) {
+        const logoImg = document.getElementById('merchant-logo-img');
+        if (logoImg) logoImg.src = customLogo;
+      }
+
       if (brandColor && brandColor.match(/^#[0-9A-Fa-f]{6}$/)) {
         const root = document.documentElement;
         root.style.setProperty('--navy-900', brandColor);
+        root.style.setProperty('--navy-800', brandColor);
         root.style.setProperty('--teal-500', brandColor);
         root.style.setProperty('--blue-500', brandColor);
+        root.style.setProperty('--amber-500', brandColor);
         
-        const styleTag = document.createElement('style');
+        let styleTag = document.getElementById('dynamic-merchant-branding-checkout');
+        if (!styleTag) {
+          styleTag = document.createElement('style');
+          styleTag.id = 'dynamic-merchant-branding-checkout';
+          document.head.appendChild(styleTag);
+        }
+
         styleTag.innerHTML = `
-          .pay-btn { background-color: ${brandColor} !important; }
+          .pay-btn, button.pay-btn, .btn-primary { background-color: ${brandColor} !important; color: #ffffff !important; }
           .pay-btn:hover { filter: brightness(0.9); }
           .ethos-logo { color: ${brandColor} !important; }
           .method-item.active { border-color: ${brandColor} !important; }
@@ -2758,10 +2781,11 @@
           .field:focus-within label { color: ${brandColor} !important; }
           input:focus, select:focus, textarea:focus { border-color: ${brandColor} !important; box-shadow: 0 0 0 3px ${brandColor}25 !important; }
           .pay-btn:focus-visible, .btn-outline:focus-visible, .method-header:focus-visible, input:focus-visible, select:focus-visible { outline-color: ${brandColor} !important; }
-          .segmented button.active { background-color: ${brandColor} !important; color: #fff !important; }
+          .segmented button.active { background-color: ${brandColor} !important; color: #ffffff !important; }
           .auth-links a, .saved-card-change, .otp-resend { color: ${brandColor} !important; }
+          .merchant-tag { background-color: ${brandColor}15 !important; color: ${brandColor} !important; border-color: ${brandColor}30 !important; }
+          .saved-card-option.selected { border-color: ${brandColor} !important; background-color: ${brandColor}08 !important; }
         `;
-        document.head.appendChild(styleTag);
       }
 
       if (customSubtext) {
@@ -2922,11 +2946,11 @@
             if (method === 'oneclick') {
               activeMethod = 'un clic';
             } else if (method === 'bi-linea') {
-              activeMethod = 'AuraPay Virtual';
+              activeMethod = 'Pago con banca';
             } else if (method === 'agente-bi') {
-              activeMethod = 'Caja Rural';
+              activeMethod = 'Pagos en efectivo';
             } else if (method === 'zigi') {
-              activeMethod = 'Cuik';
+              activeMethod = 'Billetera electrónica';
             }
           }
           tx.type = activeMethod;
@@ -2962,12 +2986,12 @@
                 paymentModality = 'Tarjeta - Contado';
               }
             }
-          } else if (activeMethod === 'AuraPay Virtual') {
-            paymentModality = 'Banca Virtual';
-          } else if (activeMethod === 'Caja Rural') {
-            paymentModality = 'Efectivo con Caja Rural';
-          } else if (activeMethod === 'Cuik') {
-            paymentModality = 'Cuik';
+          } else if (activeMethod === 'Pago con banca') {
+            paymentModality = 'Pago con banca';
+          } else if (activeMethod === 'Pagos en efectivo') {
+            paymentModality = 'Pagos en efectivo';
+          } else if (activeMethod === 'Billetera electrónica') {
+            paymentModality = 'Billetera electrónica';
           }
           tx.payment_modality = paymentModality;
 
@@ -2982,10 +3006,10 @@
             tx.amount = baseListPrice;
           }
           
-          if (activeMethod === 'AuraPay Virtual') {
-            tx.token = `debito_virtual_aura_${Math.floor(100000 + Math.random() * 900000)}`;
-          } else if (activeMethod === 'Caja Rural') {
-            tx.token = `boleta_caja_rural_${Math.floor(100000 + Math.random() * 900000)}`;
+          if (activeMethod === 'Pago con banca') {
+            tx.token = `banca_ethos_${Math.floor(100000 + Math.random() * 900000)}`;
+          } else if (activeMethod === 'Pagos en efectivo') {
+            tx.token = `efectivo_ethos_${Math.floor(100000 + Math.random() * 900000)}`;
           } else {
             tx.token = `tok_visa_4242_9823_${Math.floor(1000 + Math.random() * 9000)}`;
           }
@@ -3035,6 +3059,17 @@
       window.checkoutBaseAmount = !isNaN(rawBase) ? rawBase : null;
       window.checkoutListPrice = !isNaN(rawList) ? rawList : amount;
 
+      const urlProductsParam = urlParams.get('products');
+      if (urlProductsParam) {
+        try {
+          transactionProducts = JSON.parse(urlProductsParam);
+        } catch (e) {
+          try {
+            transactionProducts = JSON.parse(decodeURIComponent(urlProductsParam));
+          } catch (err) {}
+        }
+      }
+
       try {
         const stored = localStorage.getItem('aurapay_transactions');
         if (stored) {
@@ -3045,7 +3080,7 @@
             if (tx.custom_image) {
               customImage = tx.custom_image;
             }
-            if (tx.products && tx.products.length > 0) {
+            if ((!transactionProducts || transactionProducts.length === 0) && tx.products && tx.products.length > 0) {
               transactionProducts = tx.products;
             }
             if (tx.base_amount) window.checkoutBaseAmount = parseFloat(tx.base_amount);
@@ -3057,8 +3092,8 @@
         console.error('Error reading custom data from localStorage:', err);
       }
 
-      // Render multiple products breakdown if present
-      if (transactionProducts && transactionProducts.length > 1) {
+      // Render products breakdown if present
+      if (transactionProducts && transactionProducts.length > 0) {
         const multiItemsContainer = document.getElementById('checkout-multi-items');
         const singleCaption = document.getElementById('checkout-single-caption');
         const singleDesc = document.getElementById('checkout-single-desc');
@@ -3068,17 +3103,23 @@
           multiItemsContainer.innerHTML = '';
           
           transactionProducts.forEach(item => {
+            const itemPrice = parseFloat(item.price || item.unit_price || 0);
+            const itemQty = parseInt(item.quantity || item.qty || 1, 10);
+            const itemSubtotal = itemPrice * itemQty;
+            const currencySymbol = (urlParams.get("currency") || "GTQ") === "USD" ? "$" : "Q";
+
             const row = document.createElement('div');
             row.className = 'checkout-item-row';
             row.innerHTML = `<div class="checkout-item-left">
-                ${item.image ? `<img src="${item.image}" class="checkout-item-img">` : `<div class="checkout-item-noimg">P</div>`}
+                ${item.image ? `<img src="${item.image}" class="checkout-item-img">` : `<div class="checkout-item-noimg" style="width:36px;height:36px;border-radius:8px;background:var(--navy-900);color:#fff;display:flex;align-items:center;justify-content:center;font-weight:bold;font-size:12px;">P</div>`}
                 <div class="checkout-item-meta">
-                  <p class="checkout-item-name">${item.name}</p>
-                  <p class="checkout-item-price">${(new URLSearchParams(window.location.search).get("currency") || "GTQ") === "USD" ? "$" : "Q"} ${fmtMoney(item.price)} x ${item.quantity}</p>
+                  <p class="checkout-item-name" style="font-weight:600;font-size:12.5px;color:var(--ink-900);">${item.name}</p>
+                  <p class="checkout-item-price" style="font-size:11px;color:var(--ink-400);">${currencySymbol} ${fmtMoney(itemPrice)} x ${itemQty}</p>
                 </div>
               </div>
-              <div class="checkout-item-right">
-                ${(new URLSearchParams(window.location.search).get("currency") || "GTQ") === "USD" ? "$" : "Q"} ${fmtMoney(item.price * item.quantity)}</div>`;
+              <div class="checkout-item-right" style="font-weight:700;font-size:13px;color:var(--ink-900);">
+                ${currencySymbol} ${fmtMoney(itemSubtotal)}
+              </div>`;
             multiItemsContainer.appendChild(row);
           });
         }
@@ -3309,9 +3350,11 @@
           }
         }
 
-        // Dynamically configure installments options based on max_installments
+        // Dynamically configure installments options based on max_installments (Mínimo Común Denominador)
         let maxInst = 12;
-        if (tx && tx.max_installments !== undefined) {
+        if (transactionProducts && transactionProducts.length > 0) {
+          maxInst = Math.min(...transactionProducts.map(p => parseInt(p.max_installments || p.max_cuotas || 12, 10)));
+        } else if (tx && tx.max_installments !== undefined) {
           maxInst = parseInt(tx.max_installments);
         } else {
           const urlParams = new URLSearchParams(window.location.search);

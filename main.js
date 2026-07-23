@@ -2268,8 +2268,34 @@
     function handleCreateLink(e) {
       e.preventDefault();
       
-      const amount = parseFloat(document.getElementById('link-amount').value);
-      const maxInstallments = parseInt(document.getElementById('link-max-installments').value);
+      let amount = parseFloat(document.getElementById('link-amount').value) || 0;
+      let maxInstallments = parseInt(document.getElementById('link-max-installments').value) || 12;
+      let calculatedListPrice = parseFloat(document.getElementById('link-list-price').value) || amount;
+
+      if (selectedProductsForLink && selectedProductsForLink.length > 0) {
+        let sumBase = 0;
+        let sumList = 0;
+        let minCuotas = 12;
+
+        selectedProductsForLink.forEach(item => {
+          const itemBase = parseFloat(item.base_amount || item.price || 0);
+          const itemList = parseFloat(item.price || item.unit_price || 0);
+          const qty = parseInt(item.quantity || 1, 10);
+          
+          sumBase += (itemBase * qty);
+          sumList += (itemList * qty);
+
+          const itemMax = parseInt(item.max_installments || item.max_cuotas || 12, 10);
+          if (itemMax < minCuotas) {
+            minCuotas = itemMax;
+          }
+        });
+
+        amount = sumBase;
+        calculatedListPrice = sumList;
+        maxInstallments = minCuotas;
+      }
+
       const rates = {
         1: 4.50,
         2: 5.25,
@@ -2279,7 +2305,6 @@
         12: 8.00
       };
       const feePercentageApplied = rates[maxInstallments] || 4.50;
-      const calculatedListPrice = parseFloat(document.getElementById('link-list-price').value) || amount;
 
       const client = document.getElementById('link-client').value.trim();
       const productTitle = document.getElementById('link-product-title').value.trim() || 'Cobro de Comercio';
@@ -2341,10 +2366,10 @@
       
       const methodLabels = {
         card: 'Tarjeta',
-        virtual: 'Banca Virtual',
-        cash: 'Caja Rural',
-        cuik: 'Cuik',
-        wallet: 'Wallets'
+        virtual: 'Pago con banca',
+        cash: 'Pagos en efectivo',
+        cuik: 'Billetera electrónica',
+        wallet: 'Billeteras Digitales'
       };
       const typeDisplay = allowedMethods.map(m => methodLabels[m]).join(', ');
 
@@ -2420,6 +2445,11 @@
         img: newTransaction.image_preset,
         methods: newTransaction.allowed_methods.join(',')
       });
+
+      if (selectedProductsForLink && selectedProductsForLink.length > 0) {
+        queryParams.set('products', JSON.stringify(selectedProductsForLink));
+      }
+
       const fullUrl = `aurapay-checkout.html?${queryParams.toString()}`;
       
       document.getElementById('generated-link-input').value = fullUrl;
@@ -3075,16 +3105,30 @@
 
     // ================= MERCHANT BRANDING & LEGAL SETTINGS =================
     const defaultBranding = {
-      primary_color: '#1F2937',
+      primary_color: '#272757',
       subtext: 'Tostaduría de especialidad y café gourmet',
-      custom_terms: 'Términos del Comercio: Todos los pagos procesados son finales. Los cambios de productos o servicios se atienden dentro de los 30 días posteriores a la fecha de compra presentando su factura de compra.',
-      custom_privacy: 'Aviso de Privacidad: Sus datos personales son tratados con absoluta confidencialidad y únicamente para procesar y confirmar su pedido.'
+      logo_url: 'logo_cafe_don_arturo.png',
+      custom_terms: 'TÉRMINOS Y CONDICIONES DE VENTA\n\n1. ACEPTACIÓN Y PROCESAMIENTO: Toda compra realizada a través de esta pasarela constituye un acuerdo de venta final. Los pedidos son procesados de inmediato una vez autorizada la transacción.\n\n2. POLÍTICA DE DEVOLUCIONES Y CAMBIOS: Los cambios de producto o solicitudes de garantía se atienden dentro de los 30 días posteriores a la fecha de emisión del comprobante, presentando la factura original de compra.\n\n3. ENTREGAS Y SERVICIOS: La entrega de bienes y servicios está sujeta a la disponibilidad confirmada por el comercio.',
+      custom_privacy: 'AVISO DE PRIVACIDAD Y PROTECCIÓN DE DATOS\n\nSus datos personales son tratados con estricta confidencialidad bajo los estándares de seguridad de EthosPay. La información recopilada se utiliza exclusivamente para la gestión de su pedido, procesamiento del pago y envío de comprobantes digitales.'
     };
 
     let merchantBranding = { ...defaultBranding };
 
+    function updateEthosAdaptiveLogos() {
+      const isDark = document.documentElement.getAttribute('data-theme') === 'dark' || document.body.classList.contains('dark');
+      const logoFullEls = document.querySelectorAll('.ethos-logo-full');
+      const logoIconEls = document.querySelectorAll('.ethos-logo-icon');
+
+      logoFullEls.forEach(el => {
+        el.src = isDark ? 'ethos_logo_light_full.png' : 'ethos_logo_dark_full.png';
+      });
+      logoIconEls.forEach(el => {
+        el.src = isDark ? 'ethos_logo_light_icon.png' : 'ethos_logo_dark_icon.png';
+      });
+    }
+
     function applyAdminBrandingTheme(brandColor) {
-      if (!brandColor || !brandColor.match(/^#[0-9A-Fa-f]{6}$/)) return;
+      const color = (brandColor && brandColor.match(/^#[0-9A-Fa-f]{6}$/)) ? brandColor : '#272757';
       let existing = document.getElementById('dynamic-admin-branding-style');
       if (!existing) {
         existing = document.createElement('style');
@@ -3094,18 +3138,18 @@
 
       existing.innerHTML = `
         :root {
-          --aura-primary: ${brandColor};
+          --aura-primary: ${color};
         }
-        .bg-aura-primary, button.bg-aura-primary, div.bg-aura-primary, a.bg-aura-primary { background-color: ${brandColor} !important; }
-        .bg-aura-primaryHover:hover, button.bg-aura-primaryHover:hover { filter: brightness(0.9) !important; }
-        .text-aura-primary { color: ${brandColor} !important; }
-        .border-aura-primary { border-color: ${brandColor} !important; }
-        .focus\\:ring-aura-primary:focus { --tw-ring-color: ${brandColor} !important; border-color: ${brandColor} !important; }
-        .focus\\:border-aura-primary:focus { border-color: ${brandColor} !important; }
-        .focus-within\\:ring-aura-primary:focus-within { --tw-ring-color: ${brandColor} !important; border-color: ${brandColor} !important; }
-        .focus-within\\:border-aura-primary:focus-within { border-color: ${brandColor} !important; }
-        #mobile-fab { background-color: ${brandColor} !important; }
-        #toast-icon { background-color: ${brandColor} !important; }
+        #app-dashboard .bg-aura-primary, #app-dashboard button.bg-aura-primary, #app-dashboard div.bg-aura-primary, #app-dashboard a.bg-aura-primary { background-color: ${color} !important; }
+        #app-dashboard .bg-aura-primaryHover:hover, #app-dashboard button.bg-aura-primaryHover:hover { filter: brightness(0.9) !important; }
+        #app-dashboard .text-aura-primary { color: ${color} !important; }
+        #app-dashboard .border-aura-primary { border-color: ${color} !important; }
+        #app-dashboard .focus\\:ring-aura-primary:focus { --tw-ring-color: ${color} !important; border-color: ${color} !important; }
+        #app-dashboard .focus\\:border-aura-primary:focus { border-color: ${color} !important; }
+        #app-dashboard .focus-within\\:ring-aura-primary:focus-within { --tw-ring-color: ${color} !important; border-color: ${color} !important; }
+        #app-dashboard .focus-within\\:border-aura-primary:focus-within { border-color: ${color} !important; }
+        #mobile-fab { background-color: ${color} !important; }
+        #toast-icon { background-color: ${color} !important; }
       `;
     }
 
@@ -3119,23 +3163,50 @@
         console.error('Error loading merchant branding:', e);
       }
       applyAdminBrandingTheme(merchantBranding.primary_color);
+      updateMerchantLogoDisplay();
+      updateEthosAdaptiveLogos();
+    }
+
+    function updateMerchantLogoDisplay() {
+      const logoUrl = merchantBranding.logo_url || 'logo_cafe_don_arturo.png';
+      const sidebarLogo = document.getElementById('dashboard-merchant-logo');
+      const headerLogo = document.getElementById('header-merchant-logo');
+
+      if (sidebarLogo) sidebarLogo.src = logoUrl;
+      if (headerLogo) headerLogo.src = logoUrl;
     }
 
     function initBrandingUI() {
       loadMerchantBranding();
       const colorPicker = document.getElementById('brand-color-picker');
       const colorHex = document.getElementById('brand-color-hex');
+      const logoUrlInput = document.getElementById('brand-logo-url');
       const subtextInput = document.getElementById('brand-subtext');
       const termsInput = document.getElementById('brand-custom-terms');
       const privacyInput = document.getElementById('brand-custom-privacy');
 
-      if (colorPicker) colorPicker.value = merchantBranding.primary_color || '#1F2937';
-      if (colorHex) colorHex.value = merchantBranding.primary_color || '#1F2937';
+      if (colorPicker) colorPicker.value = merchantBranding.primary_color || '#272757';
+      if (colorHex) colorHex.value = merchantBranding.primary_color || '#272757';
+      if (logoUrlInput) logoUrlInput.value = merchantBranding.logo_url || '';
       if (subtextInput) subtextInput.value = merchantBranding.subtext || '';
       if (termsInput) termsInput.value = merchantBranding.custom_terms || '';
       if (privacyInput) privacyInput.value = merchantBranding.custom_privacy || '';
 
       updateLiveBrandPreview();
+    }
+
+    function onMerchantLogoFileSelect(fileInput) {
+      if (fileInput.files && fileInput.files[0]) {
+        const file = fileInput.files[0];
+        const reader = new FileReader();
+        reader.onload = function(e) {
+          const logoUrlInput = document.getElementById('brand-logo-url');
+          if (logoUrlInput) logoUrlInput.value = e.target.result;
+          merchantBranding.logo_url = e.target.result;
+          updateLiveBrandPreview();
+        };
+        reader.readAsDataURL(file);
+      }
     }
 
     function onBrandColorPickerChange(val) {
@@ -3165,25 +3236,31 @@
 
     function updateLiveBrandPreview() {
       const colorHex = document.getElementById('brand-color-hex');
+      const logoUrlInput = document.getElementById('brand-logo-url');
       const subtextInput = document.getElementById('brand-subtext');
       const previewBtn = document.getElementById('preview-brand-btn');
       const previewSub = document.getElementById('preview-brand-merchant-sub');
+      const previewLogo = document.getElementById('preview-brand-merchant-logo');
 
-      const color = colorHex ? colorHex.value : '#1F2937';
+      const color = colorHex ? colorHex.value : '#272757';
       const sub = subtextInput ? subtextInput.value : '';
+      const logo = (logoUrlInput && logoUrlInput.value.trim()) ? logoUrlInput.value.trim() : (merchantBranding.logo_url || 'logo_cafe_don_arturo.png');
 
       if (previewBtn) previewBtn.style.backgroundColor = color;
       if (previewSub) previewSub.innerText = sub || 'Tostaduría de especialidad y café gourmet';
+      if (previewLogo) previewLogo.src = logo;
     }
 
     function saveMerchantBranding() {
       const colorHex = document.getElementById('brand-color-hex').value.trim();
+      const logoUrl = document.getElementById('brand-logo-url') ? document.getElementById('brand-logo-url').value.trim() : '';
       const subtext = document.getElementById('brand-subtext').value.trim();
       const customTerms = document.getElementById('brand-custom-terms').value.trim();
       const customPrivacy = document.getElementById('brand-custom-privacy').value.trim();
 
       merchantBranding = {
-        primary_color: colorHex || '#1F2937',
+        primary_color: colorHex || '#272757',
+        logo_url: logoUrl || 'logo_cafe_don_arturo.png',
         subtext: subtext,
         custom_terms: customTerms,
         custom_privacy: customPrivacy
@@ -3196,7 +3273,8 @@
       }
 
       applyAdminBrandingTheme(merchantBranding.primary_color);
-      showToast('Personalización Guardada', 'La identidad visual y términos de tu comercio han sido actualizados.', 'success');
+      updateMerchantLogoDisplay();
+      showToast('Personalización Guardada', 'La identidad visual, logo y términos de tu comercio han sido actualizados.', 'success');
       addSystemLog('Configuración de Marca', 'seguridad', `Se actualizó la personalidad visual del comercio. Color primario: ${merchantBranding.primary_color}.`);
     }
 
@@ -3207,7 +3285,8 @@
       } catch(e) {}
       initBrandingUI();
       applyAdminBrandingTheme(merchantBranding.primary_color);
-      showToast('Marca Restablecida', 'Se han restaurado los valores e identidad por defecto de AuraPay.', 'info');
+      updateMerchantLogoDisplay();
+      showToast('Marca Restablecida', 'Se han restaurado los valores e identidad por defecto de EthosPay.', 'info');
     }
 
     function loadDefaultLegalTemplates() {
@@ -3760,7 +3839,7 @@
         const methods = [
           { label: 'Tarjeta — Contado', total: totalContado, count: contadoTxs.length, color: 'bg-aura-primary' },
           { label: 'Tarjeta — Cuotas',  total: totalCuotas,  count: cuotasTxs.length,  color: 'bg-blue-500' },
-          { label: 'Banca / Efectivo / Cuik',  total: totalEfectivo, count: efectivoTxs.length, color: 'bg-emerald-500' },
+          { label: 'Banca / Efectivo / Billeteras',  total: totalEfectivo, count: efectivoTxs.length, color: 'bg-emerald-500' },
         ];
         breakdownEl.innerHTML = methods.map(m => {
           const pct = totalVendido > 0 ? ((m.total / totalVendido) * 100).toFixed(1) : '0.0';
