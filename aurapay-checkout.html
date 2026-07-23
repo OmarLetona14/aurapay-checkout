@@ -7,7 +7,7 @@
 <title>Cumbre Café · Pago seguro</title>
 <meta name="title" content="EthosPay · Enlace de Pago Oficial">
 <meta name="description" content="Completa tu pago de forma rápida y 100% segura con tarjeta de crédito/débito o transferencia bancaria. Procesado por EthosPay.">
-<meta name="theme-color" content="#272757">
+<meta name="theme-color" content="#191970">
 
 <!-- Open Graph / WhatsApp / Telegram / Messenger / iMessage -->
 <meta property="og:type" content="website">
@@ -27,12 +27,12 @@
 <script>(function(){try{var s=localStorage.getItem('paylink-theme');var d=s||((window.matchMedia&&window.matchMedia('(prefers-color-scheme: dark)').matches)?'dark':'light');document.documentElement.setAttribute('data-theme',d);}catch(e){}})();</script>
 <style>
   :root{
-    --navy-900:#272757;
-    --navy-800:#272757;
-    --teal-500:#272757;
+    --navy-900:#0D0D42;
+    --navy-800:#121252;
+    --teal-500:#191970;
     --teal-100:#EEF2FF;
-    --blue-500:#272757;
-    --amber-500:#272757;
+    --blue-500:#191970;
+    --amber-500:#191970;
     --amber-100:#EEF2FF;
     --gold-300:#FCD34D;
     --red-600:#D92D20;
@@ -40,8 +40,8 @@
     --ink-600:#475467;
     --ink-400:#98a2b3;
     --line:#e4e7ec;
-    --bg:#e8ecf2;
-    --card:#ffffff;
+    --bg:#f2f4f8;
+    --card:#f8fafc;
     font-family: 'Segoe UI', system-ui, -apple-system, Roboto, Helvetica, Arial, sans-serif;
   }
   *{box-sizing:border-box;}
@@ -57,6 +57,20 @@
     padding:40px 24px;
   }
 
+  /* REGLA #3: Micro-textura (Ruido Visual SVG) */
+  body::before {
+    content: "";
+    position: fixed;
+    top: 0; left: 0; right: 0; bottom: 0;
+    width: 100vw; height: 100vh;
+    background-image: url('data:image/svg+xml;utf8,<svg viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg"><filter id="n"><feTurbulence type="fractalNoise" baseFrequency="0.8" numOctaves="3" stitchTiles="stitch"/></filter><rect width="100%" height="100%" filter="url(%23n)"/></svg>');
+    mix-blend-mode: overlay;
+    opacity: 0.025;
+    pointer-events: none;
+    z-index: 99999;
+  }
+
+  /* REGLA #2: Sombra de Oclusión Ambiental en Tarjeta Principal */
   .checkout{
     position:relative;
     width:100%;
@@ -65,7 +79,7 @@
     height:min(780px, calc(100vh - 80px));
     background:var(--card);
     border-radius:18px;
-    box-shadow:0 1px 3px rgba(16,24,40,.05), 0 8px 18px rgba(16,24,40,.08), 0 18px 36px rgba(16,24,40,.11);
+    box-shadow:0 12px 48px rgba(0, 0, 0, 0.04), 0 2px 8px rgba(0, 0, 0, 0.02);
     display:grid;
     grid-template-rows: 6px 1fr;
     grid-template-columns: minmax(320px, 38%) 1fr;
@@ -622,8 +636,8 @@
 
   /* ================= Modo oscuro ================= */
   html[data-theme="dark"]{
-    --navy-900:#F4EBDD; --navy-800:#F4EBDD; --teal-500:#3B3B7A; --teal-100:#1E1E45;
-    --blue-500:#3B3B7A; --amber-500:#3B3B7A; --amber-100:#1E1E45; --gold-300:#FCD34D;
+    --navy-900:#F4EBDD; --navy-800:#191970; --teal-500:#191970; --teal-100:#1E1E45;
+    --blue-500:#191970; --amber-500:#191970; --amber-100:#1E1E45; --gold-300:#FCD34D;
     --red-600:#F04438; --ink-900:#F4EBDD; --ink-600:#CBD5E1; --ink-400:#94A3B8;
     --line:#2A333F; --bg:#0E1319; --card:#171E27;
   }
@@ -638,15 +652,17 @@
   html[data-theme="dark"] .agent-code-box,
   html[data-theme="dark"] .amount-fixed,
   html[data-theme="dark"] .saved-card-option,
-  html[data-theme="dark"] .segmented button{background:#1E2732;}
-  html[data-theme="dark"] .segmented button.active{background:var(--navy-800);color:#F5F7FA;}
+  html[data-theme="dark"] .segmented button{background:#1E2732;color:#94A3B8;}
+  html[data-theme="dark"] .segmented button.active{background:#F4EBDD !important;color:#0D0D42 !important;font-weight:700 !important;}
   html[data-theme="dark"] .saved-card-option:hover{border-color:#3A4552;}
   html[data-theme="dark"] .saved-card-logo{background:var(--navy-800);}
   html[data-theme="dark"] input[type=text],
   html[data-theme="dark"] input[type=email],
   html[data-theme="dark"] input[type=tel],
   html[data-theme="dark"] input[type=number],
-  html[data-theme="dark"] select{background:#0F151C;color:var(--ink-900);}
+  html[data-theme="dark"] select{background:#0F151C;color:#F4EBDD;border-color:#2A333F;}
+  html[data-theme="dark"] input::placeholder,
+  html[data-theme="dark"] select::placeholder{color:#808EA3 !important;opacity:1 !important;}
   html[data-theme="dark"] input[readonly]{background:#0B1015;}
   html[data-theme="dark"] .field.invalid input{background:#2A1618;}
   html[data-theme="dark"] .btn-outline{background:transparent;}
@@ -1261,9 +1277,9 @@
 <button class="btn-outline" onclick="fakeDownload(this)" type="button">Descargar comprobante</button>
 <button class="pay-btn" onclick="finalizeLink()" type="button">Aceptar, pago finalizado</button>
 </div>
-<div class="aurapay-footer" style="justify-content:center;border-top:none;padding-top:0;margin-top:16px;">
+<div class="ethospay-footer" style="display:flex;align-items:center;justify-content:center;gap:6px;padding-top:0;margin-top:16px;font-size:11px;color:var(--ink-400);">
 <span>Procesado por</span>
-<span aria-label="AuraPay" class="aurapay-wordmark" role="img"><span class="ap-a">Aura</span><span class="ap-b">Pay</span><span class="ap-dot"></span></span>
+<img class="ethos-logo-full" src="ethos_logo_dark_full.png" alt="EthosPay" style="height:15px;width:auto;vertical-align:middle;">
 </div>
 </div>
 </div>
@@ -1279,9 +1295,9 @@
 <div class="result-actions">
 <button class="pay-btn" onclick="hideResults()" type="button">Volver a intentar</button>
 </div>
-<div class="aurapay-footer" style="justify-content:center;border-top:none;padding-top:0;margin-top:16px;">
+<div class="ethospay-footer" style="display:flex;align-items:center;justify-content:center;gap:6px;padding-top:0;margin-top:16px;font-size:11px;color:var(--ink-400);">
 <span>Procesado por</span>
-<span aria-label="AuraPay" class="aurapay-wordmark" role="img"><span class="ap-a">Aura</span><span class="ap-b">Pay</span><span class="ap-dot"></span></span>
+<img class="ethos-logo-full" src="ethos_logo_dark_full.png" alt="EthosPay" style="height:15px;width:auto;vertical-align:middle;">
 </div>
 </div>
 </div>
@@ -1297,9 +1313,9 @@
 <button class="btn-outline" onclick="hideResults()" type="button">Cerrar</button>
 <button class="pay-btn" onclick="retryPayment()" type="button">Reintentar</button>
 </div>
-<div class="aurapay-footer" style="justify-content:center;border-top:none;padding-top:0;margin-top:16px;">
+<div class="ethospay-footer" style="display:flex;align-items:center;justify-content:center;gap:6px;padding-top:0;margin-top:16px;font-size:11px;color:var(--ink-400);">
 <span>Procesado por</span>
-<span aria-label="AuraPay" class="aurapay-wordmark" role="img"><span class="ap-a">Aura</span><span class="ap-b">Pay</span><span class="ap-dot"></span></span>
+<img class="ethos-logo-full" src="ethos_logo_dark_full.png" alt="EthosPay" style="height:15px;width:auto;vertical-align:middle;">
 </div>
 </div>
 </div>
@@ -1325,9 +1341,9 @@
 <h1 class="paid-title" id="closed-title">Link pagado</h1>
 <p class="paid-sub" id="closed-sub">Este link de pago ya fue utilizado y ya no está disponible.</p>
 <p class="paid-note" id="closed-note">Por seguridad no mostramos los datos de la transacción. Si realizaste este pago, enviamos el comprobante a tu correo electrónico.</p>
-<div class="aurapay-footer" style="justify-content:center;border-top:none;padding-top:0;margin-top:20px;">
+<div class="ethospay-footer" style="display:flex;align-items:center;justify-content:center;gap:6px;padding-top:0;margin-top:20px;font-size:11px;color:var(--ink-400);">
 <span>Procesado por</span>
-<span aria-label="AuraPay" class="aurapay-wordmark" role="img"><span class="ap-a">Aura</span><span class="ap-b">Pay</span><span class="ap-dot"></span></span>
+<img class="ethos-logo-full" src="ethos_logo_dark_full.png" alt="EthosPay" style="height:15px;width:auto;vertical-align:middle;">
 </div>
 <button class="paid-reset" onclick="resetLink()" type="button">Reiniciar demo</button>
 </div>
@@ -1366,7 +1382,7 @@
 </div>
 </main>
 <div style="text-align:center;margin-top:20px;font-size:10.5px;color:var(--ink-400);line-height:1.5;max-width:520px;margin-left:auto;margin-right:auto;">
-  AuraPay no asume responsabilidad por los productos y servicios adquiridos o contratados por el tarjetahabiente en este comercio afiliado.
+  EthosPay no asume responsabilidad por los productos y servicios adquiridos o contratados por el tarjetahabiente en este comercio afiliado.
 </div>
 <div style="text-align:center;margin-top:16px;font-size:11.5px;color:var(--ink-400);">
   Vista previa (solo para revisión) ·
@@ -1468,7 +1484,7 @@
     'Guardar esta tarjeta para pagar con un clic la próxima vez': 'Save this card to pay with one click next time',
     'Cada pago con un clic pedirá un código de verificación por SMS (OTP).': 'Each one-click payment will request an SMS verification code (OTP).',
     'Al guardar tu tarjeta autorizas a': 'By saving your card you authorize',
-    'a almacenarla de forma segura (tokenizada por AuraPay) para procesar los pagos que inicies en el futuro. No se hará ningún cargo sin tu autorización y podrás eliminarla cuando quieras. Consulta los': 'to securely store it (tokenized by AuraPay) to process payments you initiate in the future. No charge will be made without your authorization and you can remove it anytime. See the',
+    'a almacenarla de forma segura (tokenizada por EthosPay) para procesar los pagos que inicies en el futuro. No se hará ningún cargo sin tu autorización y podrás eliminarla cuando quieras. Consulta los': 'to securely store it (tokenized by EthosPay) to process payments you initiate in the future. No charge will be made without your authorization and you can remove it anytime. See the',
     'y la': 'and the',
     'Política de privacidad': 'Privacy Policy',
     'Pagar Q 145.00': 'Pay Q 145.00',
@@ -1542,7 +1558,7 @@
     'Cancelar': 'Cancel',
     'Demo: el código correcto es': 'Demo: the correct code is',
     // Aviso / dev
-    'AuraPay no asume responsabilidad por los productos y servicios adquiridos o contratados por el tarjetahabiente en este comercio afiliado.': 'AuraPay assumes no responsibility for the products and services purchased or contracted by the cardholder at this affiliated merchant.',
+    'EthosPay no asume responsabilidad por los productos y servicios adquiridos o contratados por el tarjetahabiente en este comercio afiliado.': 'EthosPay assumes no responsibility for the products and services purchased or contracted by the cardholder at this affiliated merchant.',
     'Vista previa (solo para revisión) ·': 'Preview (for review only) ·',
     'Ver aprobada': 'View approved',
     'Ver rechazada': 'View declined',
@@ -2782,6 +2798,7 @@
           input:focus, select:focus, textarea:focus { border-color: ${brandColor} !important; box-shadow: 0 0 0 3px ${brandColor}25 !important; }
           .pay-btn:focus-visible, .btn-outline:focus-visible, .method-header:focus-visible, input:focus-visible, select:focus-visible { outline-color: ${brandColor} !important; }
           .segmented button.active { background-color: ${brandColor} !important; color: #ffffff !important; }
+          html[data-theme="dark"] .segmented button.active { background-color: #F4EBDD !important; color: #0D0D42 !important; }
           .auth-links a, .saved-card-change, .otp-resend { color: ${brandColor} !important; }
           .merchant-tag { background-color: ${brandColor}15 !important; color: ${brandColor} !important; border-color: ${brandColor}30 !important; }
           .saved-card-option.selected { border-color: ${brandColor} !important; background-color: ${brandColor}08 !important; }
@@ -2802,7 +2819,7 @@
       const formattedAmtVal = amountVal ? `${symVal} ${parseFloat(amountVal).toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}` : '';
 
       const titleMeta = formattedAmtVal ? `Pago de ${formattedAmtVal} a ${merchantName}` : `Enlace de Pago Oficial · ${merchantName}`;
-      const descMeta = `${conceptName} · Completa tu compra de forma rápida y 100% segura mediante tarjeta o transferencia. Procesado por AuraPay.`;
+      const descMeta = `${conceptName} · Completa tu compra de forma rápida y 100% segura mediante tarjeta o transferencia. Procesado por EthosPay.`;
 
       document.title = `${merchantName} · Pago seguro`;
 

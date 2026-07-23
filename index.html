@@ -37,25 +37,13 @@
         extend: {
           colors: {
             aura: {
-              primary: '#272757',      // Ethos Indigo (#272757)
-              primaryHover: '#1C1C42', // Ethos Dark Indigo
-              emerald: '#D97706',      // Ámbar/Oro (Evitamos verde)
+              primary: '#191970',      // Midnight Blue (#191970) Primary Brand Color
+              primaryHover: '#121252', // Deep Midnight Blue
+              primaryDark: '#0D0D42',  // Darkest Midnight Blue
+              emerald: '#D97706',      // Ámbar/Oro
               emeraldLight: '#FEF3C7',
               emeraldText: '#B45309',
               gold: '#D97706',         // Ámbar
-              goldLight: '#FEF3C7',
-              goldText: '#B45309',
-              yellowAccent: '#FEF08A',
-              yellowAccentBg: '#FEF9C3',
-              yellowAccentText: '#854D0E',
-            },
-            aura: {
-              primary: '#1F2937',
-              primaryHover: '#111827',
-              emerald: '#D97706',
-              emeraldLight: '#FEF3C7',
-              emeraldText: '#B45309',
-              gold: '#D97706',
               goldLight: '#FEF3C7',
               goldText: '#B45309',
               yellowAccent: '#FEF08A',
@@ -101,7 +89,7 @@
 
         <div class="border border-gray-200/80 rounded-lg px-3 py-2 bg-white focus-within:ring-4 focus-within:ring-aura-primary/5 focus-within:border-aura-primary transition-all duration-200">
           <label class="block text-[8px] font-bold text-gray-400 uppercase tracking-widest">Correo Electrónico</label>
-          <input type="email" required id="login-email" placeholder="ej. admin@aurapay.com.gt" class="w-full bg-transparent border-none p-0 text-sm font-normal text-gray-900 focus:ring-0 focus:outline-none mt-1">
+          <input type="email" required id="login-email" placeholder="ej. admin@ethospay.com.gt" class="w-full bg-transparent border-none p-0 text-sm font-normal text-gray-900 focus:ring-0 focus:outline-none mt-1">
         </div>
 
         <div class="border border-gray-200/80 rounded-lg px-3 py-2 bg-white focus-within:ring-4 focus-within:ring-aura-primary/5 focus-within:border-aura-primary transition-all duration-200 relative">
@@ -166,7 +154,7 @@
     <!-- Encrypted Connection Microcopy -->
     <div class="mt-5 flex items-center justify-center gap-1.5 text-gray-450 select-none">
       <span class="w-1.5 h-1.5 rounded-full bg-amber-500 animate-pulse"></span>
-      <span class="text-[9.5px] font-medium tracking-tight text-gray-400">Conexión cifrada AES-256 · Servidores AuraPay activos</span>
+      <span class="text-[9.5px] font-medium tracking-tight text-gray-400">Conexión cifrada AES-256 · Servidores EthosPay activos</span>
     </div>
   </div>
 
@@ -397,7 +385,7 @@
                     <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-aura-emerald opacity-75"></span>
                     <span class="relative inline-flex rounded-full h-2 w-2 bg-aura-emerald"></span>
                   </span>
-                  <span class="font-bold text-[11px] text-gray-800">Red: AuraPay Omnicanal</span>
+                  <span class="font-bold text-[11px] text-gray-800">Red: EthosPay Omnicanal</span>
                 </div>
               </div>
             </div>
@@ -1781,7 +1769,7 @@
   </div>
 
   <!-- ================= NOTIFICATION TOAST ================= -->
-  <div id="toast-notification" class="hidden fixed top-6 right-6 left-6 sm:left-auto sm:w-80 bg-gray-900 text-white rounded-lg px-4 py-3 shadow-xl flex items-center gap-3 z-layer-toast transform -translate-y-8 opacity-0 transition-all duration-200">
+  <div id="toast-notification" class="hidden fixed bottom-6 right-6 left-6 sm:left-auto sm:w-80 bg-gray-900 text-white rounded-lg px-4 py-3 shadow-xl flex items-center gap-3 z-layer-toast transform translate-y-8 opacity-0 transition-all duration-200">
     <div class="w-6 h-6 rounded bg-aura-primary text-white flex items-center justify-center shadow-inner" id="toast-icon">
       <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M4.5 12.75l6 6 9-13.5" /></svg>
     </div>

@@ -3457,13 +3457,13 @@
 
       toast.classList.remove('hidden');
       setTimeout(() => {
-        toast.classList.remove('-translate-y-8', 'opacity-0');
+        toast.classList.remove('translate-y-8', 'opacity-0');
         toast.classList.add('translate-y-0', 'opacity-100');
       }, 50);
 
       setTimeout(() => {
         toast.classList.remove('translate-y-0', 'opacity-100');
-        toast.classList.add('-translate-y-8', 'opacity-0');
+        toast.classList.add('translate-y-8', 'opacity-0');
         setTimeout(() => {
           toast.classList.add('hidden');
         }, 200);
