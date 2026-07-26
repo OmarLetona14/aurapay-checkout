@@ -793,6 +793,21 @@
 </div>
 <div id="checkout-price-breakdown" style="border-top:1px dashed var(--line); margin: 10px 0; padding-top: 8px; display: none;"></div>
 <div class="total"><span>Total</span><span id="checkout-total-price">Q 145.00</span></div>
+
+<div id="checkout-gt-iva-info" style="margin-top: 8px; padding-top: 8px; border-top: 1px dashed var(--line); font-size: 11px; color: var(--ink-500);">
+  <div style="display:flex; justify-content:space-between; margin-bottom: 3px;">
+    <span>Monto Base (sin IVA):</span>
+    <span id="gt-iva-base-val" style="font-family: var(--font-mono); font-weight: 600;">Q 0.00</span>
+  </div>
+  <div style="display:flex; justify-content:space-between; color: var(--navy-900); font-weight: 600;">
+    <span id="gt-iva-label">IVA Guatemala (12% Incluido):</span>
+    <span id="gt-iva-tax-val" style="font-family: var(--font-mono);">Q 0.00</span>
+  </div>
+  <p style="font-size: 9.5px; color: var(--ink-400); margin-top: 4px; line-height: 1.2;" id="gt-iva-legal-notice">
+    Decreto 27-92 del Congreso de la República de Guatemala · Precios con IVA incluido.
+  </p>
+</div>
+
 <div id="cash-benefit-badge" style="display: none; margin-top: 6px; text-align: right;">
 <span style="display: inline-block; background-color: var(--amber-100); color: var(--amber-500); font-size: 9.5px; font-weight: 700; padding: 2.5px 8px; border-radius: 9999px; text-transform: uppercase; letter-spacing: 0.5px;">Beneficio de pago en efectivo aplicado</span>
 </div>
@@ -1960,29 +1975,51 @@
     let ok = true;
     const inputs = panel ? [...panel.querySelectorAll('input[type=text], input[type=email], select')] : [];
 
-    // El correo es opcional en general; solo "Paga con un clic" lo exige
-    // (y lo valida por su cuenta en lookupSavedCard) para poder buscar la tarjeta.
     const nitStep = document.getElementById('nit-step');
     if(nitStep && nitStep.classList.contains('open')){
       const nitInput = document.getElementById('billing-nit');
       if(nitInput) inputs.push(nitInput);
+      const nameInput = document.getElementById('billing-name');
+      if(nameInput) inputs.push(nameInput);
     }
-    
-    const emailInput = document.getElementById('contact-email');
-    if(emailInput) inputs.push(emailInput);
 
     inputs.forEach(inp=>{
       const field = inp.closest('.field');
       if(!field) return;
       if(!inp.value.trim()){
         field.classList.add('invalid');
-        const err = field.querySelector('.err');
-        if(err && inp.id === 'contact-email') err.textContent = 'El correo electr\u00f3nico es obligatorio para procesar tu pago.';
         ok = false;
       } else {
         field.classList.remove('invalid');
       }
     });
+
+    // Optional email validation if typed
+    const emailInput = document.getElementById('contact-email');
+    if (emailInput && emailInput.value.trim()) {
+      const emailField = emailInput.closest('.field');
+      const val = emailInput.value.trim();
+      const isEmailValid = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(val);
+      if (!isEmailValid) {
+        if (emailField) {
+          emailField.classList.add('invalid');
+          const err = emailField.querySelector('.err');
+          if (err) err.textContent = 'Ingresa un correo electrónico válido.';
+        }
+        ok = false;
+      } else if (emailField) {
+        emailField.classList.remove('invalid');
+      }
+    }
+
+    if (!ok) {
+      const bad = document.querySelector('.field.invalid input, .field.invalid select');
+      if (bad) {
+        bad.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        setTimeout(() => bad.focus({ preventScroll: true }), 400);
+      }
+    }
+
     return ok;
   }
 
@@ -2300,7 +2337,6 @@
         }
       }
     }    if(!validatePanel(panel)) {
-      if(!isMobile()){ const bad = document.querySelector('.field.invalid input'); if(bad) { bad.scrollIntoView({behavior: 'smooth', block: 'center'}); setTimeout(()=>bad.focus({preventScroll:true}), 400); } }
       return;
     }
     const original = btn.innerHTML;
@@ -2311,7 +2347,8 @@
       btn.innerHTML = original;
 
       const group = ()=>String(Math.floor(1000 + Math.random() * 9000));
-      document.getElementById('agent-code-value').textContent = group() + ' ' + group() + ' ' + group();
+      const codeVal = group() + ' ' + group() + ' ' + group();
+      document.getElementById('agent-code-value').textContent = codeVal;
 
       const expiry = new Date(Date.now() + 24 * 60 * 60 * 1000);
       const formatted = expiry.toLocaleString('es-GT', {day:'2-digit', month:'2-digit', year:'numeric', hour:'2-digit', minute:'2-digit'});
@@ -2319,6 +2356,27 @@
 
       document.getElementById('agente-generate-step').classList.remove('open');
       document.getElementById('agente-code-step').classList.add('open');
+
+      try {
+        const urlParams = new URLSearchParams(window.location.search);
+        const txId = urlParams.get('id');
+        if (txId) {
+          const stored = localStorage.getItem('aurapay_transactions');
+          if (stored) {
+            const transactions = JSON.parse(stored);
+            const tx = transactions.find(t => t.transaction_id === txId);
+            if (tx) {
+              tx.type = 'Pagos en efectivo';
+              tx.payment_modality = 'Pagos en efectivo';
+              tx.cash_code = codeVal;
+              tx.cash_expiry = formatted;
+              localStorage.setItem('aurapay_transactions', JSON.stringify(transactions));
+              window.dispatchEvent(new Event('storage'));
+            }
+          }
+        }
+      } catch(e) { console.error(e); }
+
       setTimeout(()=>{
         const copyBtn = document.querySelector('#agente-code-step .btn-outline');
         if(copyBtn) copyBtn.focus({preventScroll:true});
@@ -3364,6 +3422,49 @@
           } else {
             breakdownEl.style.display = 'none';
             if (benefitBadge) benefitBadge.style.display = 'none';
+          }
+        }
+
+        // Calculate Guatemalan IVA breakdown (Decreto 27-92 Ley del IVA Guatemala)
+        let felConfig = { regimen: 'PEQUEÑO_CONTRIBUYENTE' };
+        try {
+          const storedConfig = localStorage.getItem('aurapay_fel_config');
+          if (storedConfig) felConfig = JSON.parse(storedConfig);
+        } catch(e){}
+
+        const pRegimen = urlParams.get('tax_regimen') || (felConfig ? felConfig.regimen : 'PEQUEÑO_CONTRIBUYENTE');
+
+        const ivaBaseEl = document.getElementById('gt-iva-base-val');
+        const ivaTaxEl = document.getElementById('gt-iva-tax-val');
+        const ivaLabelEl = document.getElementById('gt-iva-label');
+        const ivaNoticeEl = document.getElementById('gt-iva-legal-notice');
+
+        if (ivaBaseEl && ivaTaxEl) {
+          if (pRegimen === 'REGIMEN_GENERAL') {
+            const baseVal = finalAmount / 1.12;
+            const taxVal = finalAmount - baseVal;
+            ivaBaseEl.textContent = `${sym} ${fmtMoney(baseVal)}`;
+            ivaTaxEl.textContent = `${sym} ${fmtMoney(taxVal)}`;
+            if (ivaLabelEl) ivaLabelEl.textContent = 'IVA Guatemala (12% Incluido):';
+            if (ivaNoticeEl) ivaNoticeEl.textContent = 'Decreto 27-92 · Régimen General 12% IVA (Con derecho a crédito fiscal).';
+          } else if (pRegimen === 'PEQUEÑO_ELECTRONICO') {
+            const taxVal = finalAmount * 0.04;
+            ivaBaseEl.textContent = `${sym} ${fmtMoney(finalAmount)}`;
+            ivaTaxEl.textContent = `${sym} ${fmtMoney(taxVal)}`;
+            if (ivaLabelEl) ivaLabelEl.textContent = 'IVA Guatemala (4% Peq. Elec.):';
+            if (ivaNoticeEl) ivaNoticeEl.textContent = 'Decreto 27-92 · Pequeño Contribuyente Electrónico (4% Tarifa Reducida).';
+          } else if (pRegimen === 'EXENTO') {
+            ivaBaseEl.textContent = `${sym} ${fmtMoney(finalAmount)}`;
+            ivaTaxEl.textContent = `${sym} 0.00`;
+            if (ivaLabelEl) ivaLabelEl.textContent = 'IVA Guatemala (0% Exento):';
+            if (ivaNoticeEl) ivaNoticeEl.textContent = 'Operación exenta del Impuesto al Valor Agregado (Art. 7 Ley del IVA).';
+          } else {
+            // Default Pequeño Contribuyente 5%
+            const taxVal = finalAmount * 0.05;
+            ivaBaseEl.textContent = `${sym} ${fmtMoney(finalAmount)}`;
+            ivaTaxEl.textContent = `${sym} ${fmtMoney(taxVal)}`;
+            if (ivaLabelEl) ivaLabelEl.textContent = 'IVA Guatemala (5% Peq. Contribuyente):';
+            if (ivaNoticeEl) ivaNoticeEl.textContent = 'Decreto 27-92 Art. 47 · Sujeto a impuesto 5% (No genera derecho a crédito fiscal).';
           }
         }
 

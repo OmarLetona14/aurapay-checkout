@@ -72,33 +72,54 @@
 
     <div class="bg-white max-w-sm w-full p-8 rounded-xl border border-gray-250/90 shadow-xl space-y-6 relative transition-all duration-300">
       
-      <!-- Logo EthosPay -->
+      <!-- Logo EthosPay & Passwordless Badge -->
       <div class="flex flex-col items-center text-center space-y-2 select-none">
         <div class="flex items-center gap-1.5 select-none justify-center">
           <img class="ethos-logo-full h-8 w-auto object-contain" src="ethos_logo_dark_full.png" alt="EthosPay">
         </div>
-        <p class="text-[10px] text-gray-400 tracking-wide mt-0.5">Pasarela de Pagos & Soluciones Financieras</p>
+        <div class="flex items-center gap-1 mt-0.5">
+          <span class="bg-emerald-50 text-emerald-700 border border-emerald-200 text-[9px] font-bold px-2.5 py-0.5 rounded-full flex items-center gap-1">
+            <span class="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span> Sistema Passwordless Activo
+          </span>
+        </div>
+      </div>
+
+      <!-- Segmented Auth Mode Selector -->
+      <div class="bg-gray-100/80 p-1 rounded-xl flex text-[11px] font-semibold text-gray-500">
+        <button type="button" onclick="switchLoginAuthMode('passwordless')" id="auth-tab-passwordless" class="flex-1 py-1.5 rounded-lg text-aura-primary font-bold bg-white shadow-2xs transition-all flex items-center justify-center gap-1">
+          <svg class="w-3.5 h-3.5 text-aura-goldText" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M3.75 13.5l10.5-11.25L12 10.5h8.25L9.75 21.75 12 13.5H3.75z" /></svg>
+          <span>Sin Contraseña</span>
+        </button>
+        <button type="button" onclick="switchLoginAuthMode('passkey')" id="auth-tab-passkey" class="flex-1 py-1.5 rounded-lg hover:text-gray-900 transition-all flex items-center justify-center gap-1">
+          <svg class="w-3.5 h-3.5 text-gray-500" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M7.864 4.243A7.5 7.5 0 0119.5 10.5c0 2.92-.556 5.709-1.568 8.268M5.742 6.364A7.465 7.465 0 004.5 10.5a7.464 7.464 0 001.12 3.9M12 10.5a2.25 2.25 0 100-4.5 2.25 2.25 0 000 4.5z" /></svg>
+          <span>Passkey</span>
+        </button>
+        <button type="button" onclick="switchLoginAuthMode('password')" id="auth-tab-password" class="flex-1 py-1.5 rounded-lg hover:text-gray-900 transition-all flex items-center justify-center gap-1">
+          <svg class="w-3.5 h-3.5 text-gray-400" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M16.5 10.5V6.75a4.5 4.5 0 10-9 0v3.75m-.75 11.25h10.5a2.25 2.25 0 002.25-2.25v-6.75a2.25 2.25 0 00-2.25-2.25H6.75a2.25 2.25 0 00-2.25 2.25v6.75a2.25 2.25 0 002.25 2.25z" /></svg>
+          <span>Clave</span>
+        </button>
       </div>
 
       <!-- VIEW 1: CREDENTIALS FORM -->
       <form id="login-credentials-form" onsubmit="handleLoginSubmit(event)" class="space-y-4">
         <div class="text-center pb-1">
-          <h3 class="text-sm font-light text-gray-900 tracking-tight">Acceso Administrativo</h3>
-          <p class="text-[10.5px] text-gray-400 mt-0.5">Ingresa tus credenciales de colaborador autorizadas.</p>
+          <h3 class="text-sm font-bold text-gray-900 tracking-tight" id="login-form-title">Acceso Sin Contraseña (Passwordless)</h3>
+          <p class="text-[10.5px] text-gray-400 mt-0.5" id="login-form-subtitle">Ingresa tu correo para recibir un código de acceso mágico de 1 solo toque.</p>
         </div>
 
         <div class="border border-gray-200/80 rounded-lg px-3 py-2 bg-white focus-within:ring-4 focus-within:ring-aura-primary/5 focus-within:border-aura-primary transition-all duration-200">
-          <label class="block text-[8px] font-bold text-gray-400 uppercase tracking-widest">Correo Electrónico</label>
-          <input type="email" required id="login-email" placeholder="ej. admin@ethospay.com.gt" class="w-full bg-transparent border-none p-0 text-sm font-normal text-gray-900 focus:ring-0 focus:outline-none mt-1">
+          <label class="block text-[8px] font-bold text-gray-400 uppercase tracking-widest">Correo Electrónico de la Cuenta</label>
+          <input type="email" required id="login-email" placeholder="ej. admin@ethospay.com.gt" class="w-full bg-transparent border-none p-0 text-sm font-semibold text-gray-900 focus:ring-0 focus:outline-none mt-1">
         </div>
 
-        <div class="border border-gray-200/80 rounded-lg px-3 py-2 bg-white focus-within:ring-4 focus-within:ring-aura-primary/5 focus-within:border-aura-primary transition-all duration-200 relative">
+        <!-- Password field container (Hidden when in passwordless mode) -->
+        <div id="login-password-container" class="hidden border border-gray-200/80 rounded-lg px-3 py-2 bg-white focus-within:ring-4 focus-within:ring-aura-primary/5 focus-within:border-aura-primary transition-all duration-200 relative">
           <div class="flex justify-between items-center">
-            <label class="block text-[8px] font-bold text-gray-400 uppercase tracking-widest">Contraseña</label>
+            <label class="block text-[8px] font-bold text-gray-400 uppercase tracking-widest">Contraseña Tradicional</label>
             <a href="#" onclick="showToast('Enlace Enviado', 'Se ha enviado un enlace de recuperación.', 'warning')" class="text-[8px] text-aura-primary font-bold hover:underline focus:outline-none tracking-tight">¿Olvidaste la clave?</a>
           </div>
           <div class="flex items-center mt-1">
-            <input type="password" required id="login-password" placeholder="••••••••" class="w-full bg-transparent border-none p-0 text-sm font-mono text-gray-900 focus:ring-0 focus:outline-none">
+            <input type="password" id="login-password" placeholder="••••••••" class="w-full bg-transparent border-none p-0 text-sm font-mono text-gray-900 focus:ring-0 focus:outline-none">
             <button type="button" onclick="togglePasswordVisibility('login-password')" class="text-gray-400 hover:text-gray-650 focus:outline-none pl-2">
               <svg id="eye-icon-login-password" class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M2.036 12.322a1.012 1.012 0 010-.639C3.423 7.51 7.36 4.5 12 4.5c4.638 0 8.573 3.007 9.963 7.178.07.207.07.431 0 .639C20.577 16.49 16.64 19.5 12 19.5c-4.638 0-8.573-3.007-9.963-7.178z" /><circle cx="12" cy="12" r="3" /></svg>
             </button>
@@ -106,17 +127,23 @@
         </div>
 
         <button type="submit" id="btn-login-submit" class="w-full bg-aura-primary hover:bg-aura-primaryHover text-white py-2.5 rounded-md font-semibold text-xs transition-colors shadow-sm flex items-center justify-center gap-1.5 active:scale-98">
-          <span>Continuar</span>
+          <svg class="w-4 h-4 text-aura-gold" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" id="btn-login-icon"><path stroke-linecap="round" stroke-linejoin="round" d="M3.75 13.5l10.5-11.25L12 10.5h8.25L9.75 21.75 12 13.5H3.75z" /></svg>
+          <span id="btn-login-text">Enviar Código Mágico Passwordless</span>
           <div id="login-spinner" class="hidden w-3.5 h-3.5 border-2 border-white/20 border-t-white rounded-full animate-spin"></div>
+        </button>
+
+        <button type="button" onclick="triggerPasskeyBiometricAuth()" class="w-full bg-slate-900 hover:bg-slate-800 text-ivory-soft border border-slate-700 py-2.5 rounded-md font-semibold text-xs transition-all shadow-2xs flex items-center justify-center gap-2">
+          <svg class="w-4 h-4 text-aura-gold" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M7.864 4.243A7.5 7.5 0 0119.5 10.5c0 2.92-.556 5.709-1.568 8.268M5.742 6.364A7.465 7.465 0 004.5 10.5a7.464 7.464 0 001.12 3.9M12 10.5a2.25 2.25 0 100-4.5 2.25 2.25 0 000 4.5z" /></svg>
+          <span>Acceder con Huella / Face ID (Passkey)</span>
         </button>
         
         <!-- Clickable quick login pills -->
-        <div class="text-center pt-4 border-t border-gray-100">
-          <span class="text-[9px] text-gray-400 font-bold uppercase tracking-wider block mb-2">Acceso de prueba rápido</span>
+        <div class="text-center pt-3 border-t border-gray-100">
+          <span class="text-[9px] text-gray-400 font-bold uppercase tracking-wider block mb-2">Acceso Passwordless de prueba</span>
           <div class="flex justify-center gap-1.5">
-            <button type="button" onclick="fillDemoCredentials('admin')" class="px-2.5 py-1 border border-gray-250 hover:border-aura-goldText/30 hover:bg-amber-50/20 text-gray-500 hover:text-aura-goldText rounded-full text-[10px] font-semibold transition-all focus:outline-none active:scale-95">Admin</button>
-            <button type="button" onclick="fillDemoCredentials('cajero')" class="px-2.5 py-1 border border-gray-250 hover:border-aura-goldText/30 hover:bg-amber-50/20 text-gray-500 hover:text-aura-goldText rounded-full text-[10px] font-semibold transition-all focus:outline-none active:scale-95">Cajero</button>
-            <button type="button" onclick="fillDemoCredentials('operativo')" class="px-2.5 py-1 border border-gray-250 hover:border-aura-goldText/30 hover:bg-amber-50/20 text-gray-500 hover:text-aura-goldText rounded-full text-[10px] font-semibold transition-all focus:outline-none active:scale-95">Operativo</button>
+            <button type="button" onclick="fillDemoCredentials('admin')" class="px-2.5 py-1 border border-gray-250 hover:border-aura-goldText/30 hover:bg-amber-50/20 text-gray-600 hover:text-aura-goldText rounded-full text-[10px] font-bold transition-all focus:outline-none active:scale-95">Admin</button>
+            <button type="button" onclick="fillDemoCredentials('cajero')" class="px-2.5 py-1 border border-gray-250 hover:border-aura-goldText/30 hover:bg-amber-50/20 text-gray-600 hover:text-aura-goldText rounded-full text-[10px] font-bold transition-all focus:outline-none active:scale-95">Cajero</button>
+            <button type="button" onclick="fillDemoCredentials('operativo')" class="px-2.5 py-1 border border-gray-250 hover:border-aura-goldText/30 hover:bg-amber-50/20 text-gray-600 hover:text-aura-goldText rounded-full text-[10px] font-bold transition-all focus:outline-none active:scale-95">Operativo</button>
           </div>
         </div>
       </form>
@@ -225,6 +252,13 @@
             <span>Productos</span>
           </a>
 
+          <a href="#" onclick="switchTab('facturacion')" class="flex items-center gap-3 px-3 py-2 text-sm font-medium rounded-md transition-colors text-gray-500 hover:text-gray-900 hover:bg-gray-50" id="menu-facturacion">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M19.5 14.25v-2.625a3.375 3.375 0 00-3.375-3.375h-1.5A1.125 1.125 0 0113.5 7.125v-1.5a3.375 3.375 0 00-3.375-3.375H8.25m0 12.75h7.5m-7.5 3H12M10.5 2.25H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 00-9-9z" />
+            </svg>
+            <span>Facturación FEL (SAT)</span>
+          </a>
+
           <a href="#" onclick="switchTab('informacion')" class="flex items-center gap-3 px-3 py-2 text-sm font-medium rounded-md transition-colors text-gray-500 hover:text-gray-900 hover:bg-gray-50" id="menu-informacion">
             <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24">
               <path stroke-linecap="round" stroke-linejoin="round" d="M13.5 6H5.25A2.25 2.25 0 003 8.25v10.5A2.25 2.25 0 005.25 21h10.5A2.25 2.25 0 0018 18.75V10.5m-10.5 6L21 3m0 0h-5.25M21 3v5.25" />
@@ -259,24 +293,42 @@
         </nav>
       </div>
 
-      <!-- User Active Profile & Logout -->
-      <div class="p-4 border-t border-gray-200 bg-gray-50/50">
-        <div class="flex items-center gap-2.5 px-1">
-          <div class="w-7 h-7 rounded-md bg-aura-primary/10 flex items-center justify-center font-bold text-xs text-aura-primary" id="sidebar-role-avatar">
-            AD
+      <!-- User Active Profile & Logout Card (Redesigned UI/UX) -->
+      <div class="p-3 border-t border-gray-200/80 bg-gray-50/80 space-y-2">
+        
+        <!-- Interactive Profile Card -->
+        <div onclick="openUserModal(currentUser ? currentUser.id : 'usr-1')" class="bg-white border border-gray-200/90 hover:border-aura-primary/40 rounded-xl p-2.5 shadow-2xs transition-all duration-200 cursor-pointer group flex items-center justify-between gap-2.5" title="Haga clic para editar su perfil y contraseña">
+          <div class="flex items-center gap-2.5 min-w-0 flex-1">
+            <!-- Avatar Badge -->
+            <div class="w-9 h-9 rounded-lg bg-slate-900 text-aura-gold font-bold text-xs flex items-center justify-center border border-slate-800 shrink-0 shadow-xs group-hover:scale-105 transition-transform" id="sidebar-role-avatar">
+              AD
+            </div>
+            
+            <!-- User Name & Role Pill -->
+            <div class="min-w-0 flex-1">
+              <p class="text-xs font-bold text-gray-900 truncate group-hover:text-aura-primary transition-colors leading-snug" id="sidebar-role-fullname">Administrador General</p>
+              <div class="flex items-center gap-1 mt-0.5">
+                <span class="bg-amber-50 text-amber-900 text-[9.5px] font-bold px-1.5 py-0.2 rounded border border-amber-200/70 inline-block capitalize truncate" id="sidebar-role-title">Administrador</span>
+              </div>
+            </div>
           </div>
-          <div class="flex-1 min-w-0">
-            <p class="text-xs font-semibold text-gray-900 truncate" id="sidebar-role-fullname">Administrador General</p>
-            <p class="text-[9px] text-gray-400 font-medium capitalize" id="sidebar-role-title">Admin</p>
+
+          <!-- Quick Action Icon -->
+          <div class="w-7 h-7 rounded-lg text-gray-400 group-hover:text-aura-primary group-hover:bg-amber-50 flex items-center justify-center transition-colors shrink-0">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M16.862 4.487l1.687-1.688a1.875 1.875 0 112.652 2.652L10.582 16.07a4.5 4.5 0 01-1.897 1.13L6 18l.8-2.685a4.5 4.5 0 011.13-1.897l8.932-8.931zm0 0L19.5 7.125" />
+            </svg>
           </div>
         </div>
 
-        <button onclick="logout()" class="w-full mt-3 flex items-center justify-center gap-2 px-3 py-1.5 border border-red-200/50 rounded-md text-xs font-semibold text-red-700 bg-red-50/20 hover:bg-red-50 hover:text-red-800 transition-colors focus:outline-none">
-          <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24">
+        <!-- Logout Button -->
+        <button onclick="logout()" class="w-full flex items-center justify-center gap-2 px-3 py-2 rounded-xl text-xs font-semibold text-red-600 bg-red-50/40 border border-red-200/60 hover:bg-red-50 hover:text-red-700 hover:border-red-300 transition-all shadow-2xs focus:outline-none active:scale-98">
+          <svg class="w-3.5 h-3.5 text-red-500" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" d="M15.75 9V5.25A2.25 2.25 0 0013.5 3h-6a2.25 2.25 0 00-2.25 2.25v13.5A2.25 2.25 0 007.5 21h6a2.25 2.25 0 002.25-2.25V15M12 9l-3 3m0 0l3 3m-3-3h12.75" />
           </svg>
           <span>Cerrar Sesión</span>
         </button>
+
       </div>
     </aside>
 
@@ -583,6 +635,163 @@
               </div>
               <div class="px-6 py-3.5 border-t border-gray-200 bg-white text-xs text-gray-500 text-right" id="transactions-report-count">
                 Mostrando 0 transacciones
+              </div>
+            </section>
+          </div>
+
+          <!-- VIEW E: FACTURACIÓN ELECTRÓNICA FEL (SAT GUATEMALA) -->
+          <div id="facturacion-view" class="hidden space-y-6">
+            <!-- Header Info for FEL -->
+            <div class="flex flex-col items-start lg:flex-row lg:justify-between lg:items-center gap-4">
+              <div>
+                <div class="flex items-center gap-2">
+                  <h1 class="text-xl font-bold text-gray-900 tracking-tight">Facturación Electrónica FEL (SAT)</h1>
+                  <span class="bg-blue-50 text-blue-700 text-[10px] font-bold px-2 py-0.5 rounded border border-blue-200">SAT Guatemala</span>
+                  <span class="bg-emerald-50 text-emerald-700 text-[10px] font-bold px-2 py-0.5 rounded border border-emerald-200 flex items-center gap-1">
+                    <span class="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span> FEL Activo
+                  </span>
+                </div>
+                <p class="text-xs text-gray-500 mt-1">Gestión integral de DTEs y Libro de Ventas para Pequeño Contribuyente (Régimen 5% IVA - SAT Guatemala).</p>
+              </div>
+              <div class="flex flex-wrap items-center gap-2 w-full lg:w-auto">
+                <button onclick="openConfigFiscalModal()" class="flex-1 lg:flex-none bg-white hover:bg-gray-50 text-gray-700 border border-gray-250 px-3.5 py-2 rounded-md font-semibold text-xs flex items-center justify-center gap-1.5 transition-colors shadow-2xs">
+                  <svg class="w-4 h-4 text-gray-500" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M10.34 15.84c-.141-.06-.285-.125-.431-.196a9.927 9.927 0 01-1.558-1.012c-.22-.178-.432-.366-.634-.564m0 0l-1.077 1.077a1.5 1.5 0 01-2.121 0l-.707-.707a1.5 1.5 0 010-2.121l1.077-1.077m2.828 2.828c.2-.202.387-.414.564-.634m0 0a9.928 9.928 0 011.012-1.558c.071-.146.136-.29.196-.431M15.84 10.34c.06-.141.125-.285.196-.431a9.927 9.927 0 001.012-1.558c.178-.22.366-.432.564-.634m0 0l1.077-1.077a1.5 1.5 0 000-2.121l-.707-.707a1.5 1.5 0 00-2.121 0l-1.077 1.077m-2.828-2.828a9.928 9.928 0 00-1.558 1.012c-.146.071-.29.136-.431.196" /><circle cx="12" cy="12" r="3" /></svg>
+                  <span>Datos Fiscales SAT</span>
+                </button>
+                <button onclick="exportLibroVentasExcel()" class="flex-1 lg:flex-none bg-white hover:bg-emerald-50 text-emerald-700 border border-emerald-200 px-3.5 py-2 rounded-md font-semibold text-xs flex items-center justify-center gap-1.5 transition-colors shadow-2xs">
+                  <svg class="w-4 h-4 text-emerald-600" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5M16.5 12L12 16.5m0 0L7.5 12m4.5 4.5V3" /></svg>
+                  <span>Libro de Ventas (SAT-2046)</span>
+                </button>
+                <button onclick="openEmitirFacturaModal()" class="w-full lg:w-auto bg-aura-primary hover:bg-aura-primaryHover text-white px-4 py-2 rounded-md font-semibold text-xs flex items-center justify-center gap-1.5 transition-colors shadow-sm active:scale-98">
+                  <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15" /></svg>
+                  <span>Emitir Factura FEL</span>
+                </button>
+              </div>
+            </div>
+
+            <!-- Summary Cards for Pequeño Contribuyente SAT -->
+            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+              <!-- Card 1: Ventas del Mes -->
+              <div class="bg-white border border-gray-200 rounded-xl p-5 shadow-ao-card flex flex-col justify-between">
+                <div class="flex justify-between items-start">
+                  <span class="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Facturación del Mes</span>
+                  <span class="bg-indigo-50 text-indigo-700 p-1.5 rounded-lg">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 6v12m-3-6h6" /></svg>
+                  </span>
+                </div>
+                <div class="mt-3">
+                  <div class="text-2xl font-bold text-gray-900 font-mono tracking-tight" id="fel-kpi-total-month">Q 0.00</div>
+                  <p class="text-[10px] text-gray-400 mt-1">Acumulado ventas facturadas este mes</p>
+                </div>
+              </div>
+
+              <!-- Card 2: 5% Impuesto SAT Estimado -->
+              <div class="bg-white border border-gray-200 rounded-xl p-5 shadow-ao-card flex flex-col justify-between">
+                <div class="flex justify-between items-start">
+                  <span class="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Impuesto SAT 5%</span>
+                  <span class="bg-amber-50 text-amber-700 p-1.5 rounded-lg">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M9 14.25l6-6m0 0h-3.75m3.75 0V12m-9 3h.008v.008H6.75V15zm0 3h.008v.008H6.75V18z" /></svg>
+                  </span>
+                </div>
+                <div class="mt-3">
+                  <div class="text-2xl font-bold text-aura-goldText font-mono tracking-tight" id="fel-kpi-tax-month">Q 0.00</div>
+                  <p class="text-[10px] text-gray-400 mt-1">Declaraguate 5% tarifa Pequeño Contribuyente</p>
+                </div>
+              </div>
+
+              <!-- Card 3: Total DTEs Emitidos -->
+              <div class="bg-white border border-gray-200 rounded-xl p-5 shadow-ao-card flex flex-col justify-between">
+                <div class="flex justify-between items-start">
+                  <span class="text-[10px] font-bold text-gray-400 uppercase tracking-widest">DTEs Certificados</span>
+                  <span class="bg-emerald-50 text-emerald-700 p-1.5 rounded-lg">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+                  </span>
+                </div>
+                <div class="mt-3">
+                  <div class="text-2xl font-bold text-gray-900 font-mono tracking-tight" id="fel-kpi-dte-count">0</div>
+                  <p class="text-[10px] text-gray-400 mt-1">Facturas válidas autorizadas ante la SAT</p>
+                </div>
+              </div>
+
+              <!-- Card 4: Tope Anual Pequeño Contribuyente -->
+              <div class="bg-white border border-gray-200 rounded-xl p-5 shadow-ao-card flex flex-col justify-between">
+                <div class="flex justify-between items-start">
+                  <span class="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Tope Legal SAT (Q150k)</span>
+                  <span class="bg-blue-50 text-blue-700 p-1.5 rounded-lg">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M3 13.125C3 12.504 3.504 12 4.125 12h2.25c.621 0 1.125.504 1.125 1.125v6.75C7.5 20.496 6.996 21 6.375 21h-2.25A2.25 2.25 0 013 18.75v-5.625zM16.5 6.375c0-.621.504-1.125 1.125-1.125h2.25C20.496 5.25 21 5.754 21 6.375v12.375c0 .621-.504 1.125-1.125 1.125h-2.25a2.25 2.25 0 01-2.25-1.125V6.375z" /></svg>
+                  </span>
+                </div>
+                <div class="mt-2">
+                  <div class="flex justify-between text-xs font-bold text-gray-900 font-mono">
+                    <span id="fel-kpi-annual-total">Q 0.00</span>
+                    <span class="text-gray-400 text-[10px]">Límite: Q150k/año</span>
+                  </div>
+                  <div class="w-full bg-gray-100 rounded-full h-2 mt-1.5 overflow-hidden">
+                    <div id="fel-kpi-annual-bar" class="bg-aura-primary h-2 rounded-full transition-all duration-500" style="width: 0%;"></div>
+                  </div>
+                  <p class="text-[9.5px] text-gray-400 mt-1" id="fel-kpi-annual-text">0% del tope de Pequeño Contribuyente</p>
+                </div>
+              </div>
+            </div>
+
+            <!-- SAT Merchant Tax Config Summary Bar -->
+            <div class="bg-slate-900 text-white rounded-xl p-4 shadow-sm flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+              <div class="flex items-center gap-3">
+                <div class="w-10 h-10 rounded-lg bg-white/10 border border-white/15 flex items-center justify-center text-aura-gold shrink-0">
+                  <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M19.5 14.25v-2.625a3.375 3.375 0 00-3.375-3.375h-1.5A1.125 1.125 0 0113.5 7.125v-1.5a3.375 3.375 0 00-3.375-3.375H8.25m0 12.75h7.5m-7.5 3H12M10.5 2.25H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 00-9-9z" /></svg>
+                </div>
+                <div>
+                  <div class="flex items-center gap-2">
+                    <span class="font-bold text-sm text-ivory-soft" id="fel-config-display-name">Café Don Arturo, S.A.</span>
+                    <span class="bg-amber-400/20 text-amber-300 text-[9px] font-bold px-2 py-0.5 rounded border border-amber-400/30" id="fel-config-display-regimen">Pequeño Contribuyente (5%)</span>
+                  </div>
+                  <p class="text-xs text-gray-300 mt-0.5 font-mono" id="fel-config-display-nit">NIT: 8492019-3 · Certificador: SAT INFILE, S.A. · Serie: FEL-A1</p>
+                </div>
+              </div>
+              <button onclick="openConfigFiscalModal()" class="text-xs bg-white/10 hover:bg-white/20 text-white font-semibold px-3 py-1.5 rounded-lg border border-white/20 transition-colors shrink-0">
+                Editar Datos Fiscales
+              </button>
+            </div>
+
+            <!-- Invoices FEL List Section -->
+            <section class="bg-white border border-gray-200 rounded-xl shadow-sm overflow-hidden">
+              <!-- Table Toolbar -->
+              <div class="p-4 border-b border-gray-200 flex flex-col sm:flex-row justify-between items-center gap-3 bg-gray-50/50">
+                <div class="relative w-full sm:w-72">
+                  <svg class="w-4 h-4 absolute left-3 top-2.5 text-gray-400" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8" /><path d="M21 21l-4.35-4.35" /></svg>
+                  <input type="text" id="fel-search-input" oninput="renderFelInvoicesTable()" placeholder="Buscar por NIT, DTE o Cliente..." class="w-full pl-9 pr-3 py-1.5 bg-white border border-gray-250 rounded-md text-xs text-gray-900 focus:ring-1 focus:ring-aura-primary focus:border-aura-primary focus:outline-none">
+                </div>
+                <div class="flex items-center gap-2 w-full sm:w-auto">
+                  <select id="fel-status-filter" onchange="renderFelInvoicesTable()" class="bg-white border border-gray-250 rounded-md px-3 py-1.5 text-xs font-semibold text-gray-700 focus:outline-none cursor-pointer">
+                    <option value="all">Todos los Estados</option>
+                    <option value="CERTIFIED">Certificadas</option>
+                    <option value="CANCELLED">Anuladas</option>
+                  </select>
+                </div>
+              </div>
+
+              <!-- DTEs Table -->
+              <div class="overflow-x-auto">
+                <table class="w-full text-left text-sm text-gray-550 min-w-[750px]">
+                  <thead class="bg-gray-50/50 border-b border-gray-200 text-xs text-gray-400 font-semibold uppercase tracking-wider">
+                    <tr>
+                      <th scope="col" class="px-6 py-3 whitespace-nowrap">Serie / No. DTE</th>
+                      <th scope="col" class="px-6 py-3 whitespace-nowrap">UUID FEL (SAT)</th>
+                      <th scope="col" class="px-6 py-3 whitespace-nowrap">Fecha / Hora</th>
+                      <th scope="col" class="px-6 py-3 whitespace-nowrap">Receptor / NIT</th>
+                      <th scope="col" class="px-6 py-3 text-right whitespace-nowrap">Monto Total</th>
+                      <th scope="col" class="px-6 py-3 text-right whitespace-nowrap">5% IVA SAT</th>
+                      <th scope="col" class="px-6 py-3 text-center whitespace-nowrap">Estado</th>
+                      <th scope="col" class="px-6 py-3 text-right whitespace-nowrap">Acciones</th>
+                    </tr>
+                  </thead>
+                  <tbody class="divide-y divide-gray-100 text-gray-700" id="fel-table-body">
+                    <!-- Javascript Populated -->
+                  </tbody>
+                </table>
+              </div>
+              <div class="px-6 py-3.5 border-t border-gray-200 bg-white text-xs text-gray-500 text-right" id="fel-table-count">
+                Mostrando 0 facturas
               </div>
             </section>
           </div>
@@ -1418,6 +1627,43 @@
           </div>
         </div>
 
+        <!-- Card de Desglose Fiscal IVA y Retenciones SAT Guatemala -->
+        <div id="product-tax-breakdown-card" class="bg-slate-900 text-white rounded-xl p-3.5 space-y-2 text-xs shadow-sm">
+          <div class="flex items-center justify-between border-b border-white/10 pb-2">
+            <div class="flex items-center gap-1.5">
+              <span class="bg-amber-400/20 text-amber-300 text-[9px] font-bold px-2 py-0.5 rounded border border-amber-400/30">SAT Guatemala</span>
+              <span class="font-bold text-ivory-soft text-[11px]" id="product-tax-regimen-title">Pequeño Contribuyente (5% IVA)</span>
+            </div>
+            <span class="text-[9.5px] text-amber-300 font-mono font-bold" id="product-tax-rate-badge">5% IVA Fijo</span>
+          </div>
+
+          <div class="space-y-1.5 font-mono text-[11px]">
+            <div class="flex justify-between text-gray-300">
+              <span>Precio de Venta al Público:</span>
+              <span class="font-bold text-white" id="product-tax-sale-price">Q 0.00</span>
+            </div>
+            <div class="flex justify-between text-amber-300">
+              <span id="product-tax-total-iva-label">Monto IVA Total (5%):</span>
+              <span class="font-bold" id="product-tax-total-iva">Q 0.00</span>
+            </div>
+            <div class="flex justify-between text-emerald-400 border-t border-white/10 pt-1">
+              <span>(-) Retención Plataforma EthosPay (5%):</span>
+              <span class="font-bold" id="product-tax-platform-retention">Q 0.00</span>
+            </div>
+            <div class="flex justify-between text-gray-200 font-bold border-t border-white/10 pt-1 text-xs">
+              <span>(=) Remanente IVA a Pagar por el Comercio:</span>
+              <span class="text-aura-gold" id="product-tax-merchant-due">Q 0.00</span>
+            </div>
+          </div>
+
+          <div class="p-2 bg-white/5 border border-white/10 rounded-lg text-[10px] text-gray-300 leading-tight mt-1 flex items-start gap-1.5">
+            <svg class="w-3.5 h-3.5 text-emerald-400 shrink-0 mt-0.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+            <span id="product-tax-helper-text">
+              La plataforma retendrá automáticamente el 5% de retención del impuesto por cada transacción realizada. La constancia de retención SAT se genera de forma automática.
+            </span>
+          </div>
+        </div>
+
         <div class="border border-gray-200 rounded-lg px-3 py-2 bg-white focus-within:ring-1 focus-within:ring-aura-primary focus-within:border-aura-primary transition-all">
           <label class="block text-[9px] font-bold text-gray-400 uppercase tracking-widest">Descripción</label>
           <textarea id="product-desc" rows="2" placeholder="Detalles de este artículo..." class="w-full bg-transparent border-none p-0 text-sm font-medium text-gray-900 focus:ring-0 focus:outline-none mt-1 resize-none"></textarea>
@@ -1487,6 +1733,275 @@
     </div>
   </div>
 
+  <!-- ================= MODAL: EMITIR FACTURA FEL ================= -->
+  <div id="modal-fel-emitir-backdrop" class="hidden fixed inset-0 bg-gray-900/30 backdrop-blur-xs z-layer-backdrop overflow-y-auto p-4 md:py-12 flex justify-center items-start opacity-0 modal-backdrop-transition">
+    <div class="bg-white w-full h-full lg:h-auto lg:max-w-md rounded-none lg:rounded-xl p-6 shadow-xl border border-gray-200 transform scale-95 transition-transform duration-300 flex flex-col space-y-6 mx-0 lg:mx-4 relative overflow-y-auto" id="fel-emitir-modal-content" onclick="event.stopPropagation()">
+      
+      <button onclick="closeEmitirFacturaModal()" class="hidden lg:block absolute top-4 right-4 text-gray-400 hover:text-gray-900 transition-colors focus:outline-none">
+        <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" /></svg>
+      </button>
+
+      <div class="flex-shrink-0">
+        <h3 class="text-sm font-bold text-gray-900">Emitir Factura FEL (SAT)</h3>
+        <p class="text-xs text-gray-500 mt-1">Genera y certifica un Documento Tributario Electrónico para Pequeño Contribuyente.</p>
+      </div>
+
+      <form id="fel-emitir-form" onsubmit="handleEmitirFacturaSubmit(event)" class="space-y-4 flex-1 lg:flex-none">
+        
+        <div class="border border-gray-200 rounded-lg px-3 py-2 bg-white focus-within:ring-1 focus-within:ring-aura-primary focus-within:border-aura-primary transition-all">
+          <label class="block text-[9px] font-bold text-gray-400 uppercase tracking-widest">Asociar a Transacción EthosPay (Opcional)</label>
+          <select id="fel-emitir-tx" onchange="onFelTxSelectChange(this.value)" class="w-full bg-transparent border-none p-0 text-xs font-semibold text-gray-800 focus:ring-0 focus:outline-none cursor-pointer mt-1">
+            <option value="">-- Emisión Directa (Sin Transacción previa) --</option>
+          </select>
+        </div>
+
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          <div class="border border-gray-200 rounded-lg px-3 py-2 bg-white focus-within:ring-1 focus-within:ring-aura-primary focus-within:border-aura-primary transition-all">
+            <label class="block text-[9px] font-bold text-gray-400 uppercase tracking-widest">NIT Comprador / C/F</label>
+            <input type="text" id="fel-emitir-nit" required placeholder="ej. 1234567-8 o CF" class="w-full bg-transparent border-none p-0 text-xs font-semibold text-gray-900 focus:ring-0 focus:outline-none mt-1 uppercase" value="C/F">
+          </div>
+
+          <div class="border border-gray-200 rounded-lg px-3 py-2 bg-white focus-within:ring-1 focus-within:ring-aura-primary focus-within:border-aura-primary transition-all">
+            <label class="block text-[9px] font-bold text-gray-400 uppercase tracking-widest">Monto a Facturar (Q)</label>
+            <input type="number" step="0.01" min="0.01" id="fel-emitir-amount" required placeholder="0.00" class="w-full bg-transparent border-none p-0 text-xs font-mono font-bold text-gray-900 focus:ring-0 focus:outline-none mt-1">
+          </div>
+        </div>
+
+        <div class="border border-gray-200 rounded-lg px-3 py-2 bg-white focus-within:ring-1 focus-within:ring-aura-primary focus-within:border-aura-primary transition-all">
+          <label class="block text-[9px] font-bold text-gray-400 uppercase tracking-widest">Nombre / Razón Social del Receptor</label>
+          <input type="text" id="fel-emitir-name" required placeholder="ej. Consumidor Final / Juan Pérez" class="w-full bg-transparent border-none p-0 text-xs font-semibold text-gray-900 focus:ring-0 focus:outline-none mt-1" value="Consumidor Final">
+        </div>
+
+        <div class="border border-gray-200 rounded-lg px-3 py-2 bg-white focus-within:ring-1 focus-within:ring-aura-primary focus-within:border-aura-primary transition-all">
+          <label class="block text-[9px] font-bold text-gray-400 uppercase tracking-widest">Dirección Fiscal Receptor</label>
+          <input type="text" id="fel-emitir-address" placeholder="ej. Ciudad de Guatemala" class="w-full bg-transparent border-none p-0 text-xs text-gray-800 focus:ring-0 focus:outline-none mt-1" value="Ciudad de Guatemala">
+        </div>
+
+        <div class="border border-gray-200 rounded-lg px-3 py-2 bg-white focus-within:ring-1 focus-within:ring-aura-primary focus-within:border-aura-primary transition-all">
+          <label class="block text-[9px] font-bold text-gray-400 uppercase tracking-widest">Descripción del Bien o Servicio</label>
+          <input type="text" id="fel-emitir-description" required placeholder="ej. Consumo de café especial y repostería gourmet" class="w-full bg-transparent border-none p-0 text-xs text-gray-900 focus:ring-0 focus:outline-none mt-1">
+        </div>
+
+        <div class="p-3 bg-amber-50/70 border border-amber-200/70 rounded-lg text-[11px] text-amber-900 space-y-1">
+          <div class="font-bold flex items-center gap-1.5">
+            <svg class="w-3.5 h-3.5 text-amber-700" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 9v3.75m9-.75a9 9 0 11-18 0 9 9 0 0118 0zm-9 3.75h.008v.008H12v-.008z" /></svg>
+            <span>Régimen Pequeño Contribuyente (SAT)</span>
+          </div>
+          <p class="text-amber-800/90 leading-tight">Impuesto IVA 5% calculado automáticamente. Ley del IVA: "No genera derecho a crédito fiscal".</p>
+        </div>
+
+        <div class="pt-2 flex justify-end gap-2 text-xs">
+          <button type="button" onclick="closeEmitirFacturaModal()" class="w-full sm:w-auto px-4 py-2.5 border border-gray-200 rounded-md text-gray-500 font-semibold hover:bg-gray-50 transition-colors">Cancelar</button>
+          <button type="submit" class="w-full sm:w-auto px-5 py-2.5 bg-aura-primary hover:bg-aura-primaryHover text-white rounded-md font-semibold transition-colors shadow-sm flex items-center justify-center gap-1.5">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+            <span>Certificar y Emitir DTE</span>
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- ================= MODAL: CONFIGURACIÓN DATOS FISCALES SAT ================= -->
+  <div id="modal-fel-config-backdrop" class="hidden fixed inset-0 bg-gray-900/30 backdrop-blur-xs z-layer-backdrop overflow-y-auto p-4 md:py-12 flex justify-center items-start opacity-0 modal-backdrop-transition">
+    <div class="bg-white w-full h-full lg:h-auto lg:max-w-md rounded-none lg:rounded-xl p-6 shadow-xl border border-gray-200 transform scale-95 transition-transform duration-300 flex flex-col space-y-6 mx-0 lg:mx-4 relative overflow-y-auto" id="fel-config-modal-content" onclick="event.stopPropagation()">
+      
+      <button onclick="closeConfigFiscalModal()" class="hidden lg:block absolute top-4 right-4 text-gray-400 hover:text-gray-900 transition-colors focus:outline-none">
+        <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" /></svg>
+      </button>
+
+      <div class="flex-shrink-0">
+        <h3 class="text-sm font-bold text-gray-900">Datos Fiscales y Certificador FEL</h3>
+        <p class="text-xs text-gray-500 mt-1">Configuración del NIT emisor ante la Superintendencia de Administración Tributaria (SAT).</p>
+      </div>
+
+      <form id="fel-config-form" onsubmit="handleConfigFiscalSubmit(event)" class="space-y-4 flex-1 lg:flex-none">
+        
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          <div class="border border-gray-200 rounded-lg px-3 py-2 bg-white focus-within:ring-1 focus-within:ring-aura-primary focus-within:border-aura-primary transition-all">
+            <label class="block text-[9px] font-bold text-gray-400 uppercase tracking-widest">NIT Emisor SAT</label>
+            <input type="text" id="fel-config-nit" required placeholder="ej. 8492019-3" class="w-full bg-transparent border-none p-0 text-xs font-semibold text-gray-900 focus:ring-0 focus:outline-none mt-1">
+          </div>
+
+          <div class="border border-gray-200 rounded-lg px-3 py-2 bg-white focus-within:ring-1 focus-within:ring-aura-primary focus-within:border-aura-primary transition-all">
+            <label class="block text-[9px] font-bold text-gray-400 uppercase tracking-widest">Serie DTE Asignada</label>
+            <input type="text" id="fel-config-serie" required placeholder="ej. FEL-A1" class="w-full bg-transparent border-none p-0 text-xs font-mono font-bold text-gray-900 focus:ring-0 focus:outline-none mt-1">
+          </div>
+        </div>
+
+        <div class="border border-gray-200 rounded-lg px-3 py-2 bg-white focus-within:ring-1 focus-within:ring-aura-primary focus-within:border-aura-primary transition-all">
+          <label class="block text-[9px] font-bold text-gray-400 uppercase tracking-widest">Nombre o Razón Social</label>
+          <input type="text" id="fel-config-name" required placeholder="ej. Café Don Arturo, S.A." class="w-full bg-transparent border-none p-0 text-xs font-semibold text-gray-900 focus:ring-0 focus:outline-none mt-1">
+        </div>
+
+        <div class="border border-gray-200 rounded-lg px-3 py-2 bg-white focus-within:ring-1 focus-within:ring-aura-primary focus-within:border-aura-primary transition-all">
+          <label class="block text-[9px] font-bold text-gray-400 uppercase tracking-widest">Nombre Comercial</label>
+          <input type="text" id="fel-config-trade" required placeholder="ej. Café Don Arturo Especialidades" class="w-full bg-transparent border-none p-0 text-xs text-gray-900 focus:ring-0 focus:outline-none mt-1">
+        </div>
+
+        <div class="border border-gray-200 rounded-lg px-3 py-2 bg-white focus-within:ring-1 focus-within:ring-aura-primary focus-within:border-aura-primary transition-all">
+          <label class="block text-[9px] font-bold text-gray-400 uppercase tracking-widest">Dirección Fiscal Registrada en SAT</label>
+          <input type="text" id="fel-config-address" required placeholder="ej. 5ta Avenida 12-34 Zona 10, Guatemala" class="w-full bg-transparent border-none p-0 text-xs text-gray-900 focus:ring-0 focus:outline-none mt-1">
+        </div>
+
+        <div class="border border-gray-200 rounded-lg px-3 py-2 bg-white focus-within:ring-1 focus-within:ring-aura-primary focus-within:border-aura-primary transition-all">
+          <label class="block text-[9px] font-bold text-gray-400 uppercase tracking-widest">Régimen Fiscal SAT</label>
+          <select id="fel-config-regimen" class="w-full bg-transparent border-none p-0 text-xs font-semibold text-gray-800 focus:ring-0 focus:outline-none cursor-pointer mt-1">
+            <option value="PEQUEÑO_CONTRIBUYENTE">Pequeño Contribuyente (5% Impuesto Fijo)</option>
+            <option value="PEQUEÑO_ELECTRONICO">Pequeño Contribuyente Electrónico (4% Tarifa Reducida)</option>
+            <option value="REGIMEN_GENERAL">Régimen General (12% IVA)</option>
+          </select>
+        </div>
+
+        <div class="border border-gray-200 rounded-lg px-3 py-2 bg-white focus-within:ring-1 focus-within:ring-aura-primary focus-within:border-aura-primary transition-all">
+          <label class="block text-[9px] font-bold text-gray-400 uppercase tracking-widest">Certificador FEL Autorizado</label>
+          <select id="fel-config-certifier" class="w-full bg-transparent border-none p-0 text-xs font-semibold text-gray-800 focus:ring-0 focus:outline-none cursor-pointer mt-1">
+            <option value="SAT INFILE, S.A.">INFILE, S.A. (Certificador Oficial SAT)</option>
+            <option value="DIGIFACT GUATEMALA">DIGIFACT Servicios Tributarios</option>
+            <option value="GUATEFACTURAS, S.A.">GUATEFACTURAS, S.A.</option>
+            <option value="SAT DIRECTO">SAT FEL Directo (Portal SAT)</option>
+          </select>
+        </div>
+
+        <div class="pt-2 flex justify-end gap-2 text-xs">
+          <button type="button" onclick="closeConfigFiscalModal()" class="w-full sm:w-auto px-4 py-2.5 border border-gray-200 rounded-md text-gray-500 font-semibold hover:bg-gray-50 transition-colors">Cancelar</button>
+          <button type="submit" class="w-full sm:w-auto px-4 py-2.5 bg-aura-primary hover:bg-aura-primaryHover text-white rounded-md font-semibold transition-colors shadow-sm">Guardar Datos Fiscales</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- ================= MODAL: VISOR DE DOCUMENTO PDF FEL SAT ================= -->
+  <div id="modal-fel-pdf-backdrop" class="hidden fixed inset-0 bg-gray-900/40 backdrop-blur-xs z-layer-backdrop overflow-y-auto p-4 md:py-8 flex justify-center items-start opacity-0 modal-backdrop-transition">
+    <div class="bg-white w-full max-w-2xl rounded-xl p-6 md:p-8 shadow-2xl border border-gray-200 transform scale-95 transition-transform duration-300 relative my-auto" id="fel-pdf-modal-content" onclick="event.stopPropagation()">
+      
+      <button onclick="closeFelPdfModal()" class="absolute top-4 right-4 text-gray-400 hover:text-gray-900 transition-colors focus:outline-none print:hidden">
+        <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" /></svg>
+      </button>
+
+      <!-- Printable DTE Body -->
+      <div id="printable-fel-document" class="space-y-6 text-xs text-gray-800">
+        <!-- Header -->
+        <div class="border-b border-gray-200 pb-4 flex flex-col sm:flex-row justify-between items-start gap-4">
+          <div>
+            <span class="text-[9px] font-bold text-blue-700 bg-blue-50 border border-blue-200 px-2 py-0.5 rounded uppercase tracking-wider">DOCUMENTO TRIBUTARIO ELECTRÓNICO</span>
+            <h2 class="text-base font-bold text-gray-900 mt-1" id="pdf-emisor-name">Café Don Arturo, S.A.</h2>
+            <p class="text-xs text-gray-600 font-semibold" id="pdf-emisor-trade">Café Don Arturo Especialidades</p>
+            <p class="text-[11px] text-gray-500 mt-0.5" id="pdf-emisor-address">5ta Avenida 12-34 Zona 10, Ciudad de Guatemala</p>
+            <p class="text-[11px] font-mono text-gray-700 font-bold mt-1" id="pdf-emisor-nit">NIT Emisor: 8492019-3</p>
+          </div>
+          <div class="text-right sm:text-right bg-gray-50 p-3 rounded-lg border border-gray-200 w-full sm:w-auto font-mono">
+            <span class="text-[10px] font-bold text-gray-400 uppercase tracking-widest block">FACTURA FEL</span>
+            <p class="text-sm font-bold text-gray-900 mt-0.5" id="pdf-dte-number">Serie FEL-A1 No. 10492</p>
+            <span class="text-[9px] bg-emerald-100 text-emerald-800 font-bold px-1.5 py-0.5 rounded mt-1 inline-block" id="pdf-dte-status">CERTIFICADA</span>
+          </div>
+        </div>
+
+        <!-- Authorization metadata box -->
+        <div class="bg-slate-50 border border-slate-200 rounded-lg p-3 space-y-1 font-mono text-[10.5px]">
+          <div class="flex justify-between">
+            <span class="text-gray-500">NÚMERO DE AUTORIZACIÓN (UUID):</span>
+            <span class="font-bold text-gray-900" id="pdf-uuid">A192B83C-492A-4091-8931-102938475610</span>
+          </div>
+          <div class="flex justify-between">
+            <span class="text-gray-500">FECHA Y HORA DE CERTIFICACIÓN:</span>
+            <span class="font-bold text-gray-800" id="pdf-auth-date">2026-07-25 20:40:00</span>
+          </div>
+          <div class="flex justify-between">
+            <span class="text-gray-500">CERTIFICADOR SAT:</span>
+            <span class="font-bold text-gray-800" id="pdf-certifier">INFILE, S.A. (NIT: 1254890-1)</span>
+          </div>
+        </div>
+
+        <!-- Receiver Data -->
+        <div class="border border-gray-200 rounded-lg p-3 bg-white space-y-1 text-xs">
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
+            <div>
+              <span class="text-[10px] text-gray-400 font-bold uppercase">NIT del Comprador:</span>
+              <p class="font-bold text-gray-900 font-mono" id="pdf-receiver-nit">C/F</p>
+            </div>
+            <div>
+              <span class="text-[10px] text-gray-400 font-bold uppercase">Nombre del Comprador:</span>
+              <p class="font-bold text-gray-900" id="pdf-receiver-name">Consumidor Final</p>
+            </div>
+          </div>
+          <div class="pt-1 border-t border-gray-100">
+            <span class="text-[10px] text-gray-400 font-bold uppercase">Dirección:</span>
+            <p class="text-gray-700" id="pdf-receiver-address">Ciudad de Guatemala</p>
+          </div>
+        </div>
+
+        <!-- Items Table -->
+        <div class="border border-gray-200 rounded-lg overflow-hidden">
+          <table class="w-full text-left text-xs">
+            <thead class="bg-gray-50 border-b border-gray-200 font-semibold text-gray-500 uppercase">
+              <tr>
+                <th class="px-3 py-2">Descripción</th>
+                <th class="px-3 py-2 text-right">Cant.</th>
+                <th class="px-3 py-2 text-right">Precio Unit.</th>
+                <th class="px-3 py-2 text-right">Total (Q)</th>
+              </tr>
+            </thead>
+            <tbody class="divide-y divide-gray-100 text-gray-800" id="pdf-items-body">
+              <tr>
+                <td class="px-3 py-2 font-medium">Consumo de productos/servicios</td>
+                <td class="px-3 py-2 text-right">1</td>
+                <td class="px-3 py-2 text-right font-mono">Q 150.00</td>
+                <td class="px-3 py-2 text-right font-bold font-mono">Q 150.00</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <!-- Totals & Legal Notice -->
+        <div class="flex flex-col sm:flex-row justify-between items-end gap-4 pt-2">
+          <div class="flex items-center gap-3">
+            <div class="w-20 h-20 bg-gray-100 border border-gray-300 rounded p-1 flex items-center justify-center text-gray-400">
+              <svg class="w-full h-full" viewBox="0 0 100 100" fill="currentColor">
+                <rect width="30" height="30" x="5" y="5"/>
+                <rect width="30" height="30" x="65" y="5"/>
+                <rect width="30" height="30" x="5" y="65"/>
+                <rect width="10" height="10" x="45" y="45"/>
+                <rect width="15" height="15" x="65" y="65"/>
+              </svg>
+            </div>
+            <div class="text-[9.5px] text-gray-500 max-w-[280px] leading-tight space-y-1">
+              <p class="font-bold text-gray-700 uppercase">Régimen Pequeño Contribuyente</p>
+              <p>Régimen Simplificado de Pequeño Contribuyente según Art. 47 Ley del IVA (Decreto 27-92).</p>
+              <p class="italic text-gray-400">"Sujeto a pago de impuesto 5%. No genera derecho a crédito fiscal."</p>
+            </div>
+          </div>
+
+          <div class="w-full sm:w-56 bg-gray-50 border border-gray-200 rounded-lg p-3 space-y-1.5 font-mono text-xs text-right">
+            <div class="flex justify-between text-gray-600">
+              <span>Total Operación:</span>
+              <span class="font-bold text-gray-900" id="pdf-total-amount">Q 150.00</span>
+            </div>
+            <div class="flex justify-between text-amber-800 text-[11px]">
+              <span>IVA 5% Incluido:</span>
+              <span class="font-bold" id="pdf-tax-amount">Q 7.50</span>
+            </div>
+            <div class="border-t border-gray-200 pt-1 flex justify-between font-bold text-sm text-gray-900">
+              <span>Gran Total:</span>
+              <span id="pdf-grand-total">Q 150.00</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Footer Buttons -->
+      <div class="pt-4 border-t border-gray-200 flex justify-between items-center text-xs print:hidden">
+        <button type="button" onclick="closeFelPdfModal()" class="px-4 py-2 border border-gray-250 rounded-md text-gray-600 font-semibold hover:bg-gray-50 transition-colors">Cerrar</button>
+        <div class="flex gap-2">
+          <button type="button" onclick="printFelPdf()" class="px-4 py-2 bg-aura-primary hover:bg-aura-primaryHover text-white rounded-md font-semibold transition-colors flex items-center gap-1.5 shadow-sm">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M6.72 13.829c-.24.03-.48.062-.72.096m.72-.096a42.415 42.415 0 0110.56 0m-10.56 0L6.34 18m10.94-4.171c.24.03.48.062.72.096m-.72-.096L17.66 18m0 0l.229 2.523a1.125 1.125 0 01-1.12 1.227H7.231a1.125 1.125 0 01-1.12-1.227L6.34 18m11.318 0h1.091A2.25 2.25 0 0021 15.75V9.456c0-1.081-.768-2.015-1.837-2.175a48.085 48.085 0 00-14.326 0C3.768 7.441 3 8.375 3 9.456v6.294A2.25 2.25 0 005.25 18h1.091" /></svg>
+            <span>Imprimir / Descargar PDF</span>
+          </button>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
   <!-- ================= MODAL: CREAR/EDITAR USUARIO ================= -->
   <!-- Responsive user creation modal overlay with visible password strength meter -->
   <div id="modal-user-backdrop" class="hidden fixed inset-0 bg-gray-900/30 backdrop-blur-xs z-layer-backdrop overflow-y-auto p-4 md:py-12 flex justify-center items-start opacity-0 modal-backdrop-transition">
@@ -1537,7 +2052,7 @@
 
         <div id="user-password-container" class="space-y-2">
           <div class="border border-gray-200 rounded-lg px-3 py-2 bg-white focus-within:ring-1 focus-within:ring-aura-primary focus-within:border-aura-primary transition-all relative">
-            <label class="block text-[9px] font-bold text-gray-400 uppercase tracking-widest">Contraseña</label>
+            <label class="block text-[9px] font-bold text-gray-400 uppercase tracking-widest" id="user-password-label">Contraseña</label>
             <div class="flex items-center mt-1">
               <input type="password" id="user-password" oninput="onPasswordInput(this.value)" placeholder="Ingresa contraseña" class="w-full bg-transparent border-none p-0 text-sm font-mono text-gray-900 focus:ring-0 focus:outline-none">
               <button type="button" onclick="togglePasswordVisibility('user-password')" class="text-gray-400 hover:text-gray-650 focus:outline-none pl-2">
@@ -1545,6 +2060,7 @@
               </button>
             </div>
           </div>
+          <p class="text-[10px] text-gray-400 hidden" id="user-password-help">Deja este campo en blanco para mantener la contraseña actual.</p>
 
           <!-- Password Strength Visual Meter -->
           <div class="space-y-1">
@@ -1574,15 +2090,18 @@
     <div id="drawer-container" onclick="event.stopPropagation()" class="fixed right-0 top-0 bottom-0 w-full h-full lg:max-w-md bg-white border-l border-gray-200 shadow-2xl flex flex-col translate-x-full drawer-transition z-layer-drawer-container">
       
       <!-- Drawer Header -->
-      <div class="p-6 border-b border-gray-200 flex justify-between items-center">
-        <div>
+      <div class="p-4 sm:p-6 border-b border-gray-200 flex justify-between items-start">
+        <div class="min-w-0 flex-1 pr-2">
           <span class="text-[9px] font-semibold text-gray-400 uppercase tracking-wider block" id="drawer-subtitle">Código de Cobro</span>
-          <div class="flex items-center gap-2">
-            <h3 class="text-sm font-bold text-gray-900 mt-0.5" id="drawer-title">chk_7x89ab</h3>
-            <button id="drawer-free-inventory-btn" onclick="freeInventory(selectedTransaction)" class="hidden bg-white hover:bg-red-50 text-red-600 border border-red-200 text-[10px] font-bold px-2.5 py-1 rounded shadow-sm transition-colors mt-0.5 flex items-center gap-1"><svg width="12" height="12" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h10a8 8 0 018 8v2M3 10l6 6m-6-6l6-6"/></svg> Liberar Inventario</button>
+          <div class="flex flex-wrap items-center gap-2 mt-0.5">
+            <h3 class="text-sm font-bold text-gray-900 truncate" id="drawer-title">chk_7x89ab</h3>
+            <button id="drawer-free-inventory-btn" onclick="freeInventory(selectedTransaction)" class="hidden bg-white hover:bg-red-50 text-red-600 border border-red-200 text-[10px] font-bold px-2.5 py-1 rounded shadow-sm transition-colors flex items-center gap-1">
+              <svg width="12" height="12" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h10a8 8 0 018 8v2M3 10l6 6m-6-6l6-6"/></svg>
+              <span>Liberar Inventario</span>
+            </button>
           </div>
         </div>
-        <button onclick="closeDrawer()" class="text-gray-400 hover:text-gray-900 transition-colors focus:outline-none">
+        <button onclick="closeDrawer()" class="text-gray-400 hover:text-gray-900 transition-colors focus:outline-none p-1">
           <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" /></svg>
         </button>
       </div>
@@ -1726,6 +2245,13 @@
                 <span class="text-gray-400 block mb-0.5">Correo de Contacto</span>
                 <span class="font-semibold text-gray-950" id="detail-contact-email">-</span>
               </div>
+              <div class="col-span-2 bg-amber-50/60 border border-amber-200/80 rounded-lg p-2.5 space-y-1 mt-1">
+                <div class="flex justify-between items-center text-[10.5px]">
+                  <span class="text-amber-900 font-semibold" id="detail-gt-iva-label">IVA Guatemala (5% Pequeño Contribuyente):</span>
+                  <span class="font-bold font-mono text-amber-950" id="detail-gt-iva-amount">Q 0.00</span>
+                </div>
+                <p class="text-[9.5px] text-amber-800/90 leading-tight" id="detail-gt-iva-regimen-text">Decreto 27-92 Art. 47 · No genera derecho a crédito fiscal.</p>
+              </div>
             </div>
           </div>
 
@@ -1765,6 +2291,14 @@
 
       </div>
 
+      <!-- Drawer Sticky Action Footer (Mobile & Desktop) -->
+      <div id="drawer-footer-actions" class="p-4 border-t border-gray-200 bg-gray-50 flex gap-2">
+        <button id="drawer-free-inventory-btn-footer" onclick="freeInventory(selectedTransaction)" class="hidden w-full bg-white hover:bg-red-50 text-red-600 border border-red-200 text-xs font-bold py-2.5 px-4 rounded-lg shadow-sm transition-colors flex items-center justify-center gap-2">
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h10a8 8 0 018 8v2M3 10l6 6m-6-6l6-6"/></svg>
+          <span>Liberar Inventario / Cancelar Cobro</span>
+        </button>
+      </div>
+
     </div>
   </div>
 
@@ -1794,6 +2328,32 @@
       <button type="button" onclick="closeLoginErrorModal()" class="w-full bg-gray-50 border border-gray-200 hover:bg-gray-100 text-gray-800 py-2 rounded-md font-semibold text-xs transition-colors focus:outline-none active:scale-98">
         Entendido
       </button>
+    </div>
+  </div>
+
+  <!-- ================= MODAL: SCANNER PASSKEY BIOMÉTRICO (FACE ID / HUELLA) ================= -->
+  <div id="modal-passkey-scan" class="hidden fixed inset-0 bg-gray-950/60 backdrop-blur-md z-layer-backdrop flex items-center justify-center opacity-0 transition-opacity duration-300">
+    <div class="bg-slate-900 border border-slate-800 text-white rounded-2xl max-w-xs w-full p-6 shadow-2xl transform scale-95 transition-all duration-300 text-center mx-4 space-y-5 relative overflow-hidden" id="passkey-scan-content">
+      
+      <div class="relative w-20 h-20 mx-auto flex items-center justify-center">
+        <div class="absolute inset-0 rounded-full border-2 border-amber-400/30 animate-ping"></div>
+        <div class="w-16 h-16 rounded-full bg-amber-400/10 border border-amber-400/40 flex items-center justify-center text-aura-gold shadow-lg">
+          <svg class="w-9 h-9 animate-pulse" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M7.864 4.243A7.5 7.5 0 0119.5 10.5c0 2.92-.556 5.709-1.568 8.268M5.742 6.364A7.465 7.465 0 004.5 10.5a7.464 7.464 0 001.12 3.9M12 10.5a2.25 2.25 0 100-4.5 2.25 2.25 0 000 4.5z" /></svg>
+        </div>
+      </div>
+
+      <div class="space-y-1">
+        <h4 class="text-sm font-bold text-ivory-soft">Autenticación Biométrica (Passkey)</h4>
+        <p class="text-xs text-gray-300">Escaneando rostro o huella digital registrada en tu dispositivo (Windows Hello / Face ID / Touch ID)...</p>
+      </div>
+
+      <div class="pt-1">
+        <span class="text-[10px] font-mono text-amber-300 bg-amber-400/10 px-3 py-1 rounded-full border border-amber-400/20">
+          Autenticando sin contraseña...
+        </span>
+      </div>
+
+      <button type="button" onclick="closePasskeyScanModal()" class="text-xs text-gray-400 hover:text-white transition-colors block mx-auto pt-2">Cancelar</button>
     </div>
   </div>
 

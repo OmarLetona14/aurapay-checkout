@@ -344,22 +344,138 @@
       }
     ];
 
+    // Centralized Safe Storage Manager
+    const StorageManager = {
+      get(key, fallback = null) {
+        try {
+          const item = localStorage.getItem(key);
+          return item ? JSON.parse(item) : fallback;
+        } catch (e) {
+          console.warn(`StorageManager.get error for ${key}:`, e);
+          return fallback;
+        }
+      },
+      set(key, value) {
+        try {
+          localStorage.setItem(key, typeof value === 'string' ? value : JSON.stringify(value));
+          return true;
+        } catch (e) {
+          console.error(`StorageManager.set error for ${key}:`, e);
+          return false;
+        }
+      }
+    };
+
+    // Centralized High-Performance Modal Manager
+    const ModalManager = {
+      open(backdropId, contentId) {
+        const modal = document.getElementById(backdropId);
+        const content = contentId ? document.getElementById(contentId) : null;
+        if (!modal) return;
+
+        modal.classList.remove('hidden');
+        requestAnimationFrame(() => {
+          modal.classList.remove('opacity-0');
+          modal.classList.add('opacity-100');
+          if (content) {
+            content.classList.remove('scale-95');
+            content.classList.add('scale-100');
+          }
+        });
+      },
+      close(backdropId, contentId, duration = 200) {
+        const modal = document.getElementById(backdropId);
+        const content = contentId ? document.getElementById(contentId) : null;
+        if (!modal) return;
+
+        modal.classList.remove('opacity-100');
+        modal.classList.add('opacity-0');
+        if (content) {
+          content.classList.remove('scale-100');
+          content.classList.add('scale-95');
+        }
+        setTimeout(() => {
+          modal.classList.add('hidden');
+        }, duration);
+      }
+    };
+
+    // Performance Utility: Debounce for fast input events
+    function debounce(fn, delay = 200) {
+      let timeoutId;
+      return function (...args) {
+        clearTimeout(timeoutId);
+        timeoutId = setTimeout(() => fn.apply(this, args), delay);
+      };
+    }
+
     // LocalStorage sync for transactions (versioned schema)
     const TX_SCHEMA_VERSION = 'v3';
-    try {
-      const storedVersion = localStorage.getItem('aurapay_tx_version') || localStorage.getItem('aurapay_tx_version');
-      const stored = localStorage.getItem('aurapay_transactions') || localStorage.getItem('aurapay_transactions');
-      if (stored && (storedVersion === TX_SCHEMA_VERSION || storedVersion === 'v3')) {
-        transactions = JSON.parse(stored);
-      } else {
-        localStorage.setItem('aurapay_transactions', JSON.stringify(transactions));
-        localStorage.setItem('aurapay_transactions', JSON.stringify(transactions));
-        localStorage.setItem('aurapay_tx_version', TX_SCHEMA_VERSION);
-        localStorage.setItem('aurapay_tx_version', TX_SCHEMA_VERSION);
-      }
-    } catch (e) {
-      console.error(e);
+    const storedTxVersion = StorageManager.get('aurapay_tx_version');
+    const storedTxs = StorageManager.get('aurapay_transactions');
+    if (storedTxs && storedTxVersion === TX_SCHEMA_VERSION) {
+      transactions = storedTxs;
+    } else {
+      StorageManager.set('aurapay_transactions', transactions);
+      StorageManager.set('aurapay_tx_version', TX_SCHEMA_VERSION);
     }
+
+    // Helper function for Guatemalan IVA calculations (Decreto 27-92 Ley del IVA)
+    function calculateIvaGuatemala(totalAmount, regimen = null) {
+      const amt = parseFloat(totalAmount) || 0;
+      let reg = regimen;
+      if (!reg) {
+        try {
+          const cfg = JSON.parse(localStorage.getItem('aurapay_fel_config'));
+          if (cfg && cfg.regimen) reg = cfg.regimen;
+        } catch(e){}
+      }
+      if (!reg) reg = 'PEQUEÑO_CONTRIBUYENTE';
+
+      let baseAmount = amt;
+      let taxAmount = 0;
+      let taxRate = 0.05;
+      let label = 'IVA 5% Pequeño Contribuyente';
+      let generateCredit = false;
+
+      if (reg === 'REGIMEN_GENERAL') {
+        taxRate = 0.12;
+        baseAmount = amt / 1.12;
+        taxAmount = amt - baseAmount;
+        label = 'IVA 12% Régimen General';
+        generateCredit = true;
+      } else if (reg === 'PEQUEÑO_ELECTRONICO') {
+        taxRate = 0.04;
+        baseAmount = amt;
+        taxAmount = amt * 0.04;
+        label = 'IVA 4% Pequeño Contribuyente Electrónico';
+        generateCredit = false;
+      } else if (reg === 'EXENTO') {
+        taxRate = 0.0;
+        baseAmount = amt;
+        taxAmount = 0.0;
+        label = 'IVA 0% Exento';
+        generateCredit = false;
+      } else {
+        // PEQUEÑO_CONTRIBUYENTE
+        taxRate = 0.05;
+        baseAmount = amt;
+        taxAmount = amt * 0.05;
+        label = 'IVA 5% Pequeño Contribuyente';
+        generateCredit = false;
+      }
+
+      return {
+        totalAmount: amt,
+        baseAmount: baseAmount,
+        taxAmount: taxAmount,
+        taxRate: taxRate,
+        regimen: reg,
+        label: label,
+        generateCredit: generateCredit
+      };
+    }
+    window.calculateIvaGuatemala = calculateIvaGuatemala;
 
     // Products Catalog State Array
     let productsCatalog = [
@@ -403,27 +519,29 @@
 
     // LocalStorage sync for products
     const PROD_SCHEMA_VERSION = 'v2';
-    try {
-      const storedProdVersion = localStorage.getItem('aurapay_prod_version') || localStorage.getItem('aurapay_prod_version');
-      const storedProds = localStorage.getItem('aurapay_products') || localStorage.getItem('aurapay_products');
-      if (storedProds && (storedProdVersion === PROD_SCHEMA_VERSION || storedProdVersion === 'v2')) {
-        productsCatalog = JSON.parse(storedProds);
-      } else {
-        localStorage.setItem('aurapay_products', JSON.stringify(productsCatalog));
-        localStorage.setItem('aurapay_products', JSON.stringify(productsCatalog));
-        localStorage.setItem('aurapay_prod_version', PROD_SCHEMA_VERSION);
-        localStorage.setItem('aurapay_prod_version', PROD_SCHEMA_VERSION);
-      }
-    } catch (e) {
-      console.error(e);
+    const storedProdVersion = StorageManager.get('aurapay_prod_version');
+    const storedProds = StorageManager.get('aurapay_products');
+    if (storedProds && storedProdVersion === PROD_SCHEMA_VERSION) {
+      productsCatalog = storedProds;
+    } else {
+      StorageManager.set('aurapay_products', productsCatalog);
+      StorageManager.set('aurapay_prod_version', PROD_SCHEMA_VERSION);
     }
 
-    // Administrative User State Array
     let users = [
       { id: 'usr-1', name: 'Administrador General', email: 'admin@aurapay.com.gt', password: 'AuraPay2026*', role: 'admin', status: 'active', lastActive: 'Ahora mismo' },
       { id: 'usr-2', name: 'Cajero de Caja A', email: 'cajero@aurapay.com.gt', password: 'AuraPay2026*', role: 'cajero', status: 'active', lastActive: 'Ayer, 18:22' },
       { id: 'usr-4', name: 'Operador de Catálogo', email: 'operativo@aurapay.com.gt', password: 'AuraPay2026*', role: 'operativo', status: 'active', lastActive: 'Hace 2 horas' }
     ];
+    try {
+      const storedUsers = localStorage.getItem('aurapay_users');
+      if (storedUsers) {
+        const parsed = JSON.parse(storedUsers);
+        if (Array.isArray(parsed) && parsed.length > 0) {
+          users = parsed;
+        }
+      }
+    } catch(e) {}
 
     // Global states
     const BASE_NET_SALES = 120400.00;
@@ -663,15 +781,136 @@
       }
     }
 
+    // ================= PASSWORDLESS & BIOMETRIC AUTH SYSTEM =================
+    let currentAuthMode = 'passwordless';
+
+    function switchLoginAuthMode(mode) {
+      currentAuthMode = mode;
+      const tabPasswordless = document.getElementById('auth-tab-passwordless');
+      const tabPasskey = document.getElementById('auth-tab-passkey');
+      const tabPassword = document.getElementById('auth-tab-password');
+
+      const titleEl = document.getElementById('login-form-title');
+      const subtitleEl = document.getElementById('login-form-subtitle');
+      const passContainer = document.getElementById('login-password-container');
+      const btnText = document.getElementById('btn-login-text');
+      const btnIcon = document.getElementById('btn-login-icon');
+      const passInput = document.getElementById('login-password');
+
+      const inactiveClass = 'flex-1 py-1.5 rounded-lg hover:text-gray-900 transition-all flex items-center justify-center gap-1 text-gray-500 font-semibold';
+      const activeClass = 'flex-1 py-1.5 rounded-lg text-aura-primary font-bold bg-white shadow-2xs transition-all flex items-center justify-center gap-1';
+
+      if (tabPasswordless) tabPasswordless.className = mode === 'passwordless' ? activeClass : inactiveClass;
+      if (tabPasskey) tabPasskey.className = mode === 'passkey' ? activeClass : inactiveClass;
+      if (tabPassword) tabPassword.className = mode === 'password' ? activeClass : inactiveClass;
+
+      if (mode === 'passwordless') {
+        if (titleEl) titleEl.innerText = 'Acceso Sin Contraseña (Passwordless)';
+        if (subtitleEl) subtitleEl.innerText = 'Ingresa tu correo para recibir un código mágico de 1 solo toque.';
+        if (passContainer) passContainer.classList.add('hidden');
+        if (passInput) passInput.removeAttribute('required');
+        if (btnText) btnText.innerText = 'Enviar Código Mágico Passwordless';
+        if (btnIcon) btnIcon.innerHTML = `<path stroke-linecap="round" stroke-linejoin="round" d="M3.75 13.5l10.5-11.25L12 10.5h8.25L9.75 21.75 12 13.5H3.75z" />`;
+      } else if (mode === 'passkey') {
+        triggerPasskeyBiometricAuth();
+      } else {
+        if (titleEl) titleEl.innerText = 'Acceso Tradicional con Clave';
+        if (subtitleEl) subtitleEl.innerText = 'Ingresa tu correo y contraseña asignada.';
+        if (passContainer) passContainer.classList.remove('hidden');
+        if (passInput) passInput.setAttribute('required', 'required');
+        if (btnText) btnText.innerText = 'Iniciar Sesión con Clave';
+        if (btnIcon) btnIcon.innerHTML = `<path stroke-linecap="round" stroke-linejoin="round" d="M16.5 10.5V6.75a4.5 4.5 0 10-9 0v3.75m-.75 11.25h10.5a2.25 2.25 0 002.25-2.25v-6.75a2.25 2.25 0 00-2.25-2.25H6.75a2.25 2.25 0 00-2.25 2.25v6.75a2.25 2.25 0 002.25 2.25z" />`;
+      }
+    }
+
+    function triggerPasskeyBiometricAuth() {
+      const emailInput = document.getElementById('login-email');
+      const email = emailInput ? emailInput.value.trim() : '';
+
+      const modal = document.getElementById('modal-passkey-scan');
+      const content = document.getElementById('passkey-scan-content');
+      if (!modal) return;
+
+      modal.classList.remove('hidden');
+      setTimeout(() => {
+        modal.classList.remove('opacity-0');
+        modal.classList.add('opacity-100');
+        content.classList.remove('scale-95');
+        content.classList.add('scale-100');
+      }, 10);
+
+      setTimeout(() => {
+        closePasskeyScanModal();
+
+        let targetUser = users.find(u => email && u.email.toLowerCase() === email.toLowerCase());
+        if (!targetUser) targetUser = users.find(u => u.role === 'admin') || users[0];
+
+        if (targetUser.status === 'blocked') {
+          showLoginErrorModal('Cuenta Inhabilitada', 'Esta cuenta ha sido inhabilitada por seguridad.');
+          return;
+        }
+
+        currentUser = targetUser;
+        currentUser.lastActive = 'Ahora mismo';
+        renderUsersTable();
+        updateRole(currentUser.role);
+
+        document.getElementById('app-login').classList.add('hidden');
+        document.getElementById('app-dashboard').classList.remove('hidden');
+
+        showToast('⚡ Autenticación Biométrica Exitosa', `Bienvenido ${currentUser.name} (Acceso Passkey Sin Contraseña)`, 'success');
+        addSystemLog('Login Passkey Biométrico', 'seguridad', `Acceso concedido mediante Passkey / Face ID para ${currentUser.email}`);
+      }, 1200);
+    }
+
+    function closePasskeyScanModal() {
+      const modal = document.getElementById('modal-passkey-scan');
+      const content = document.getElementById('passkey-scan-content');
+      if (!modal) return;
+      modal.classList.remove('opacity-100');
+      modal.classList.add('opacity-0');
+      content.classList.remove('scale-100');
+      content.classList.add('scale-95');
+      setTimeout(() => { modal.classList.add('hidden'); }, 200);
+    }
+
     function handleLoginSubmit(e) {
       e.preventDefault();
       
-      const email = document.getElementById('login-email').value;
+      const email = document.getElementById('login-email').value.trim();
       const pass = document.getElementById('login-password').value;
       const spinner = document.getElementById('login-spinner');
       const submitBtn = document.getElementById('btn-login-submit');
 
-      // Find user
+      if (currentAuthMode === 'passwordless') {
+        const user = users.find(u => u.email.toLowerCase() === email.toLowerCase());
+        if (!user) {
+          addSystemLog('Passwordless Fallido', 'seguridad', `No existe usuario registrado para: ${email}`);
+          showLoginErrorModal('Usuario No Encontrado', 'El correo electrónico ingresado no corresponde a ningún usuario o colaborador registrado.');
+          return;
+        }
+        if (user.status === 'blocked') {
+          showLoginErrorModal('Cuenta Inhabilitada', 'Esta cuenta ha sido bloqueada por seguridad. Contacta al administrador.');
+          return;
+        }
+
+        submitBtn.disabled = true;
+        spinner.classList.remove('hidden');
+
+        setTimeout(() => {
+          userPreLoginAttempt = user;
+          document.getElementById('login-credentials-form').classList.add('hidden');
+          document.getElementById('login-2fa-form').classList.remove('hidden');
+          submitBtn.disabled = false;
+          spinner.classList.add('hidden');
+
+          setTimeout(() => document.getElementById('pin-1').focus(), 50);
+          showToast('⚡ Código Mágico Enviado', 'Código Passwordless: 123456 (Simulado)', 'success');
+        }, 600);
+        return;
+      }
+
+      // Traditional Password Mode
       const user = users.find(u => u.email.toLowerCase() === email.toLowerCase() && u.password === pass);
 
       if (!user) {
@@ -686,7 +925,6 @@
         return;
       }
 
-      // Start simulated 2FA transition
       submitBtn.disabled = true;
       spinner.classList.remove('hidden');
 
@@ -697,10 +935,9 @@
         submitBtn.disabled = false;
         spinner.classList.add('hidden');
         
-        // Focus first cell
         setTimeout(() => document.getElementById('pin-1').focus(), 50);
         showToast('Código Enviado', 'Código 2FA: 123456 (Simulado)', 'success');
-      }, 800);
+      }, 600);
     }
 
     function handleLogin2FASubmit(e) {
@@ -1109,6 +1346,69 @@
       }
 
       listPriceInput.value = calculatedPrice > 0 ? calculatedPrice.toFixed(2) : '';
+
+      // Update Guatemalan Tax Breakdown Card & Platform Retention (5%)
+      const salePrice = calculatedPrice > 0 ? calculatedPrice : baseAmt;
+      
+      let felConfig = { regimen: 'PEQUEÑO_CONTRIBUYENTE' };
+      try {
+        const storedConfig = localStorage.getItem('aurapay_fel_config');
+        if (storedConfig) felConfig = JSON.parse(storedConfig);
+      } catch(e){}
+
+      const regimen = felConfig.regimen || 'PEQUEÑO_CONTRIBUYENTE';
+      const regimenTitleEl = document.getElementById('product-tax-regimen-title');
+      const rateBadgeEl = document.getElementById('product-tax-rate-badge');
+      const salePriceEl = document.getElementById('product-tax-sale-price');
+      const totalIvaLabelEl = document.getElementById('product-tax-total-iva-label');
+      const totalIvaEl = document.getElementById('product-tax-total-iva');
+      const retentionEl = document.getElementById('product-tax-platform-retention');
+      const merchantDueEl = document.getElementById('product-tax-merchant-due');
+      const helperTextEl = document.getElementById('product-tax-helper-text');
+
+      if (salePriceEl) salePriceEl.innerText = formatCurrency(salePrice, 'GTQ');
+
+      // Platform Retention Rate = 5% (5% de retención de la plataforma)
+      const platformRetentionAmt = salePrice * 0.05;
+      if (retentionEl) retentionEl.innerText = formatCurrency(platformRetentionAmt, 'GTQ');
+
+      if (regimen === 'REGIMEN_GENERAL') {
+        const baseWithoutIva = salePrice / 1.12;
+        const totalIva12 = salePrice - baseWithoutIva;
+        const merchantRemanent = Math.max(0, totalIva12 - platformRetentionAmt);
+
+        if (regimenTitleEl) regimenTitleEl.innerText = 'Régimen General (12% IVA)';
+        if (rateBadgeEl) rateBadgeEl.innerText = '12% IVA General';
+        if (totalIvaLabelEl) totalIvaLabelEl.innerText = 'Monto IVA Total (12%):';
+        if (totalIvaEl) totalIvaEl.innerText = formatCurrency(totalIva12, 'GTQ');
+        if (merchantDueEl) merchantDueEl.innerText = formatCurrency(merchantRemanent, 'GTQ');
+        if (helperTextEl) helperTextEl.innerText = 'La plataforma retendrá el 5% de retención legal en cada cobro. El comercio sólo deberá declarar y pagar el remanente (7%) ante la SAT en Declaraguate.';
+      } else if (regimen === 'PEQUEÑO_ELECTRONICO') {
+        const totalIva4 = salePrice * 0.04;
+        if (regimenTitleEl) regimenTitleEl.innerText = 'Pequeño Contribuyente Electrónico (4%)';
+        if (rateBadgeEl) rateBadgeEl.innerText = '4% Tarifa Reducida';
+        if (totalIvaLabelEl) totalIvaLabelEl.innerText = 'Monto IVA Total (4%):';
+        if (totalIvaEl) totalIvaEl.innerText = formatCurrency(totalIva4, 'GTQ');
+        if (merchantDueEl) merchantDueEl.innerText = formatCurrency(0, 'GTQ');
+        if (helperTextEl) helperTextEl.innerText = 'La plataforma retendrá automáticamente el 4% del impuesto por cada transacción realizada. Quedas 100% libre de trámite adicional.';
+      } else if (regimen === 'EXENTO') {
+        if (regimenTitleEl) regimenTitleEl.innerText = 'Exento de IVA (0%)';
+        if (rateBadgeEl) rateBadgeEl.innerText = '0% Exento';
+        if (totalIvaLabelEl) totalIvaLabelEl.innerText = 'Monto IVA Total (0%):';
+        if (totalIvaEl) totalIvaEl.innerText = formatCurrency(0, 'GTQ');
+        if (retentionEl) retentionEl.innerText = formatCurrency(0, 'GTQ');
+        if (merchantDueEl) merchantDueEl.innerText = formatCurrency(0, 'GTQ');
+        if (helperTextEl) helperTextEl.innerText = 'Operación exenta del Impuesto al Valor Agregado según Art. 7 de la Ley del IVA.';
+      } else {
+        // Default Pequeño Contribuyente 5%
+        const totalIva5 = salePrice * 0.05;
+        if (regimenTitleEl) regimenTitleEl.innerText = 'Pequeño Contribuyente (5% IVA)';
+        if (rateBadgeEl) rateBadgeEl.innerText = '5% IVA Fijo';
+        if (totalIvaLabelEl) totalIvaLabelEl.innerText = 'Monto IVA Total (5%):';
+        if (totalIvaEl) totalIvaEl.innerText = formatCurrency(totalIva5, 'GTQ');
+        if (merchantDueEl) merchantDueEl.innerText = formatCurrency(0, 'GTQ');
+        if (helperTextEl) helperTextEl.innerText = '✓ La plataforma retendrá automáticamente el 5% de retención del impuesto en cada venta. ¡El 100% de tu IVA queda solventado automáticamente ante la SAT!';
+      }
     }
 
     function renderProductsCatalog() {
@@ -1379,6 +1679,7 @@
       } else {
         titleEl.innerText = 'Registrar Producto en Catálogo';
         editIdInput.value = '';
+        updateCalculatedProductPrice();
       }
 
       modal.classList.remove('hidden');
@@ -1853,8 +2154,8 @@
     }
 
     function openUserModal(userId = null) {
-      if (selectedRole !== 'admin') {
-        showToast('Acción Restringida', 'Solo el Administrador posee permisos para administrar usuarios.', 'warning');
+      if (selectedRole !== 'admin' && (!currentUser || userId !== currentUser.id)) {
+        showToast('Acción Restringida', 'Solo el Administrador posee permisos para administrar otros usuarios.', 'warning');
         return;
       }
 
@@ -1863,6 +2164,9 @@
       const form = document.getElementById('user-form');
       const passwordContainer = document.getElementById('user-password-container');
       const passwordInput = document.getElementById('user-password');
+      const passwordLabel = document.getElementById('user-password-label');
+      const passwordHelp = document.getElementById('user-password-help');
+      const roleSelect = document.getElementById('user-role');
       
       form.reset();
       onPasswordInput('');
@@ -1875,20 +2179,36 @@
         document.getElementById('user-edit-id').value = user.id;
         document.getElementById('user-fullname').value = user.name;
         document.getElementById('user-email').value = user.email;
-        document.getElementById('user-role').value = user.role;
+        if (roleSelect) {
+          roleSelect.value = user.role;
+          roleSelect.disabled = (selectedRole !== 'admin');
+        }
 
-        // Hide password section when editing for layout simplicity
-        passwordContainer.classList.add('hidden');
-        passwordInput.required = false;
+        // Show password section for optional password update
+        if (passwordContainer) passwordContainer.classList.remove('hidden');
+        if (passwordInput) {
+          passwordInput.required = false;
+          passwordInput.value = '';
+          passwordInput.placeholder = '••••••••';
+        }
+        if (passwordLabel) passwordLabel.innerText = 'Nueva Contraseña (Opcional)';
+        if (passwordHelp) passwordHelp.classList.remove('hidden');
 
-        document.getElementById('user-modal-title').innerText = 'Editar Usuario';
+        document.getElementById('user-modal-title').innerText = 'Editar Usuario / Cambiar Clave';
         document.getElementById('user-modal-mobile-title').innerText = 'Editar Usuario';
-        document.getElementById('user-modal-desc').innerText = 'Modifica los permisos o detalles del usuario.';
+        document.getElementById('user-modal-desc').innerText = 'Modifica el nombre, correo, rol o actualiza la contraseña.';
       } else {
         // Create Mode
         document.getElementById('user-edit-id').value = '';
-        passwordContainer.classList.remove('hidden');
-        passwordInput.required = true;
+        if (roleSelect) roleSelect.disabled = false;
+        if (passwordContainer) passwordContainer.classList.remove('hidden');
+        if (passwordInput) {
+          passwordInput.required = true;
+          passwordInput.value = '';
+          passwordInput.placeholder = 'Ingresa contraseña';
+        }
+        if (passwordLabel) passwordLabel.innerText = 'Contraseña';
+        if (passwordHelp) passwordHelp.classList.add('hidden');
 
         document.getElementById('user-modal-title').innerText = 'Crear Usuario';
         document.getElementById('user-modal-mobile-title').innerText = 'Crear Usuario';
@@ -1921,9 +2241,10 @@
       e.preventDefault();
       
       const editId = document.getElementById('user-edit-id').value;
-      const fullname = document.getElementById('user-fullname').value;
-      const email = document.getElementById('user-email').value;
+      const fullname = document.getElementById('user-fullname').value.trim();
+      const email = document.getElementById('user-email').value.trim();
       const role = document.getElementById('user-role').value;
+      const password = document.getElementById('user-password').value;
 
       if (editId) {
         // Edit submission
@@ -1933,19 +2254,39 @@
           user.email = email;
           user.role = role;
           
-          // If editing active logged in user, refresh sidebar dynamically
-          if (currentUser.id === user.id) {
+          let passChanged = false;
+          if (password && password.trim() !== '') {
+            user.password = password.trim();
+            passChanged = true;
+          }
+          
+          try {
+            localStorage.setItem('aurapay_users', JSON.stringify(users));
+          } catch(err) { console.error(err); }
+
+          // If editing active logged in user, refresh active session details dynamically
+          if (currentUser && currentUser.id === user.id) {
             currentUser.role = role;
             currentUser.name = fullname;
             currentUser.email = email;
+            if (passChanged) currentUser.password = user.password;
+            try {
+              localStorage.setItem('aurapay_user', JSON.stringify(currentUser));
+            } catch(e){}
             updateRole(role);
+            
+            const nameEl = document.getElementById('sidebar-role-fullname');
+            if (nameEl) nameEl.innerText = fullname;
+            const topbarNameEl = document.getElementById('user-dropdown-name');
+            if (topbarNameEl) topbarNameEl.innerText = fullname;
           }
-          showToast('Usuario Actualizado', `Se modificaron los datos de ${fullname}`);
-          addSystemLog('Usuario Modificado', 'vendedor', `Se actualizaron datos de la cuenta: ${email} (Rol: ${role})`);
+          
+          const msg = passChanged ? `Se actualizaron los datos y la contraseña de ${fullname}` : `Se modificaron los datos de ${fullname}`;
+          showToast('Usuario Actualizado', msg, 'success');
+          addSystemLog('Usuario Modificado', 'admin', `Se actualizaron datos de la cuenta: ${email} (Nombre: ${fullname}, Rol: ${role}${passChanged ? ', Contraseña modificada' : ''})`);
         }
       } else {
         // Create submission
-        const password = document.getElementById('user-password').value;
         const newUsr = {
           id: 'usr-' + (users.length + 1),
           name: fullname,
@@ -1956,8 +2297,12 @@
           lastActive: 'Nunca conectado'
         };
         users.push(newUsr);
-        showToast('Usuario Registrado', `Se creó la cuenta del usuario ${fullname}`);
-        addSystemLog('Usuario Creado', 'vendedor', `Se registró una nueva cuenta de usuario: ${email} con rol: ${role}`);
+        try {
+          localStorage.setItem('aurapay_users', JSON.stringify(users));
+        } catch(err) { console.error(err); }
+
+        showToast('Usuario Registrado', `Se creó la cuenta del usuario ${fullname}`, 'success');
+        addSystemLog('Usuario Creado', 'admin', `Se registró una nueva cuenta de usuario: ${email} con rol: ${role}`);
       }
 
       renderUsersTable();
@@ -2568,11 +2913,21 @@
 
       document.getElementById('drawer-title').innerText = transaction.transaction_id;
       const freeBtn = document.getElementById('drawer-free-inventory-btn');
+      const freeBtnFooter = document.getElementById('drawer-free-inventory-btn-footer');
+      const canFree = (transaction.status === 'PENDING' || transaction.status === 'INITIATED');
+
       if (freeBtn) {
-        if ((transaction.status === 'PENDING' || transaction.status === 'INITIATED') && transaction.products && transaction.products.length > 0) {
-           freeBtn.classList.remove('hidden');
+        if (canFree) {
+          freeBtn.classList.remove('hidden');
         } else {
-           freeBtn.classList.add('hidden');
+          freeBtn.classList.add('hidden');
+        }
+      }
+      if (freeBtnFooter) {
+        if (canFree) {
+          freeBtnFooter.classList.remove('hidden');
+        } else {
+          freeBtnFooter.classList.add('hidden');
         }
       }
       document.getElementById('drawer-subtitle').innerText = `Establecimiento: ${transaction.merchant.name}`;
@@ -2611,6 +2966,22 @@
       document.getElementById('detail-nit').innerText = billing.nit || 'N/A';
       document.getElementById('detail-billing-name').innerText = billing.client_name || 'N/A';
       document.getElementById('detail-contact-email').innerText = billing.contact_email || 'N/A';
+
+      // Populate GT IVA breakdown
+      const ivaInfo = calculateIvaGuatemala(transaction.amount);
+      const ivaLabelEl = document.getElementById('detail-gt-iva-label');
+      const ivaAmtEl = document.getElementById('detail-gt-iva-amount');
+      const ivaRegTextEl = document.getElementById('detail-gt-iva-regimen-text');
+
+      if (ivaLabelEl) ivaLabelEl.innerText = `${ivaInfo.label}:`;
+      if (ivaAmtEl) ivaAmtEl.innerText = formatCurrency(ivaInfo.taxAmount, 'GTQ');
+      if (ivaRegTextEl) {
+        if (ivaInfo.generateCredit) {
+          ivaRegTextEl.innerText = 'Decreto 27-92 · Con derecho a crédito fiscal.';
+        } else {
+          ivaRegTextEl.innerText = 'Decreto 27-92 Art. 47 · No genera derecho a crédito fiscal.';
+        }
+      }
 
       const tokenEl = document.getElementById('detail-token');
       if (transaction.token) {
@@ -3470,17 +3841,486 @@
       }, 3500);
     }
 
+    // ================= FACTURACIÓN ELECTRÓNICA FEL (SAT GUATEMALA) =================
+
+    let felConfig = {
+      nit: '8492019-3',
+      name: 'Café Don Arturo, S.A.',
+      tradeName: 'Café Don Arturo Especialidades',
+      address: '5ta Avenida 12-34 Zona 10, Ciudad de Guatemala',
+      regimen: 'PEQUEÑO_CONTRIBUYENTE',
+      certifier: 'SAT INFILE, S.A.',
+      serie: 'FEL-A1'
+    };
+
+    let felInvoices = [
+      {
+        id: 'fel-10491',
+        uuid: 'E98A72B4-9021-4890-A819-B10293847501',
+        serie: 'FEL-A1',
+        number: '10491',
+        date: '2026-07-24 14:22:10',
+        receiver_nit: '4920194-2',
+        receiver_name: 'Distribuidora Los Andes',
+        receiver_address: 'Ciudad de Guatemala',
+        tx_id: 'chk_7x89ab',
+        payment_method: 'Tarjeta de crédito',
+        description: 'Venta de café en grano bolsa 1lb y repostería',
+        amount: 350.00,
+        tax_rate: 0.05,
+        tax_amount: 17.50,
+        status: 'CERTIFIED'
+      },
+      {
+        id: 'fel-10492',
+        uuid: 'A192B83C-492A-4091-8931-102938475610',
+        serie: 'FEL-A1',
+        number: '10492',
+        date: '2026-07-25 10:15:00',
+        receiver_nit: 'CF',
+        receiver_name: 'Consumidor Final',
+        receiver_address: 'Ciudad de Guatemala',
+        tx_id: 'chk_3k90px',
+        payment_method: 'Pagos en efectivo',
+        description: 'Combo desayuno artesanal y café de origen',
+        amount: 150.00,
+        tax_rate: 0.05,
+        tax_amount: 7.50,
+        status: 'CERTIFIED'
+      }
+    ];
+
+    try {
+      const storedConfig = localStorage.getItem('aurapay_fel_config');
+      if (storedConfig) felConfig = JSON.parse(storedConfig);
+    } catch(e){}
+
+    try {
+      const storedInvoices = localStorage.getItem('aurapay_fel_invoices');
+      if (storedInvoices) felInvoices = JSON.parse(storedInvoices);
+    } catch(e){}
+
+    let currentSelectedFelInvoice = null;
+
+    function renderFelInvoicesTable() {
+      const tbody = document.getElementById('fel-table-body');
+      if (!tbody) return;
+      tbody.innerHTML = '';
+
+      // Update merchant config banner
+      const nameDisplay = document.getElementById('fel-config-display-name');
+      const regimenDisplay = document.getElementById('fel-config-display-regimen');
+      const nitDisplay = document.getElementById('fel-config-display-nit');
+
+      if (nameDisplay) nameDisplay.innerText = felConfig.name || 'Café Don Arturo, S.A.';
+      if (regimenDisplay) {
+        if (felConfig.regimen === 'PEQUEÑO_CONTRIBUYENTE') regimenDisplay.innerText = 'Pequeño Contribuyente (5%)';
+        else if (felConfig.regimen === 'PEQUEÑO_ELECTRONICO') regimenDisplay.innerText = 'Pequeño Contribuyente Electrónico (4%)';
+        else regimenDisplay.innerText = 'Régimen General (12%)';
+      }
+      if (nitDisplay) nitDisplay.innerText = `NIT: ${felConfig.nit || '8492019-3'} · Certificador: ${felConfig.certifier || 'SAT INFILE, S.A.'} · Serie: ${felConfig.serie || 'FEL-A1'}`;
+
+      // Calculate KPIs
+      const certifiedInvoices = felInvoices.filter(i => i.status === 'CERTIFIED');
+      const monthTotal = certifiedInvoices.reduce((sum, i) => sum + (parseFloat(i.amount) || 0), 0);
+      const taxTotal = monthTotal * 0.05; // 5% Pequeño Contribuyente
+      const dteCount = certifiedInvoices.length;
+
+      const totalMonthEl = document.getElementById('fel-kpi-total-month');
+      const taxMonthEl = document.getElementById('fel-kpi-tax-month');
+      const dteCountEl = document.getElementById('fel-kpi-dte-count');
+
+      if (totalMonthEl) totalMonthEl.innerText = formatCurrency(monthTotal, 'GTQ');
+      if (taxMonthEl) taxMonthEl.innerText = formatCurrency(taxTotal, 'GTQ');
+      if (dteCountEl) dteCountEl.innerText = dteCount;
+
+      // Annual Limit Progress (Q 150,000.00 / year SAT limit for Pequeño Contribuyente)
+      const ANNUAL_LIMIT = 150000.00;
+      const annualTotalEl = document.getElementById('fel-kpi-annual-total');
+      const annualBarEl = document.getElementById('fel-kpi-annual-bar');
+      const annualTextEl = document.getElementById('fel-kpi-annual-text');
+
+      if (annualTotalEl) annualTotalEl.innerText = formatCurrency(monthTotal, 'GTQ');
+      const pct = Math.min(100, Math.round((monthTotal / ANNUAL_LIMIT) * 100));
+      if (annualBarEl) {
+        annualBarEl.style.width = `${pct}%`;
+        if (pct >= 85) {
+          annualBarEl.className = 'bg-red-500 h-2 rounded-full transition-all duration-500';
+        } else if (pct >= 60) {
+          annualBarEl.className = 'bg-amber-500 h-2 rounded-full transition-all duration-500';
+        } else {
+          annualBarEl.className = 'bg-aura-primary h-2 rounded-full transition-all duration-500';
+        }
+      }
+      if (annualTextEl) {
+        if (pct >= 85) {
+          annualTextEl.innerText = `¡Alerta! Has consumido el ${pct}% del tope anual de Pequeño Contribuyente (Q150,000). Evalúa migrar al Régimen General.`;
+          annualTextEl.className = 'text-[9.5px] text-red-600 font-bold mt-1';
+        } else {
+          annualTextEl.innerText = `${pct}% del tope anual de Pequeño Contribuyente (Q150,000).`;
+          annualTextEl.className = 'text-[9.5px] text-gray-400 mt-1';
+        }
+      }
+
+      // Filters
+      const searchQuery = (document.getElementById('fel-search-input')?.value || '').toLowerCase().trim();
+      const statusFilter = document.getElementById('fel-status-filter')?.value || 'all';
+
+      const filtered = felInvoices.filter(inv => {
+        const matchStatus = (statusFilter === 'all') || (inv.status === statusFilter);
+        const matchSearch = !searchQuery || 
+          (inv.number && inv.number.toLowerCase().includes(searchQuery)) ||
+          (inv.uuid && inv.uuid.toLowerCase().includes(searchQuery)) ||
+          (inv.receiver_nit && inv.receiver_nit.toLowerCase().includes(searchQuery)) ||
+          (inv.receiver_name && inv.receiver_name.toLowerCase().includes(searchQuery));
+        return matchStatus && matchSearch;
+      });
+
+      const countEl = document.getElementById('fel-table-count');
+      if (countEl) countEl.innerText = `Mostrando ${filtered.length} de ${felInvoices.length} facturas`;
+
+      if (filtered.length === 0) {
+        tbody.innerHTML = `
+          <tr>
+            <td colspan="8" class="px-6 py-8 text-center text-gray-400 font-medium text-xs">
+              No se han emitido facturas electrónicas registradas en este filtro.
+            </td>
+          </tr>
+        `;
+        return;
+      }
+
+      filtered.forEach(inv => {
+        const tr = document.createElement('tr');
+        tr.className = 'hover:bg-gray-50/70 transition-colors border-b border-gray-100';
+
+        const isCancelled = inv.status === 'CANCELLED';
+        const badgeStyle = isCancelled ? 'bg-red-50 text-red-600 border-red-200' : 'bg-emerald-50 text-emerald-700 border-emerald-200';
+        const taxVal = (parseFloat(inv.amount) || 0) * (inv.tax_rate || 0.05);
+
+        tr.innerHTML = `
+          <td class="px-6 py-4 font-bold font-mono text-xs text-gray-900 whitespace-nowrap">${inv.serie} - ${inv.number}</td>
+          <td class="px-6 py-4 font-mono text-[11px] text-gray-500 whitespace-nowrap">${inv.uuid.substring(0, 18)}...</td>
+          <td class="px-6 py-4 text-xs text-gray-400 whitespace-nowrap">${inv.date}</td>
+          <td class="px-6 py-4 whitespace-nowrap">
+            <div class="font-semibold text-xs text-gray-900">${inv.receiver_name}</div>
+            <div class="text-[10px] text-gray-400 font-mono">NIT: ${inv.receiver_nit}</div>
+          </td>
+          <td class="px-6 py-4 text-right font-bold text-gray-900 text-xs font-mono whitespace-nowrap">${formatCurrency(inv.amount, 'GTQ')}</td>
+          <td class="px-6 py-4 text-right font-semibold text-amber-800 text-xs font-mono whitespace-nowrap">${formatCurrency(taxVal, 'GTQ')}</td>
+          <td class="px-6 py-4 text-center whitespace-nowrap">
+            <span class="px-2.5 py-0.5 rounded-full text-[10px] font-bold border ${badgeStyle}">
+              ${isCancelled ? 'Anulada' : 'Certificada'}
+            </span>
+          </td>
+          <td class="px-6 py-4 text-right space-x-2 whitespace-nowrap">
+            <button onclick="openFelPdfModal('${inv.id}')" class="text-xs text-aura-primary font-bold hover:underline focus:outline-none">Ver DTE PDF</button>
+            ${!isCancelled ? `<button onclick="anularFelInvoice('${inv.id}')" class="text-xs text-red-600 font-bold hover:underline focus:outline-none">Anular</button>` : ''}
+          </td>
+        `;
+        tbody.appendChild(tr);
+      });
+    }
+
+    // Modal Fiscal Config
+    function openConfigFiscalModal() {
+      const modal = document.getElementById('modal-fel-config-backdrop');
+      const content = document.getElementById('fel-config-modal-content');
+      
+      document.getElementById('fel-config-nit').value = felConfig.nit || '8492019-3';
+      document.getElementById('fel-config-name').value = felConfig.name || 'Café Don Arturo, S.A.';
+      document.getElementById('fel-config-trade').value = felConfig.tradeName || 'Café Don Arturo Especialidades';
+      document.getElementById('fel-config-address').value = felConfig.address || '5ta Avenida 12-34 Zona 10, Ciudad de Guatemala';
+      document.getElementById('fel-config-regimen').value = felConfig.regimen || 'PEQUEÑO_CONTRIBUYENTE';
+      document.getElementById('fel-config-certifier').value = felConfig.certifier || 'SAT INFILE, S.A.';
+      document.getElementById('fel-config-serie').value = felConfig.serie || 'FEL-A1';
+
+      modal.classList.remove('hidden');
+      setTimeout(() => {
+        modal.classList.remove('opacity-0');
+        modal.classList.add('opacity-100');
+        content.classList.remove('scale-95');
+        content.classList.add('scale-100');
+      }, 10);
+    }
+
+    function closeConfigFiscalModal() {
+      const modal = document.getElementById('modal-fel-config-backdrop');
+      const content = document.getElementById('fel-config-modal-content');
+      modal.classList.remove('opacity-100');
+      modal.classList.add('opacity-0');
+      content.classList.remove('scale-100');
+      content.classList.add('scale-95');
+      setTimeout(() => { modal.classList.add('hidden'); }, 200);
+    }
+
+    function handleConfigFiscalSubmit(e) {
+      e.preventDefault();
+      felConfig.nit = document.getElementById('fel-config-nit').value.trim();
+      felConfig.name = document.getElementById('fel-config-name').value.trim();
+      felConfig.tradeName = document.getElementById('fel-config-trade').value.trim();
+      felConfig.address = document.getElementById('fel-config-address').value.trim();
+      felConfig.regimen = document.getElementById('fel-config-regimen').value;
+      felConfig.certifier = document.getElementById('fel-config-certifier').value;
+      felConfig.serie = document.getElementById('fel-config-serie').value.trim();
+
+      try {
+        localStorage.setItem('aurapay_fel_config', JSON.stringify(felConfig));
+      } catch(err){ console.error(err); }
+
+      renderFelInvoicesTable();
+      closeConfigFiscalModal();
+      showToast('Datos Fiscales Actualizados', 'Se guardó la configuración del emisor FEL ante la SAT.', 'success');
+      addSystemLog('Configuración SAT', 'admin', `Se actualizaron datos fiscales del emisor NIT: ${felConfig.nit}`);
+    }
+
+    // Modal Emitir DTE FEL
+    function openEmitirFacturaModal(preselectTxId = null) {
+      const modal = document.getElementById('modal-fel-emitir-backdrop');
+      const content = document.getElementById('fel-emitir-modal-content');
+      const selectTx = document.getElementById('fel-emitir-tx');
+
+      if (selectTx) {
+        selectTx.innerHTML = '<option value="">-- Emisión Directa (Sin Transacción previa) --</option>';
+        const paidTxs = transactions.filter(t => t.status === 'PAID');
+        paidTxs.forEach(t => {
+          const opt = document.createElement('option');
+          opt.value = t.transaction_id;
+          opt.innerText = `${t.transaction_id} - ${t.client} (Q ${t.amount})`;
+          selectTx.appendChild(opt);
+        });
+
+        if (preselectTxId) {
+          selectTx.value = preselectTxId;
+          onFelTxSelectChange(preselectTxId);
+        } else {
+          selectTx.value = '';
+          document.getElementById('fel-emitir-nit').value = 'C/F';
+          document.getElementById('fel-emitir-name').value = 'Consumidor Final';
+          document.getElementById('fel-emitir-address').value = 'Ciudad de Guatemala';
+          document.getElementById('fel-emitir-amount').value = '';
+          document.getElementById('fel-emitir-description').value = '';
+        }
+      }
+
+      modal.classList.remove('hidden');
+      setTimeout(() => {
+        modal.classList.remove('opacity-0');
+        modal.classList.add('opacity-100');
+        content.classList.remove('scale-95');
+        content.classList.add('scale-100');
+      }, 10);
+    }
+
+    function closeEmitirFacturaModal() {
+      const modal = document.getElementById('modal-fel-emitir-backdrop');
+      const content = document.getElementById('fel-emitir-modal-content');
+      modal.classList.remove('opacity-100');
+      modal.classList.add('opacity-0');
+      content.classList.remove('scale-100');
+      content.classList.add('scale-95');
+      setTimeout(() => { modal.classList.add('hidden'); }, 200);
+    }
+
+    function onFelTxSelectChange(txId) {
+      if (!txId) return;
+      const tx = transactions.find(t => t.transaction_id === txId);
+      if (tx) {
+        document.getElementById('fel-emitir-amount').value = tx.amount;
+        document.getElementById('fel-emitir-description').value = tx.product ? tx.product.title : 'Consumo de productos/servicios';
+        document.getElementById('fel-emitir-name').value = tx.client || 'Consumidor Final';
+      }
+    }
+
+    function handleEmitirFacturaSubmit(e) {
+      e.preventDefault();
+
+      const txId = document.getElementById('fel-emitir-tx').value;
+      const nit = document.getElementById('fel-emitir-nit').value.trim() || 'C/F';
+      const amount = parseFloat(document.getElementById('fel-emitir-amount').value) || 0;
+      const name = document.getElementById('fel-emitir-name').value.trim() || 'Consumidor Final';
+      const address = document.getElementById('fel-emitir-address').value.trim() || 'Ciudad de Guatemala';
+      const description = document.getElementById('fel-emitir-description').value.trim() || 'Venta de productos/servicios';
+
+      const nextNum = 10490 + felInvoices.length + 1;
+      const now = new Date();
+      const formatPad = (n) => String(n).padStart(2, '0');
+      const timeStr = now.getFullYear() + '-' + formatPad(now.getMonth()+1) + '-' + formatPad(now.getDate()) + ' ' + formatPad(now.getHours()) + ':' + formatPad(now.getMinutes()) + ':' + formatPad(now.getSeconds());
+
+      const genHex = (len) => Array.from({length: len}, () => Math.floor(Math.random()*16).toString(16).toUpperCase()).join('');
+      const uuidStr = `${genHex(8)}-${genHex(4)}-${genHex(4)}-${genHex(4)}-${genHex(12)}`;
+
+      const newInvoice = {
+        id: `fel-${nextNum}`,
+        uuid: uuidStr,
+        serie: felConfig.serie || 'FEL-A1',
+        number: String(nextNum),
+        date: timeStr,
+        receiver_nit: nit,
+        receiver_name: name,
+        receiver_address: address,
+        tx_id: txId || 'Venta-Directa',
+        payment_method: txId ? 'Transacción EthosPay' : 'Pago General',
+        description: description,
+        amount: amount,
+        tax_rate: 0.05,
+        tax_amount: amount * 0.05,
+        status: 'CERTIFIED'
+      };
+
+      felInvoices.unshift(newInvoice);
+      try {
+        localStorage.setItem('aurapay_fel_invoices', JSON.stringify(felInvoices));
+      } catch(err){ console.error(err); }
+
+      renderFelInvoicesTable();
+      closeEmitirFacturaModal();
+      showToast('Factura FEL Certificada', `Se emitió el DTE No. ${newInvoice.number} ante la SAT.`, 'success');
+      addSystemLog('Factura Emitida (FEL)', 'cajero', `DTE No. ${newInvoice.number} certificado por ${amount.toFixed(2)} Quetzales para ${name} (NIT: ${nit})`);
+      
+      openFelPdfModal(newInvoice.id);
+    }
+
+    // Modal Visor PDF DTE
+    function openFelPdfModal(invoiceId) {
+      const inv = felInvoices.find(i => i.id === invoiceId);
+      if (!inv) return;
+
+      currentSelectedFelInvoice = inv;
+      const modal = document.getElementById('modal-fel-pdf-backdrop');
+      const content = document.getElementById('fel-pdf-modal-content');
+
+      document.getElementById('pdf-emisor-name').innerText = felConfig.name || 'Café Don Arturo, S.A.';
+      document.getElementById('pdf-emisor-trade').innerText = felConfig.tradeName || 'Café Don Arturo Especialidades';
+      document.getElementById('pdf-emisor-address').innerText = felConfig.address || '5ta Avenida 12-34 Zona 10, Ciudad de Guatemala';
+      document.getElementById('pdf-emisor-nit').innerText = `NIT Emisor: ${felConfig.nit || '8492019-3'}`;
+
+      document.getElementById('pdf-dte-number').innerText = `Serie ${inv.serie} No. ${inv.number}`;
+      const statusEl = document.getElementById('pdf-dte-status');
+      if (statusEl) {
+        if (inv.status === 'CANCELLED') {
+          statusEl.innerText = 'ANULADA';
+          statusEl.className = 'text-[9px] bg-red-100 text-red-800 font-bold px-1.5 py-0.5 rounded mt-1 inline-block';
+        } else {
+          statusEl.innerText = 'CERTIFICADA';
+          statusEl.className = 'text-[9px] bg-emerald-100 text-emerald-800 font-bold px-1.5 py-0.5 rounded mt-1 inline-block';
+        }
+      }
+
+      document.getElementById('pdf-uuid').innerText = inv.uuid;
+      document.getElementById('pdf-auth-date').innerText = inv.date;
+      document.getElementById('pdf-certifier').innerText = `${felConfig.certifier || 'INFILE, S.A.'} (Certificación SAT DTE)`;
+
+      document.getElementById('pdf-receiver-nit').innerText = inv.receiver_nit || 'C/F';
+      document.getElementById('pdf-receiver-name').innerText = inv.receiver_name || 'Consumidor Final';
+      document.getElementById('pdf-receiver-address').innerText = inv.receiver_address || 'Ciudad de Guatemala';
+
+      const itemsBody = document.getElementById('pdf-items-body');
+      if (itemsBody) {
+        itemsBody.innerHTML = `
+          <tr>
+            <td class="px-3 py-2 font-medium">${inv.description || 'Consumo de productos/servicios'}</td>
+            <td class="px-3 py-2 text-right">1</td>
+            <td class="px-3 py-2 text-right font-mono">${formatCurrency(inv.amount, 'GTQ')}</td>
+            <td class="px-3 py-2 text-right font-bold font-mono">${formatCurrency(inv.amount, 'GTQ')}</td>
+          </tr>
+        `;
+      }
+
+      const totalVal = parseFloat(inv.amount) || 0;
+      const taxVal = totalVal * 0.05;
+
+      document.getElementById('pdf-total-amount').innerText = formatCurrency(totalVal, 'GTQ');
+      document.getElementById('pdf-tax-amount').innerText = formatCurrency(taxVal, 'GTQ');
+      document.getElementById('pdf-grand-total').innerText = formatCurrency(totalVal, 'GTQ');
+
+      modal.classList.remove('hidden');
+      setTimeout(() => {
+        modal.classList.remove('opacity-0');
+        modal.classList.add('opacity-100');
+        content.classList.remove('scale-95');
+        content.classList.add('scale-100');
+      }, 10);
+    }
+
+    function closeFelPdfModal() {
+      const modal = document.getElementById('modal-fel-pdf-backdrop');
+      const content = document.getElementById('fel-pdf-modal-content');
+      modal.classList.remove('opacity-100');
+      modal.classList.add('opacity-0');
+      content.classList.remove('scale-100');
+      content.classList.add('scale-95');
+      setTimeout(() => { modal.classList.add('hidden'); }, 200);
+    }
+
+    function printFelPdf() {
+      window.print();
+    }
+
+    function anularFelInvoice(invoiceId) {
+      const inv = felInvoices.find(i => i.id === invoiceId);
+      if (!inv) return;
+
+      showCustomConfirm(
+        'Anular Factura Electrónica (DTE)',
+        `¿Estás seguro que deseas anular el DTE Serie ${inv.serie} No. ${inv.number}? Esta acción emitirá la anulación oficial ante la SAT.`,
+        () => {
+          inv.status = 'CANCELLED';
+          try {
+            localStorage.setItem('aurapay_fel_invoices', JSON.stringify(felInvoices));
+          } catch(err){ console.error(err); }
+
+          renderFelInvoicesTable();
+          showToast('DTE Anulado', `Se anuló la factura No. ${inv.number} ante la SAT.`, 'success');
+          addSystemLog('Anulación DTE FEL', 'admin', `Se procedió a la anulación de la factura DTE No. ${inv.number}`);
+        }
+      );
+    }
+
+    // Export Libro de Ventas (SAT-2046 Pequeño Contribuyente)
+    function exportLibroVentasExcel() {
+      const certified = felInvoices.filter(i => i.status === 'CERTIFIED');
+      let csvContent = 'data:text/csv;charset=utf-8,';
+      csvContent += 'LIBRO DE VENTAS - PEQUEÑO CONTRIBUYENTE (SAT-2046)\n';
+      csvContent += `Establecimiento: ${felConfig.name} - NIT: ${felConfig.nit}\n`;
+      csvContent += 'Fecha Generacion: ' + new Date().toLocaleString() + '\n\n';
+      csvContent += 'Fecha,Serie DTE,Numero DTE,UUID SAT,NIT Cliente,Nombre Cliente,Monto Total (Q),IVA 5% (Q)\n';
+
+      let sumTotal = 0;
+      let sumTax = 0;
+
+      certified.forEach(i => {
+        const amt = parseFloat(i.amount) || 0;
+        const tax = amt * 0.05;
+        sumTotal += amt;
+        sumTax += tax;
+        csvContent += `"${i.date}","${i.serie}","${i.number}","${i.uuid}","${i.receiver_nit}","${i.receiver_name}",${amt.toFixed(2)},${tax.toFixed(2)}\n`;
+      });
+
+      csvContent += `\nTOTALES,,, ,,${sumTotal.toFixed(2)},${sumTax.toFixed(2)}\n`;
+
+      const encodedUri = encodeURI(csvContent);
+      const link = document.createElement('a');
+      link.setAttribute('href', encodedUri);
+      link.setAttribute('download', `Libro_Ventas_Pequeño_Contribuyente_SAT_${new Date().toISOString().substring(0,10)}.csv`);
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+
+      showToast('Libro de Ventas Descargado', 'Se generó el reporte formateado para Declaraguate / SAT.', 'success');
+    }
+
     // Sidebar navigation tabs switching responsively
     function switchTab(viewName) {
       try {
         const allowedViews = {
-          admin: ['dashboard', 'links', 'transacciones', 'productos', 'informacion', 'usuarios', 'logs', 'ajustes'],
-          cajero: ['dashboard', 'links', 'transacciones', 'productos'],
-          operativo: ['dashboard', 'links', 'transacciones', 'productos']
+          admin: ['dashboard', 'links', 'transacciones', 'productos', 'facturacion', 'informacion', 'usuarios', 'logs', 'ajustes'],
+          cajero: ['dashboard', 'links', 'transacciones', 'productos', 'facturacion'],
+          operativo: ['dashboard', 'links', 'transacciones', 'productos', 'facturacion']
         };
 
         const userRole = currentUser ? currentUser.role : 'cajero';
-        const allowed = allowedViews[userRole] || ['dashboard', 'links', 'transacciones', 'productos'];
+        const allowed = allowedViews[userRole] || ['dashboard', 'links', 'transacciones', 'productos', 'facturacion'];
         if (!allowed.includes(viewName)) {
           showToast('Acceso Restringido', 'Tu rol no tiene acceso a esta sección.', 'warning');
           return;
@@ -3493,9 +4333,10 @@
         const logsMenu = document.getElementById('menu-logs');
         const infoMenu = document.getElementById('menu-informacion');
         const prodMenu = document.getElementById('menu-productos');
+        const facturacionMenu = document.getElementById('menu-facturacion');
         const ajustMenu = document.getElementById('menu-ajustes');
         
-        const allMenus = [dashboardMenu, linksMenu, transMenu, usersMenu, logsMenu, infoMenu, prodMenu, ajustMenu];
+        const allMenus = [dashboardMenu, linksMenu, transMenu, usersMenu, logsMenu, infoMenu, prodMenu, facturacionMenu, ajustMenu];
         const inactiveClass = 'flex items-center gap-3 px-3 py-2 text-sm font-medium rounded-md transition-colors text-gray-500 hover:text-gray-900 hover:bg-gray-50';
         const inactiveBadgeClass = 'flex items-center justify-between px-3 py-2 text-sm font-medium rounded-md transition-colors text-gray-500 hover:text-gray-900 hover:bg-gray-50';
         const activeClass = 'flex items-center gap-3 px-3 py-2 text-sm font-semibold rounded-md transition-colors text-aura-goldText bg-amber-50';
@@ -3504,7 +4345,6 @@
         allMenus.forEach(el => {
           if (!el) return;
           const isHidden = el.classList.contains('hidden');
-          // Preserve justify-between for menus that have badges
           const hasBadge = el.querySelector('span[id*="badge"]');
           el.className = hasBadge ? inactiveBadgeClass : inactiveClass;
           if (isHidden) el.classList.add('hidden');
@@ -3519,11 +4359,11 @@
         const usuariosView = document.getElementById('usuarios-view');
         const logsView = document.getElementById('logs-view');
         const productosView = document.getElementById('productos-view');
+        const facturacionView = document.getElementById('facturacion-view');
         const ajustesView = document.getElementById('ajustes-view');
+        const informacionView = document.getElementById('informacion-view');
         
         const topbarCreateBtn = document.getElementById('btn-create-link');
-
-        const informacionView = document.getElementById('informacion-view');
 
         // Hide all content containers first
         if (dashboardView) dashboardView.classList.add('hidden');
@@ -3531,6 +4371,7 @@
         if (usuariosView) usuariosView.classList.add('hidden');
         if (logsView) logsView.classList.add('hidden');
         if (productosView) productosView.classList.add('hidden');
+        if (facturacionView) facturacionView.classList.add('hidden');
         if (ajustesView) ajustesView.classList.add('hidden');
         if (informacionView) informacionView.classList.add('hidden');
 
@@ -3581,6 +4422,11 @@
           if (productosView) productosView.classList.remove('hidden');
           if (topbarCreateBtn) topbarCreateBtn.classList.add('hidden');
           renderProductsCatalog();
+        } else if (viewName === 'facturacion') {
+          activateMenu(facturacionMenu);
+          if (facturacionView) facturacionView.classList.remove('hidden');
+          if (topbarCreateBtn) topbarCreateBtn.classList.add('hidden');
+          renderFelInvoicesTable();
         } else if (viewName === 'ajustes') {
           activateMenu(ajustMenu);
           if (ajustesView) ajustesView.classList.remove('hidden');
