@@ -464,13 +464,47 @@
       }
     });
 
+    // Re-synchronize transactions from storage reactively (focus / storage event)
+    function refreshTransactionsFromStorage() {
+      try {
+        const stored = StorageManager.get('ethospay_transactions') || StorageManager.get('aurapay_transactions');
+        if (stored && Array.isArray(stored) && stored.length > 0) {
+          transactions = stored;
+          transactions.forEach((tx, idx) => {
+            if (tx.delivery_status !== 'Entregado' && tx.delivery_status !== 'En proceso de entrega') {
+              const status = (tx.shipping && (tx.shipping.delivery_status === 'Entregado' || tx.shipping.delivery_status === 'En proceso de entrega'))
+                ? tx.shipping.delivery_status
+                : (tx.status === 'PAID' && (idx % 2 === 0 || tx.transaction_id === 'chk_a1b2c3') ? 'Entregado' : 'En proceso de entrega');
+              tx.delivery_status = status;
+            }
+            if (tx.shipping) {
+              tx.shipping.delivery_status = tx.delivery_status;
+            }
+          });
+          if (typeof calculateKPIs === 'function') calculateKPIs();
+          if (typeof renderTable === 'function') renderTable();
+        }
+      } catch(e) {
+        console.error('Error refreshing transactions from storage:', e);
+      }
+    }
+    window.refreshTransactionsFromStorage = refreshTransactionsFromStorage;
+    window.addEventListener('storage', (e) => {
+      if (e.key === 'ethospay_transactions' || e.key === 'aurapay_transactions') {
+        refreshTransactionsFromStorage();
+      }
+    });
+    window.addEventListener('focus', () => {
+      refreshTransactionsFromStorage();
+    });
+
     // Helper function for Guatemalan IVA calculations (Decreto 27-92 Ley del IVA)
     function calculateIvaGuatemala(totalAmount, regimen = null) {
       const amt = parseFloat(totalAmount) || 0;
       let reg = regimen;
       if (!reg) {
         try {
-          const cfg = JSON.parse(localStorage.getItem('aurapay_fel_config'));
+          const cfg = JSON.parse(localStorage.getItem('aurapay_fel_config') || localStorage.getItem('ethospay_fel_config') || '{}');
           if (cfg && cfg.regimen) reg = cfg.regimen;
         } catch(e){}
       }
@@ -481,32 +515,57 @@
       let taxRate = 0.05;
       let label = 'IVA 5% Pequeño Contribuyente';
       let generateCredit = false;
+      let retentionAmount = 0;
+      let retentionLabel = 'Retención Definitiva SAT (5%)';
+      let merchantDue = 0;
+      let legalExplanation = '';
+      let regimenHumanName = 'Pequeño Contribuyente (5% Fijo)';
 
       if (reg === 'REGIMEN_GENERAL') {
         taxRate = 0.12;
         baseAmount = amt / 1.12;
         taxAmount = amt - baseAmount;
+        retentionAmount = taxAmount * 0.15; // 15% del débito fiscal IVA (Decreto 20-2006 Ley Antievasión)
+        merchantDue = taxAmount - retentionAmount;
         label = 'IVA 12% Régimen General';
+        regimenHumanName = 'Régimen General (12% IVA)';
+        retentionLabel = 'Retención Operadora (15% del IVA)';
         generateCredit = true;
+        legalExplanation = 'El precio final al público incluye 12% de IVA (Decreto 27-92). Las facturas con NIT generan derecho a Crédito Fiscal para el comprador. En cobros con tarjeta, la operadora retiene el 15% del IVA como pago a cuenta (Decreto 20-2006). El remanente (85%) se declara mensualmente en Declaraguate SAT-2237.';
       } else if (reg === 'PEQUEÑO_ELECTRONICO') {
         taxRate = 0.04;
         baseAmount = amt;
         taxAmount = amt * 0.04;
+        retentionAmount = taxAmount;
+        merchantDue = 0;
         label = 'IVA 4% Pequeño Contribuyente Electrónico';
+        regimenHumanName = 'Pequeño Contribuyente Electrónico (4%)';
+        retentionLabel = 'Retención Definitiva SAT (4%)';
         generateCredit = false;
+        legalExplanation = 'Tarifa preferencial reducida del 4% (Decreto 7-2019) para ventas con Factura Electrónica (FEL) y cobro electrónico. La operadora retiene el 4% completo como pago definitivo. No genera derecho a crédito fiscal.';
       } else if (reg === 'EXENTO') {
         taxRate = 0.0;
         baseAmount = amt;
         taxAmount = 0.0;
-        label = 'IVA 0% Exento';
+        retentionAmount = 0.0;
+        merchantDue = 0;
+        label = 'IVA 0% Operación Exenta';
+        regimenHumanName = 'Exento de IVA (0%)';
+        retentionLabel = 'Sin retención (Operación Exenta)';
         generateCredit = false;
+        legalExplanation = 'Venta legalmente exenta del Impuesto al Valor Agregado según Art. 7 u 8 de la Ley del IVA (Decreto 27-92). No aplica retención ni genera débito o crédito fiscal.';
       } else {
-        // PEQUEÑO_CONTRIBUYENTE
+        // PEQUEÑO_CONTRIBUYENTE (Default)
         taxRate = 0.05;
         baseAmount = amt;
         taxAmount = amt * 0.05;
+        retentionAmount = taxAmount;
+        merchantDue = 0;
         label = 'IVA 5% Pequeño Contribuyente';
+        regimenHumanName = 'Pequeño Contribuyente (5% Fijo)';
+        retentionLabel = 'Retención Definitiva SAT (5%)';
         generateCredit = false;
+        legalExplanation = 'Tarifa simplificada del 5% sobre el total facturado (Decreto 27-92 Art. 47 y 48). Al cobrar con tarjeta o enlace de pago, la operadora retiene el 5% íntegro con carácter de pago definitivo, quedando el comercio 100% solvente ante la SAT por esta transacción. No genera derecho a crédito fiscal.';
       }
 
       return {
@@ -514,9 +573,14 @@
         baseAmount: baseAmount,
         taxAmount: taxAmount,
         taxRate: taxRate,
+        retentionAmount: retentionAmount,
+        retentionLabel: retentionLabel,
+        merchantDue: merchantDue,
         regimen: reg,
+        regimenHumanName: regimenHumanName,
         label: label,
-        generateCredit: generateCredit
+        generateCredit: generateCredit,
+        legalExplanation: legalExplanation
       };
     }
     window.calculateIvaGuatemala = calculateIvaGuatemala;
@@ -527,7 +591,10 @@
         id: 'prod_001',
         name: 'Café de Especialidad Huehuetenango (340g)',
         ref: 'SKU-CAF-HUE-340',
+        item_type: 'producto',
         stock: 45,
+        weight: 0.75,
+        dimensions: { length: 12, width: 8, height: 22 },
         base_amount: 134.85,
         max_installments: 6,
         fee_percentage_applied: 7.00,
@@ -539,7 +606,10 @@
         id: 'prod_002',
         name: 'Prensa Francesa de Cobre (1L)',
         ref: 'SKU-PRE-COP-100',
+        item_type: 'producto',
         stock: 12,
+        weight: 1.10,
+        dimensions: { length: 15, width: 12, height: 25 },
         base_amount: 322.00,
         max_installments: 12,
         fee_percentage_applied: 8.00,
@@ -551,18 +621,51 @@
         id: 'prod_003',
         name: 'Molino de Café Manual de Acero',
         ref: 'SKU-MOL-MAN-SS',
-        stock: null, // null = sin control de inventario
+        item_type: 'producto',
+        stock: 18,
+        weight: 0.90,
+        dimensions: { length: 10, width: 10, height: 24 },
         base_amount: 259.19,
         max_installments: 3,
         fee_percentage_applied: 5.75,
         price: 275.00,
         description: 'Molino de café manual con muelas de cerámica ajustables, cuerpo de acero inoxidable.',
         image: null
+      },
+      {
+        id: 'prod_004',
+        name: 'Taller de Barismo y Extracción Especializada',
+        ref: 'SRV-BAR-TAL-01',
+        item_type: 'servicio',
+        stock: null,
+        weight: null,
+        dimensions: null,
+        base_amount: 350.00,
+        max_installments: 6,
+        fee_percentage_applied: 7.00,
+        price: 375.00,
+        description: 'Curso intensivo de 4 horas: calibración de espresso, texturizado de leche y métodos artesanales.',
+        image: null
+      },
+      {
+        id: 'prod_005',
+        name: 'Mantenimiento Preventivo de Máquina Espresso',
+        ref: 'SRV-MAN-ESP-02',
+        item_type: 'servicio',
+        stock: null,
+        weight: null,
+        dimensions: null,
+        base_amount: 280.00,
+        max_installments: 3,
+        fee_percentage_applied: 5.75,
+        price: 300.00,
+        description: 'Descalcificación completa, sustitución de empaques, ajuste de presión de bomba y duchas.',
+        image: null
       }
     ];
 
     // LocalStorage sync for products
-    const PROD_SCHEMA_VERSION = 'v3';
+    const PROD_SCHEMA_VERSION = 'v6';
     const storedProdVersion = StorageManager.get('ethospay_prod_version') || StorageManager.get('aurapay_prod_version');
     const storedProds = StorageManager.get('ethospay_products') || StorageManager.get('aurapay_products');
     if (storedProds && storedProdVersion === PROD_SCHEMA_VERSION) {
@@ -1400,16 +1503,10 @@
 
       listPriceInput.value = calculatedPrice > 0 ? calculatedPrice.toFixed(2) : '';
 
-      // Update Guatemalan Tax Breakdown Card & Platform Retention (5%)
+      // Update Guatemalan Tax Breakdown Card & Platform Retention
       const salePrice = calculatedPrice > 0 ? calculatedPrice : baseAmt;
-      
-      let felConfig = { regimen: 'PEQUEÑO_CONTRIBUYENTE' };
-      try {
-        const storedConfig = localStorage.getItem('aurapay_fel_config');
-        if (storedConfig) felConfig = JSON.parse(storedConfig);
-      } catch(e){}
+      const iva = calculateIvaGuatemala(salePrice);
 
-      const regimen = felConfig.regimen || 'PEQUEÑO_CONTRIBUYENTE';
       const regimenTitleEl = document.getElementById('product-tax-regimen-title');
       const rateBadgeEl = document.getElementById('product-tax-rate-badge');
       const salePriceEl = document.getElementById('product-tax-sale-price');
@@ -1422,58 +1519,30 @@
       const helperTextEl = document.getElementById('product-tax-helper-text');
 
       if (salePriceEl) salePriceEl.innerText = formatCurrency(salePrice, 'GTQ');
-
-      if (regimen === 'REGIMEN_GENERAL') {
-        const baseWithoutIva = salePrice / 1.12;
-        const totalIva12 = salePrice - baseWithoutIva;
-        // Retención legal operadoras de tarjeta en Régimen General: 15% del IVA (Decreto 20-2006)
-        const generalRetentionAmt = totalIva12 * 0.15;
-        const merchantRemanent = Math.max(0, totalIva12 - generalRetentionAmt);
-
-        if (regimenTitleEl) regimenTitleEl.innerText = 'Régimen General (12% IVA)';
-        if (rateBadgeEl) rateBadgeEl.innerText = '12% IVA General';
-        if (totalIvaLabelEl) totalIvaLabelEl.innerText = 'Débito Fiscal IVA Total (12%):';
-        if (totalIvaEl) totalIvaEl.innerText = formatCurrency(totalIva12, 'GTQ');
-        if (retentionLabelEl) retentionLabelEl.innerText = '(-) Retención SAT Operadora (15% del IVA):';
-        if (retentionEl) retentionEl.innerText = formatCurrency(generalRetentionAmt, 'GTQ');
-        if (dueLabelEl) dueLabelEl.innerText = '(=) Remanente IVA a Declarar en SAT:';
-        if (merchantDueEl) merchantDueEl.innerText = formatCurrency(merchantRemanent, 'GTQ');
-        if (helperTextEl) helperTextEl.innerText = 'Conforme al Decreto 20-2006, la operadora retiene el 15% del débito fiscal IVA generado en cobros con tarjeta. El comercio compensa con sus créditos fiscales y liquida el remanente en su declaración mensual Declaraguate SAT-2237.';
-      } else if (regimen === 'PEQUEÑO_ELECTRONICO') {
-        const totalIva4 = salePrice * 0.04;
-        if (regimenTitleEl) regimenTitleEl.innerText = 'Pequeño Contribuyente Electrónico (4%)';
-        if (rateBadgeEl) rateBadgeEl.innerText = '4% Tarifa Reducida';
-        if (totalIvaLabelEl) totalIvaLabelEl.innerText = 'Impuesto SAT Calculado (4% sobre Facturado):';
-        if (totalIvaEl) totalIvaEl.innerText = formatCurrency(totalIva4, 'GTQ');
-        if (retentionLabelEl) retentionLabelEl.innerText = '(-) Retención SAT (4% sobre Facturado - Pago Definitivo):';
-        if (retentionEl) retentionEl.innerText = formatCurrency(totalIva4, 'GTQ');
-        if (dueLabelEl) dueLabelEl.innerText = '(=) Saldo de IVA a Liquidar ante SAT:';
-        if (merchantDueEl) merchantDueEl.innerText = formatCurrency(0, 'GTQ');
-        if (helperTextEl) helperTextEl.innerText = '✓ Conforme al Decreto 7-2019, la plataforma retiene el 4% sobre el monto total facturado como pago definitivo del impuesto. Quedas 100% solvente sin trámites adicionales.';
-      } else if (regimen === 'EXENTO') {
-        if (regimenTitleEl) regimenTitleEl.innerText = 'Exento de IVA (0%)';
-        if (rateBadgeEl) rateBadgeEl.innerText = '0% Exento';
-        if (totalIvaLabelEl) totalIvaLabelEl.innerText = 'Monto IVA Total (0%):';
-        if (totalIvaEl) totalIvaEl.innerText = formatCurrency(0, 'GTQ');
-        if (retentionLabelEl) retentionLabelEl.innerText = '(-) Retención SAT (0% Exento):';
-        if (retentionEl) retentionEl.innerText = formatCurrency(0, 'GTQ');
-        if (dueLabelEl) dueLabelEl.innerText = '(=) Saldo de IVA a Liquidar ante SAT:';
-        if (merchantDueEl) merchantDueEl.innerText = formatCurrency(0, 'GTQ');
-        if (helperTextEl) helperTextEl.innerText = 'Operación exenta del Impuesto al Valor Agregado según Art. 7 de la Ley del IVA. No aplica retención.';
-      } else {
-        // Default Pequeño Contribuyente 5%
-        const totalIva5 = salePrice * 0.05;
-        if (regimenTitleEl) regimenTitleEl.innerText = 'Pequeño Contribuyente (5% IVA)';
-        if (rateBadgeEl) rateBadgeEl.innerText = '5% IVA Fijo';
-        if (totalIvaLabelEl) totalIvaLabelEl.innerText = 'Impuesto SAT Calculado (5% sobre Facturado):';
-        if (totalIvaEl) totalIvaEl.innerText = formatCurrency(totalIva5, 'GTQ');
-        if (retentionLabelEl) retentionLabelEl.innerText = '(-) Retención SAT (5% sobre Facturado - Pago Definitivo):';
-        if (retentionEl) retentionEl.innerText = formatCurrency(totalIva5, 'GTQ');
-        if (dueLabelEl) dueLabelEl.innerText = '(=) Saldo de IVA a Liquidar ante SAT:';
-        if (merchantDueEl) merchantDueEl.innerText = formatCurrency(0, 'GTQ');
-        if (helperTextEl) helperTextEl.innerText = '✓ Conforme al Art. 48 de la Ley del IVA (Decreto 27-92), los emisores y operadores retienen el 5% sobre el monto total facturado como pago definitivo. ¡El 100% de tu IVA queda solventado automáticamente ante la SAT!';
-      }
+      if (regimenTitleEl) regimenTitleEl.innerText = iva.regimenHumanName;
+      if (rateBadgeEl) rateBadgeEl.innerText = iva.label.replace('IVA ', '');
+      if (totalIvaLabelEl) totalIvaLabelEl.innerText = `${iva.label}:`;
+      if (totalIvaEl) totalIvaEl.innerText = formatCurrency(iva.taxAmount, 'GTQ');
+      if (retentionLabelEl) retentionLabelEl.innerText = `${iva.retentionLabel}:`;
+      if (retentionEl) retentionEl.innerText = formatCurrency(iva.retentionAmount, 'GTQ');
+      if (dueLabelEl) dueLabelEl.innerText = 'Saldo a Liquidar ante SAT:';
+      if (merchantDueEl) merchantDueEl.innerText = formatCurrency(iva.merchantDue, 'GTQ');
+      if (helperTextEl) helperTextEl.innerText = iva.legalExplanation;
     }
+
+    let catalogTypeFilter = 'all';
+
+    function filterCatalogByType(type) {
+      catalogTypeFilter = type;
+      const btnAll = document.getElementById('btn-prod-cat-all');
+      const btnProd = document.getElementById('btn-prod-cat-producto');
+      const btnServ = document.getElementById('btn-prod-cat-servicio');
+      if (btnAll) btnAll.className = type === 'all' ? 'px-2.5 py-1 text-[11px] font-semibold rounded bg-gray-100 text-gray-950 transition-colors' : 'px-2.5 py-1 text-[11px] font-semibold rounded text-gray-500 hover:text-gray-900 transition-colors';
+      if (btnProd) btnProd.className = type === 'producto' ? 'px-2.5 py-1 text-[11px] font-semibold rounded bg-gray-100 text-gray-950 transition-colors' : 'px-2.5 py-1 text-[11px] font-semibold rounded text-gray-500 hover:text-gray-900 transition-colors';
+      if (btnServ) btnServ.className = type === 'servicio' ? 'px-2.5 py-1 text-[11px] font-semibold rounded bg-gray-100 text-gray-950 transition-colors' : 'px-2.5 py-1 text-[11px] font-semibold rounded text-gray-500 hover:text-gray-900 transition-colors';
+      renderProductsCatalog();
+    }
+    window.filterCatalogByType = filterCatalogByType;
 
     function renderProductsCatalog() {
       const grid = document.getElementById('products-catalog-grid');
@@ -1482,7 +1551,14 @@
 
       grid.innerHTML = '';
 
-      if (productsCatalog.length === 0) {
+      const itemsToRender = productsCatalog.filter(p => {
+        const isService = (p.item_type === 'servicio' || p.stock === null || p.stock === undefined);
+        if (catalogTypeFilter === 'producto') return !isService;
+        if (catalogTypeFilter === 'servicio') return isService;
+        return true;
+      });
+
+      if (itemsToRender.length === 0) {
         grid.classList.add('hidden');
         emptyState.classList.remove('hidden');
         return;
@@ -1491,7 +1567,7 @@
       grid.classList.remove('hidden');
       emptyState.classList.add('hidden');
 
-      productsCatalog.forEach(p => {
+      itemsToRender.forEach(p => {
         const card = document.createElement('div');
         card.className = 'bg-white border border-gray-200 rounded-xl shadow-xs overflow-hidden flex flex-col justify-between transition-all hover:shadow-md';
 
@@ -1510,16 +1586,18 @@
         }
 
         let stockLabel = '';
-        if (p.stock !== null && p.stock !== undefined) {
+        const isService = (p.item_type === 'servicio' || p.stock === null || p.stock === undefined);
+        if (isService) {
+          stockLabel = '<span class="bg-blue-50 text-blue-700 text-[9.5px] px-2 py-0.5 rounded font-bold border border-blue-200" title="Servicio intangible · Sin envío">🛠️ Servicio</span>';
+        } else {
           const mainStock = p.stock > 0 ? `<span class="bg-amber-50 text-aura-goldText text-[9.5px] px-2 py-0.5 rounded font-bold border border-amber-200/50" title="Inventario disponible">${p.stock} en stock</span>` : `<span class="bg-slate-50 text-slate-550 text-[9.5px] px-2 py-0.5 rounded font-bold border border-slate-200">Agotado</span>`;
           const reservedStock = (p.reserved && p.reserved > 0) ? `<span class="bg-gray-100 text-gray-600 text-[9.5px] px-2 py-0.5 rounded font-bold border border-gray-200" title="Apartados en links pendientes">${p.reserved} apartados</span>` : '';
           stockLabel = `<div class="flex items-center gap-1">${mainStock}${reservedStock}</div>`;
-        } else {
-          stockLabel = '<span class="bg-gray-50 text-gray-550 text-[9.5px] px-2 py-0.5 rounded font-bold border border-gray-150">Servicio</span>';
         }
 
         const descText = p.description || 'Sin descripción detallada disponible.';
         const refPill = p.ref ? `<span class="bg-gray-100 text-gray-600 text-[9.5px] px-1.5 py-0.2 rounded font-mono border border-gray-200">${p.ref}</span>` : '';
+        const weightPill = (!isService && p.weight) ? `<span class="bg-amber-50 text-aura-goldText text-[9px] px-1.5 py-0.2 rounded font-medium border border-amber-200/50" title="Peso de envío: ${p.weight} lb">📦 ${p.weight} lb</span>` : '';
 
         card.innerHTML = `
           <div class="h-32 w-full border-b border-gray-150 overflow-hidden relative bg-gray-50">
@@ -1532,7 +1610,7 @@
             <div class="space-y-1.5">
               <div class="flex items-start justify-between gap-2">
                 <h3 class="font-bold text-xs text-gray-950 line-clamp-1 flex-1" title="${p.name}">${p.name}</h3>
-                ${refPill}
+                <div class="flex items-center gap-1 flex-shrink-0">${refPill}${weightPill}</div>
               </div>
               <p class="text-[10.5px] text-gray-550 leading-relaxed line-clamp-2">${descText}</p>
             </div>
@@ -1703,11 +1781,25 @@
       if (prodId) {
         const prod = productsCatalog.find(p => p.id === prodId);
         if (prod) {
-          titleEl.innerText = 'Editar Producto';
+          titleEl.innerText = 'Editar Ítem del Catálogo';
           editIdInput.value = prod.id;
           document.getElementById('product-name').value = prod.name;
           document.getElementById('product-ref').value = prod.ref || '';
+          
+          const prodType = prod.item_type || (prod.stock !== null && prod.stock !== undefined ? 'producto' : 'servicio');
+          setProductModalType(prodType);
+
           document.getElementById('product-stock').value = prod.stock !== null && prod.stock !== undefined ? prod.stock : '';
+          
+          const weightEl = document.getElementById('product-weight');
+          const lengthEl = document.getElementById('product-length');
+          const widthEl  = document.getElementById('product-width');
+          const heightEl = document.getElementById('product-height');
+          if (weightEl) weightEl.value = (prod.weight !== null && prod.weight !== undefined) ? prod.weight : '';
+          if (lengthEl) lengthEl.value = (prod.dimensions && prod.dimensions.length) ? prod.dimensions.length : '';
+          if (widthEl)  widthEl.value  = (prod.dimensions && prod.dimensions.width) ? prod.dimensions.width : '';
+          if (heightEl) heightEl.value = (prod.dimensions && prod.dimensions.height) ? prod.dimensions.height : '';
+
           document.getElementById('product-base-amount').value = prod.base_amount || prod.price;
           document.getElementById('product-max-installments').value = prod.max_installments || 1;
           updateCalculatedProductPrice();
@@ -1741,8 +1833,22 @@
           }
         }
       } else {
-        titleEl.innerText = 'Registrar Producto en Catálogo';
+        titleEl.innerText = 'Registrar en Catálogo';
         editIdInput.value = '';
+        setProductModalType('producto');
+        document.getElementById('product-name').value = '';
+        document.getElementById('product-ref').value = '';
+        document.getElementById('product-stock').value = '';
+        const weightEl = document.getElementById('product-weight');
+        const lengthEl = document.getElementById('product-length');
+        const widthEl  = document.getElementById('product-width');
+        const heightEl = document.getElementById('product-height');
+        if (weightEl) weightEl.value = '';
+        if (lengthEl) lengthEl.value = '';
+        if (widthEl)  widthEl.value  = '';
+        if (heightEl) heightEl.value = '';
+        document.getElementById('product-base-amount').value = '';
+        document.getElementById('product-desc').value = '';
         updateCalculatedProductPrice();
       }
 
@@ -1839,13 +1945,66 @@
       document.getElementById('img-url-preview-state').classList.add('hidden');
     }
 
+    function setProductModalType(type) {
+      const isService = (type === 'servicio');
+      const typeInput = document.getElementById('product-item-type');
+      if (typeInput) typeInput.value = isService ? 'servicio' : 'producto';
+
+      const prodBtn = document.getElementById('item-type-product-btn');
+      const servBtn = document.getElementById('item-type-service-btn');
+      const stockContainer = document.getElementById('product-stock-container');
+      const serviceHint = document.getElementById('product-service-hint');
+      const dimensionsContainer = document.getElementById('product-dimensions-container');
+
+      if (isService) {
+        if (prodBtn) {
+          prodBtn.className = 'py-1.5 px-2.5 rounded-md text-xs font-semibold border flex items-center justify-center gap-1.5 transition-all bg-gray-50 text-gray-600 border-gray-200 hover:bg-gray-100';
+        }
+        if (servBtn) {
+          servBtn.className = 'py-1.5 px-2.5 rounded-md text-xs font-semibold border flex items-center justify-center gap-1.5 transition-all bg-blue-600 text-white border-blue-600 shadow-xs';
+        }
+        if (stockContainer) stockContainer.classList.add('hidden');
+        if (serviceHint) serviceHint.classList.remove('hidden');
+        if (dimensionsContainer) dimensionsContainer.classList.add('hidden');
+        const stockInput = document.getElementById('product-stock');
+        if (stockInput) stockInput.value = '';
+      } else {
+        if (prodBtn) {
+          prodBtn.className = 'py-1.5 px-2.5 rounded-md text-xs font-semibold border flex items-center justify-center gap-1.5 transition-all bg-aura-primary text-white border-aura-primary shadow-xs';
+        }
+        if (servBtn) {
+          servBtn.className = 'py-1.5 px-2.5 rounded-md text-xs font-semibold border flex items-center justify-center gap-1.5 transition-all bg-gray-50 text-gray-600 border-gray-200 hover:bg-gray-100';
+        }
+        if (stockContainer) stockContainer.classList.remove('hidden');
+        if (serviceHint) serviceHint.classList.add('hidden');
+        if (dimensionsContainer) dimensionsContainer.classList.remove('hidden');
+      }
+    }
+    window.setProductModalType = setProductModalType;
+
     function handleSaveProduct(e) {
       e.preventDefault();
+
+      const itemType = document.getElementById('product-item-type') ? document.getElementById('product-item-type').value : 'producto';
+      const isService = (itemType === 'servicio');
 
       const name = document.getElementById('product-name').value.trim();
       const ref = document.getElementById('product-ref').value.trim() || null;
       const stockVal = document.getElementById('product-stock').value;
-      const stock = stockVal !== '' ? parseInt(stockVal) : null;
+      const stock = isService ? null : (stockVal !== '' ? parseInt(stockVal) : null);
+
+      const weightVal = document.getElementById('product-weight') ? document.getElementById('product-weight').value : '';
+      const lengthVal = document.getElementById('product-length') ? document.getElementById('product-length').value : '';
+      const widthVal  = document.getElementById('product-width') ? document.getElementById('product-width').value : '';
+      const heightVal = document.getElementById('product-height') ? document.getElementById('product-height').value : '';
+
+      const weight = isService ? null : (weightVal !== '' ? parseFloat(weightVal) : null);
+      const dimensions = isService ? null : {
+        length: lengthVal !== '' ? parseFloat(lengthVal) : null,
+        width: widthVal !== '' ? parseFloat(widthVal) : null,
+        height: heightVal !== '' ? parseFloat(heightVal) : null
+      };
+
       const baseAmount = parseFloat(document.getElementById('product-base-amount').value);
       const maxInstallments = parseInt(document.getElementById('product-max-installments').value);
       const calculatedListPrice = parseFloat(document.getElementById('product-list-price').value);
@@ -1872,7 +2031,10 @@
             id: editId,
             name,
             ref,
+            item_type: itemType,
             stock,
+            weight,
+            dimensions,
             base_amount: baseAmount,
             max_installments: maxInstallments,
             fee_percentage_applied: feePercentageApplied,
@@ -1883,7 +2045,7 @@
             description,
             image: currentProductImageBase64
           };
-          showToast('Catálogo Actualizado', `El producto "${name}" fue modificado.`, 'success');
+          showToast('Catálogo Actualizado', `"${name}" fue modificado exitosamente.`, 'success');
         }
       } else {
         // Create mode
@@ -1891,7 +2053,10 @@
           id: 'prod_' + Math.random().toString(36).substr(2, 9),
           name,
           ref,
+          item_type: itemType,
           stock,
+          weight,
+          dimensions,
           base_amount: baseAmount,
           max_installments: maxInstallments,
           fee_percentage_applied: feePercentageApplied,
@@ -1903,13 +2068,13 @@
           image: currentProductImageBase64
         };
         productsCatalog.push(newProduct);
-        showToast('Producto Registrado', `"${name}" fue añadido al catálogo.`, 'success');
+        showToast('Ítem Registrado', `"${name}" fue añadido al catálogo como ${isService ? 'servicio' : 'producto'}.`, 'success');
       }
 
       // Sync and render
       try {
         localStorage.setItem('aurapay_products', JSON.stringify(productsCatalog));
-        localStorage.setItem('aurapay_products', JSON.stringify(productsCatalog));
+        localStorage.setItem('ethospay_products', JSON.stringify(productsCatalog));
       } catch (err) {
         console.error(err);
       }
@@ -1945,18 +2110,118 @@
     // Temporary array to hold selected products for the link being created
     let selectedProductsForLink = [];
 
+    function setLinkType(type) {
+      const isService = (type === 'servicio');
+      
+      // Validate against current cart
+      if (selectedProductsForLink && selectedProductsForLink.length > 0) {
+        const hasServiceInCart = selectedProductsForLink.some(item => item.is_service || item.item_type === 'servicio');
+        const hasInventoryInCart = selectedProductsForLink.some(item => !item.is_service && item.discounts_inventory);
+
+        if (isService && hasInventoryInCart) {
+          showToast('Incompatibilidad en Carrito', 'El carrito ya contiene productos con inventario. Vacía la selección para cambiar a servicio.', 'error');
+          return;
+        }
+        if (!isService && hasServiceInCart) {
+          showToast('Incompatibilidad en Carrito', 'El carrito ya contiene un servicio. Vacía la selección para cambiar a producto físico.', 'error');
+          return;
+        }
+      }
+
+      const typeInput = document.getElementById('link-item-type');
+      if (typeInput) typeInput.value = isService ? 'servicio' : 'producto';
+
+      const prodBtn = document.getElementById('link-type-product-btn');
+      const servBtn = document.getElementById('link-type-service-btn');
+
+      if (isService) {
+        if (prodBtn) prodBtn.className = 'py-1.5 px-3 rounded-md text-xs font-semibold border flex items-center justify-center gap-1.5 transition-all bg-gray-50 text-gray-600 border-gray-200 hover:bg-gray-100';
+        if (servBtn) servBtn.className = 'py-1.5 px-3 rounded-md text-xs font-semibold border flex items-center justify-center gap-1.5 transition-all bg-blue-600 text-white border-blue-600 shadow-xs';
+      } else {
+        if (prodBtn) prodBtn.className = 'py-1.5 px-3 rounded-md text-xs font-semibold border flex items-center justify-center gap-1.5 transition-all bg-aura-primary text-white border-aura-primary shadow-xs';
+        if (servBtn) servBtn.className = 'py-1.5 px-3 rounded-md text-xs font-semibold border flex items-center justify-center gap-1.5 transition-all bg-gray-50 text-gray-600 border-gray-200 hover:bg-gray-100';
+      }
+
+      updateShippingVisibilityForLinkType();
+      populateLinkProductDropdown();
+    }
+    window.setLinkType = setLinkType;
+
+    function updateShippingVisibilityForLinkType() {
+      const shippingRow = document.getElementById('link-shipping-config-row');
+      const shippingCheck = document.getElementById('link-require-shipping');
+
+      let isService = false;
+      if (selectedProductsForLink && selectedProductsForLink.length > 0) {
+        isService = selectedProductsForLink.some(item => item.is_service || item.item_type === 'servicio');
+      } else {
+        isService = (document.getElementById('link-item-type')?.value === 'servicio');
+      }
+
+      if (isService) {
+        if (shippingRow) shippingRow.classList.add('hidden');
+        if (shippingCheck) {
+          shippingCheck.checked = false;
+        }
+        if (typeof toggleShippingConfig === 'function') {
+          toggleShippingConfig(false);
+        }
+      } else {
+        if (shippingRow) shippingRow.classList.remove('hidden');
+      }
+    }
+    window.updateShippingVisibilityForLinkType = updateShippingVisibilityForLinkType;
+
     function populateLinkProductDropdown() {
       const select = document.getElementById('link-product-select');
       if (!select) return;
 
-      select.innerHTML = '<option value="" disabled selected>-- Elegir producto... --</option>';
+      const currentType = document.getElementById('link-item-type')?.value || 'producto';
+      const isServiceMode = (currentType === 'servicio');
+
+      // Actualizar label descriptivo del bloque si existe
+      const label = document.getElementById('link-catalog-product-label');
+      if (label) {
+        label.innerText = isServiceMode ? 'Servicios del Catálogo (Opcional)' : 'Productos Físicos del Catálogo (Opcional)';
+      }
+
+      select.innerHTML = isServiceMode 
+        ? '<option value="" disabled selected>-- Elegir servicio del catálogo... --</option>'
+        : '<option value="" disabled selected>-- Elegir producto físico del catálogo... --</option>';
+
+      let count = 0;
       productsCatalog.forEach(p => {
+        const isService = (p.item_type === 'servicio' || p.stock === null || p.stock === undefined);
+        
+        // Si estamos en modo producto físico, NO mostrar servicios
+        if (!isServiceMode && isService) {
+          return;
+        }
+
+        // Si estamos en modo servicio, NO mostrar productos físicos
+        if (isServiceMode && !isService) {
+          return;
+        }
+
+        // Si es producto físico y no tiene stock (stock <= 0), no lo mostramos en el listado desplegable
+        if (!isService && (p.stock !== null && p.stock !== undefined && Number(p.stock) <= 0)) {
+          return;
+        }
+
         const option = document.createElement('option');
         option.value = p.id;
-        const displayName = p.name.length > 45 ? p.name.substring(0, 42) + '...' : p.name;
-        option.textContent = `${displayName} - Q ${p.price.toFixed(2)}`;
+        option.textContent = p.name;
         select.appendChild(option);
+        count++;
       });
+
+      if (count === 0) {
+        const option = document.createElement('option');
+        option.value = '';
+        option.disabled = true;
+        option.textContent = isServiceMode ? 'No hay servicios disponibles en el catálogo' : 'No hay productos físicos con stock disponible';
+        select.appendChild(option);
+      }
     }
 
     function onLinkProductSelect(prodId) {
@@ -1965,9 +2230,46 @@
       const prod = productsCatalog.find(p => p.id === prodId);
       if (!prod) return;
 
+      const isService = (prod.item_type === 'servicio' || prod.stock === null || prod.stock === undefined);
+      const discountsInventory = !isService && (prod.stock !== null && prod.stock !== undefined);
+
+      // Regla de negocio crítica: NO se pueden mezclar productos tipo servicio y productos que descuenten inventario
+      if (selectedProductsForLink && selectedProductsForLink.length > 0) {
+        const hasServiceInCart = selectedProductsForLink.some(i => i.is_service || i.item_type === 'servicio');
+        const hasInventoryInCart = selectedProductsForLink.some(i => !i.is_service && i.discounts_inventory);
+
+        if (isService && hasInventoryInCart) {
+          showToast('Incompatibilidad en Carrito', 'No es posible mezclar productos con inventario y servicios en la misma orden.', 'error');
+          const select = document.getElementById('link-product-select');
+          if (select) select.value = '';
+          return;
+        }
+
+        if (discountsInventory && hasServiceInCart) {
+          showToast('Incompatibilidad en Carrito', 'No es posible mezclar servicios y productos que descuentan inventario en la misma orden.', 'error');
+          const select = document.getElementById('link-product-select');
+          if (select) select.value = '';
+          return;
+        }
+      }
+
+      // Validar si cuenta con stock disponible
+      if (discountsInventory && Number(prod.stock) <= 0) {
+        showToast('Sin Stock', `El producto "${prod.name}" no tiene existencias disponibles.`, 'warning');
+        const select = document.getElementById('link-product-select');
+        if (select) select.value = '';
+        return;
+      }
+
       // Check if already selected
       const existing = selectedProductsForLink.find(item => item.id === prodId);
       if (existing) {
+        if (discountsInventory && prod.stock !== null && prod.stock !== undefined && (existing.quantity + 1 > prod.stock)) {
+          showToast('Stock Insuficiente', `No puedes agregar más unidades de "${prod.name}". Stock disponible: ${prod.stock}.`, 'warning');
+          const select = document.getElementById('link-product-select');
+          if (select) select.value = '';
+          return;
+        }
         existing.quantity++;
       } else {
         selectedProductsForLink.push({
@@ -1977,7 +2279,12 @@
           base_amount: prod.base_amount || prod.price,
           max_installments: prod.max_installments || 1,
           quantity: 1,
-          image: prod.image
+          image: prod.image,
+          item_type: isService ? 'servicio' : 'producto',
+          is_service: isService,
+          discounts_inventory: discountsInventory,
+          weight: prod.weight || null,
+          dimensions: prod.dimensions || null
         });
       }
 
@@ -1985,12 +2292,27 @@
       const select = document.getElementById('link-product-select');
       if (select) select.value = '';
 
+      // Automatically sync link type pill
+      const typeInput = document.getElementById('link-item-type');
+      if (typeInput) typeInput.value = isService ? 'servicio' : 'producto';
+      const prodBtn = document.getElementById('link-type-product-btn');
+      const servBtn = document.getElementById('link-type-service-btn');
+      if (isService) {
+        if (prodBtn) prodBtn.className = 'py-1.5 px-3 rounded-md text-xs font-semibold border flex items-center justify-center gap-1.5 transition-all bg-gray-50 text-gray-600 border-gray-200 hover:bg-gray-100';
+        if (servBtn) servBtn.className = 'py-1.5 px-3 rounded-md text-xs font-semibold border flex items-center justify-center gap-1.5 transition-all bg-blue-600 text-white border-blue-600 shadow-xs';
+      } else {
+        if (prodBtn) prodBtn.className = 'py-1.5 px-3 rounded-md text-xs font-semibold border flex items-center justify-center gap-1.5 transition-all bg-aura-primary text-white border-aura-primary shadow-xs';
+        if (servBtn) servBtn.className = 'py-1.5 px-3 rounded-md text-xs font-semibold border flex items-center justify-center gap-1.5 transition-all bg-gray-50 text-gray-600 border-gray-200 hover:bg-gray-100';
+      }
+
       renderSelectedProductsInLink();
+      updateShippingVisibilityForLinkType();
     }
 
     function removeProductFromLinkSelection(prodId) {
       selectedProductsForLink = selectedProductsForLink.filter(item => item.id !== prodId);
       renderSelectedProductsInLink();
+      updateShippingVisibilityForLinkType();
     }
 
     function updateProductQuantityInLink(prodId, newQty) {
@@ -2000,6 +2322,13 @@
       if (newQty <= 0) {
         removeProductFromLinkSelection(prodId);
       } else {
+        if (item.discounts_inventory) {
+          const prod = productsCatalog.find(p => p.id === prodId);
+          if (prod && prod.stock !== null && prod.stock !== undefined && newQty > prod.stock) {
+            showToast('Stock Insuficiente', `Solo hay ${prod.stock} unidades disponibles en inventario de "${prod.name}".`, 'warning');
+            return;
+          }
+        }
         item.quantity = newQty;
         renderSelectedProductsInLink();
       }
@@ -2008,6 +2337,7 @@
     function clearLinkProductSelection() {
       selectedProductsForLink = [];
       renderSelectedProductsInLink();
+      updateShippingVisibilityForLinkType();
     }
 
     function renderSelectedProductsInLink() {
@@ -2037,6 +2367,7 @@
         amountInput.value = '';
         titleInput.value = '';
         if (listPriceInput) listPriceInput.value = '';
+        updateShippingVisibilityForLinkType();
         return;
       }
 
@@ -2060,11 +2391,18 @@
 
         titles.push(`${item.quantity}x ${item.name}`);
 
+        const typeBadge = item.is_service ? 
+          '<span class="bg-blue-50 text-blue-700 text-[8.5px] px-1.5 py-0.2 rounded font-bold border border-blue-200">Servicio</span>' : 
+          '<span class="bg-amber-50 text-aura-goldText text-[8.5px] px-1.5 py-0.2 rounded font-bold border border-amber-200/50">Inventario</span>';
+
         const row = document.createElement('div');
         row.className = 'flex items-center justify-between py-1.5 text-xs text-gray-700 gap-2';
         row.innerHTML = `
           <div class="min-w-0 flex-1">
-            <p class="font-semibold text-gray-900 truncate text-[11px]">${item.name}</p>
+            <div class="flex items-center gap-1.5">
+              <p class="font-semibold text-gray-900 truncate text-[11px]">${item.name}</p>
+              ${typeBadge}
+            </div>
             <p class="text-[9px] text-gray-400">Q ${item.price.toFixed(2)} c/u</p>
           </div>
           <div class="flex items-center gap-1.5">
@@ -2100,6 +2438,8 @@
       if (listPriceInput) {
         listPriceInput.value = totalListPrice.toFixed(2);
       }
+
+      updateShippingVisibilityForLinkType();
     }
 
     // ================= USER MANAGEMENT PANEL LOGIC =================
@@ -2613,6 +2953,28 @@
       }
 
       listPriceInput.value = calculatedPrice > 0 ? calculatedPrice.toFixed(2) : '';
+
+      // Update Guatemalan Tax Breakdown in Create Link Modal
+      const targetAmt = calculatedPrice > 0 ? calculatedPrice : baseAmt;
+      const regSelect = document.getElementById('link-tax-regimen-select');
+      const selectedReg = regSelect ? regSelect.value : 'PEQUEÑO_CONTRIBUYENTE';
+      const iva = calculateIvaGuatemala(targetAmt, selectedReg);
+
+      const summaryBadge = document.getElementById('link-tax-summary-badge');
+      const baseDisplay = document.getElementById('link-tax-base-display');
+      const amountLabel = document.getElementById('link-tax-amount-label');
+      const amountDisplay = document.getElementById('link-tax-amount-display');
+      const retentionLabel = document.getElementById('link-tax-retention-label');
+      const retentionDisplay = document.getElementById('link-tax-retention-display');
+      const explanationEl = document.getElementById('link-tax-explanation');
+
+      if (summaryBadge) summaryBadge.innerText = iva.regimenHumanName;
+      if (baseDisplay) baseDisplay.innerText = formatCurrency(iva.baseAmount, 'GTQ');
+      if (amountLabel) amountLabel.innerText = `${iva.label}:`;
+      if (amountDisplay) amountDisplay.innerText = formatCurrency(iva.taxAmount, 'GTQ');
+      if (retentionLabel) retentionLabel.innerText = `${iva.retentionLabel}:`;
+      if (retentionDisplay) retentionDisplay.innerText = formatCurrency(iva.retentionAmount, 'GTQ');
+      if (explanationEl) explanationEl.innerText = iva.legalExplanation;
     }
 
     // ================= MODAL ACTIONS =================
@@ -2622,8 +2984,17 @@
         return;
       }
       
-      populateLinkProductDropdown();
+      setLinkType('producto');
       clearLinkProductSelection();
+
+      // Reset and sync tax regimen dropdown and keep collapsible closed by default
+      try {
+        const felCfg = JSON.parse(localStorage.getItem('aurapay_fel_config') || localStorage.getItem('ethospay_fel_config') || '{}');
+        const regSelect = document.getElementById('link-tax-regimen-select');
+        if (regSelect && felCfg.regimen) regSelect.value = felCfg.regimen;
+        const detailsEl = document.getElementById('link-tax-details');
+        if (detailsEl) detailsEl.removeAttribute('open');
+      } catch(e){}
 
       const modal = document.getElementById('modal-backdrop');
       const content = document.getElementById('create-modal-content');
@@ -2737,6 +3108,14 @@
       const customDesc = document.getElementById('link-desc').value.trim();
       const currency = document.getElementById('link-currency') ? document.getElementById('link-currency').value : 'GTQ';
 
+      // Detect if link or products is a service
+      let isServiceLink = false;
+      if (selectedProductsForLink && selectedProductsForLink.length > 0) {
+        isServiceLink = selectedProductsForLink.some(item => item.is_service || item.item_type === 'servicio');
+      } else {
+        isServiceLink = (document.getElementById('link-item-type')?.value === 'servicio');
+      }
+
       // Check if product is selected from catalog (multiple products support)
       let customImgData = null;
       if (selectedProductsForLink.length > 0) {
@@ -2746,18 +3125,20 @@
           customImgData = firstWithImg.image;
         }
 
-        // Decrement stock for each selected product
+        // Decrement stock ONLY for physical products that discount inventory
         selectedProductsForLink.forEach(item => {
-          const prod = productsCatalog.find(p => p.id === item.id);
-          if (prod && prod.stock !== null && prod.stock !== undefined) {
-            let qtyToReserve = item.quantity;
-            if (prod.stock < qtyToReserve) {
-              showToast('Stock Insuficiente', `El stock de "${prod.name}" no alcanza para cubrir la cantidad solicitada. Se apartará el stock disponible.`, 'warning');
-              qtyToReserve = prod.stock;
-            }
-            if (qtyToReserve > 0) {
-              prod.stock -= qtyToReserve;
-              prod.reserved = (prod.reserved || 0) + qtyToReserve;
+          if (item.discounts_inventory) {
+            const prod = productsCatalog.find(p => p.id === item.id);
+            if (prod && prod.stock !== null && prod.stock !== undefined) {
+              let qtyToReserve = item.quantity;
+              if (prod.stock < qtyToReserve) {
+                showToast('Stock Insuficiente', `El stock de "${prod.name}" no alcanza para cubrir la cantidad solicitada. Se apartará el stock disponible.`, 'warning');
+                qtyToReserve = prod.stock;
+              }
+              if (qtyToReserve > 0) {
+                prod.stock -= qtyToReserve;
+                prod.reserved = (prod.reserved || 0) + qtyToReserve;
+              }
             }
           }
         });
@@ -2765,13 +3146,14 @@
         // Sync products catalog to localStorage
         try {
           localStorage.setItem('aurapay_products', JSON.stringify(productsCatalog));
-          localStorage.setItem('aurapay_products', JSON.stringify(productsCatalog));
+          localStorage.setItem('ethospay_products', JSON.stringify(productsCatalog));
         } catch (err) {
           console.error(err);
         }
         
         // Rerender catalog grid
         renderProductsCatalog();
+        populateLinkProductDropdown();
       }
       
       // Read selected payment methods
@@ -2801,7 +3183,11 @@
       let placeholder = 'CoffeeBagIcon';
       let subtext = 'Tostaduría de especialidad y café gourmet';
 
-      const requireShipping = document.getElementById('link-require-shipping') ? document.getElementById('link-require-shipping').checked : false;
+      // Cuando el producto sea un servicio, NUNCA se permite envío a domicilio
+      let requireShipping = false;
+      if (!isServiceLink) {
+        requireShipping = document.getElementById('link-require-shipping') ? document.getElementById('link-require-shipping').checked : false;
+      }
 
       const newTransaction = {
         transaction_id: generateTransactionId(),
@@ -2832,6 +3218,7 @@
         },
         image_preset: customImgData ? 'custom' : 'generic',
         custom_image: customImgData,
+        tax_regimen: (document.getElementById('link-tax-regimen-select')?.value) || 'PEQUEÑO_CONTRIBUYENTE',
         products: JSON.parse(JSON.stringify(selectedProductsForLink)), // store all products info
         allowed_methods: allowedMethods,
         token: null,
@@ -2873,15 +3260,32 @@
         subtext: newTransaction.merchant.subtext,
         phone: newTransaction.phone,
         img: newTransaction.image_preset,
+        tax_regimen: newTransaction.tax_regimen,
         methods: newTransaction.allowed_methods.join(',')
       });
 
-      if (requireShipping) {
+      if (requireShipping && !isServiceLink) {
         queryParams.set('shipping', '1');
       }
 
+      if (isServiceLink) {
+        queryParams.set('is_service', '1');
+      }
+
       if (selectedProductsForLink && selectedProductsForLink.length > 0) {
-        queryParams.set('products', JSON.stringify(selectedProductsForLink));
+        // Strip base64 image strings to completely eliminate HTTP 414 URI Too Long!
+        const lightweightProducts = selectedProductsForLink.map(item => ({
+          id: item.id,
+          name: item.name,
+          price: item.price,
+          base_amount: item.base_amount || item.price,
+          quantity: item.quantity,
+          is_service: !!item.is_service,
+          item_type: item.item_type || 'producto',
+          weight: item.weight || null,
+          dimensions: item.dimensions || null
+        }));
+        queryParams.set('products', JSON.stringify(lightweightProducts));
       }
 
       const fullUrl = `ethospay-checkout.html?${queryParams.toString()}`;
@@ -2899,6 +3303,10 @@
     
     function freeInventory(txn) {
       if (!txn) return;
+      if (txn.status === 'PAID' || txn.status === 'COMPLETED' || txn.status === 'APROBADA') {
+        showToast('Acción no permitida', 'Esta transacción ya fue pagada con éxito. No es posible liberar inventario de una compra completada.', 'error');
+        return;
+      }
       showCustomConfirm(
         'Liberar Inventario',
         `¿Estás seguro que deseas liberar el inventario apartado de esta transacción? Esto cancelará el link y los productos volverán a estar disponibles.`,
@@ -2921,13 +3329,16 @@
           if (updated) {
             try {
               localStorage.setItem('aurapay_products', JSON.stringify(productsCatalog));
+              localStorage.setItem('ethospay_products', JSON.stringify(productsCatalog));
             } catch (err) { console.error(err); }
             renderProductsCatalog();
+            populateLinkProductDropdown();
           }
           
           txn.status = 'CANCELLED';
           try {
             localStorage.setItem('aurapay_transactions', JSON.stringify(transactions));
+            localStorage.setItem('ethospay_transactions', JSON.stringify(transactions));
           } catch(err) { console.error(err); }
           
           renderTable();
@@ -2942,7 +3353,7 @@
       if (!t) return 0;
       const amount = parseFloat(t.amount) || 0;
       const baseNet = parseFloat(t.base_amount) || amount;
-      const modality = t.payment_modality || t.type || 'Contado';
+      const modality = t.payment_modality || t.type || 'Al contado';
       
       const isEfectivo = modality.includes('Virtual') || 
                          modality.includes('Rural') || 
@@ -2954,7 +3365,7 @@
         return baseNet;
       }
       
-      let appliedRate = 0.0450; // Tarjeta Contado por defecto: 4.50%
+      let appliedRate = 0.0450; // Tarjeta Al contado por defecto: 4.50%
       
       const matchCuotas = modality.match(/\((\d+)\)/);
       if (matchCuotas) {
@@ -2998,12 +3409,45 @@
     // ================= DRAWER ACTIONS =================
 
     function openDrawer(transaction) {
+      // Refresh latest transactions state from storage to reflect recent payments immediately
+      refreshTransactionsFromStorage();
+      const txnId = (typeof transaction === 'object' && transaction) ? transaction.transaction_id : transaction;
+      const fresh = transactions.find(t => t.transaction_id === txnId);
+      if (fresh) transaction = fresh;
       selectedTransaction = transaction;
 
+      const isPaid = (transaction.status === 'PAID' || transaction.status === 'COMPLETED' || transaction.status === 'APROBADA');
+
       document.getElementById('drawer-title').innerText = transaction.transaction_id;
+
+      // Update Drawer Header Payment Status Badge
+      const paymentBadge = document.getElementById('drawer-payment-badge');
+      const paymentBadgeDot = document.getElementById('drawer-payment-badge-dot');
+      const paymentBadgeText = document.getElementById('drawer-payment-badge-text');
+      if (paymentBadge && paymentBadgeText) {
+        if (isPaid) {
+          paymentBadge.className = 'inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[10px] font-semibold border shadow-xs bg-emerald-50 text-emerald-800 border-emerald-200';
+          if (paymentBadgeDot) paymentBadgeDot.className = 'w-1.5 h-1.5 rounded-full bg-emerald-500';
+          paymentBadgeText.innerText = 'Pagado';
+        } else if (transaction.status === 'CANCELLED') {
+          paymentBadge.className = 'inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[10px] font-semibold border shadow-xs bg-red-50 text-red-700 border-red-200';
+          if (paymentBadgeDot) paymentBadgeDot.className = 'w-1.5 h-1.5 rounded-full bg-red-500';
+          paymentBadgeText.innerText = 'Cancelado';
+        } else if (transaction.status === 'EXPIRED') {
+          paymentBadge.className = 'inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[10px] font-semibold border shadow-xs bg-gray-100 text-gray-500 border-gray-200';
+          if (paymentBadgeDot) paymentBadgeDot.className = 'w-1.5 h-1.5 rounded-full bg-gray-400';
+          paymentBadgeText.innerText = 'Expirado';
+        } else {
+          paymentBadge.className = 'inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[10px] font-semibold border shadow-xs bg-amber-50 text-amber-800 border-amber-200';
+          if (paymentBadgeDot) paymentBadgeDot.className = 'w-1.5 h-1.5 rounded-full bg-amber-500 animate-pulse';
+          paymentBadgeText.innerText = 'Pendiente';
+        }
+      }
+
+      // Prohibit inventory release if already paid!
       const freeBtn = document.getElementById('drawer-free-inventory-btn');
       const freeBtnFooter = document.getElementById('drawer-free-inventory-btn-footer');
-      const canFree = (transaction.status === 'PENDING' || transaction.status === 'INITIATED');
+      const canFree = (transaction.status === 'PENDING' || transaction.status === 'INITIATED') && !isPaid;
 
       if (freeBtn) {
         if (canFree) {
@@ -3039,7 +3483,10 @@
       document.getElementById('detail-currency').innerText = transaction.currency;
       document.getElementById('detail-amount').innerText = formatCurrency(transaction.amount);
       document.getElementById('detail-idempotency').innerText = transaction.idempotency_key;
-      document.getElementById('detail-modality').innerText = transaction.payment_modality || 'Contado';
+      let displayMod = transaction.payment_modality || 'Al contado';
+      if (displayMod.toLowerCase() === 'contado') displayMod = 'Al contado';
+      if (displayMod.toLowerCase() === 'tarjeta - contado') displayMod = 'Tarjeta - Al contado';
+      document.getElementById('detail-modality').innerText = displayMod;
       document.getElementById('detail-net-received').innerText = formatCurrency(calculateNetReceived(transaction));
 
       document.getElementById('detail-base-amount').innerText = formatCurrency(transaction.base_amount || transaction.amount);
@@ -3092,21 +3539,28 @@
       // Render package delivery status strictly as 'Entregado' or 'En proceso de entrega'
       renderDeliveryStatusUI(getDeliveryStatus(transaction));
 
-      // Populate GT IVA breakdown
-      const ivaInfo = calculateIvaGuatemala(transaction.amount);
+      // Populate GT IVA breakdown (Collapsible details)
+      const ivaInfo = calculateIvaGuatemala(transaction.amount, transaction.tax_regimen);
       const ivaLabelEl = document.getElementById('detail-gt-iva-label');
       const ivaAmtEl = document.getElementById('detail-gt-iva-amount');
       const ivaRegTextEl = document.getElementById('detail-gt-iva-regimen-text');
+      const regNameEl = document.getElementById('detail-tax-regimen-name');
+      const baseEl = document.getElementById('detail-tax-base');
+      const ivaTitleEl = document.getElementById('detail-tax-iva-title');
+      const ivaValEl = document.getElementById('detail-tax-iva-val');
+      const retValEl = document.getElementById('detail-tax-retention-val');
 
-      if (ivaLabelEl) ivaLabelEl.innerText = `${ivaInfo.label}:`;
+      if (ivaLabelEl) ivaLabelEl.innerText = `${ivaInfo.label}`;
       if (ivaAmtEl) ivaAmtEl.innerText = formatCurrency(ivaInfo.taxAmount, 'GTQ');
-      if (ivaRegTextEl) {
-        if (ivaInfo.generateCredit) {
-          ivaRegTextEl.innerText = 'Decreto 27-92 · Con derecho a crédito fiscal.';
-        } else {
-          ivaRegTextEl.innerText = 'Decreto 27-92 Art. 47 · No genera derecho a crédito fiscal.';
-        }
-      }
+      if (regNameEl) regNameEl.innerText = ivaInfo.regimenHumanName;
+      if (baseEl) baseEl.innerText = formatCurrency(ivaInfo.baseAmount, 'GTQ');
+      if (ivaTitleEl) ivaTitleEl.innerText = `${ivaInfo.label}:`;
+      if (ivaValEl) ivaValEl.innerText = formatCurrency(ivaInfo.taxAmount, 'GTQ');
+      if (retValEl) retValEl.innerText = formatCurrency(ivaInfo.retentionAmount, 'GTQ');
+      if (ivaRegTextEl) ivaRegTextEl.innerText = ivaInfo.legalExplanation;
+
+      const detailsEl = document.getElementById('detail-tax-breakdown-details');
+      if (detailsEl) detailsEl.removeAttribute('open'); // Keep collapsed by default
 
       const tokenEl = document.getElementById('detail-token');
       if (transaction.token) {

@@ -926,6 +926,15 @@
               </div>
             </div>
 
+            <!-- Filter Tabs for Catalog -->
+            <div class="flex items-center justify-between gap-3 pt-1">
+              <div class="flex gap-1 bg-gray-50 p-0.5 rounded border border-gray-200">
+                <button type="button" onclick="filterCatalogByType('all')" class="px-2.5 py-1 text-[11px] font-semibold rounded bg-gray-100 text-gray-950 transition-colors" id="btn-prod-cat-all">Todos</button>
+                <button type="button" onclick="filterCatalogByType('producto')" class="px-2.5 py-1 text-[11px] font-semibold rounded text-gray-500 hover:text-gray-900 transition-colors" id="btn-prod-cat-producto">Productos Físicos</button>
+                <button type="button" onclick="filterCatalogByType('servicio')" class="px-2.5 py-1 text-[11px] font-semibold rounded text-gray-500 hover:text-gray-900 transition-colors" id="btn-prod-cat-servicio">Servicios</button>
+              </div>
+            </div>
+
             <!-- Grid container for products -->
             <div id="products-catalog-grid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
               <!-- JS Populated -->
@@ -1397,8 +1406,24 @@
         <!-- Modal Form -->
         <form id="create-link-form" onsubmit="handleCreateLink(event)" class="space-y-4 flex-1 lg:flex-none">
           
+          <!-- Selector de Tipo de Cobro -->
+          <div class="border border-gray-200 rounded-lg p-2.5 bg-white">
+            <label class="block text-[9px] font-bold text-gray-400 uppercase tracking-widest mb-1.5">Tipo de Cobro</label>
+            <div class="grid grid-cols-2 gap-2">
+              <button type="button" id="link-type-product-btn" onclick="setLinkType('producto')" class="py-1.5 px-3 rounded-md text-xs font-semibold border flex items-center justify-center gap-1.5 transition-all bg-aura-primary text-white border-aura-primary shadow-xs">
+                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M20.25 7.5l-.625 10.632a2.25 2.25 0 01-2.247 2.118H6.622a2.25 2.25 0 01-2.247-2.118L3.75 7.5M10 11.25h4M3.375 7.5h17.25c.621 0 1.125-.504 1.125-1.125v-1.5c0-.621-.504-1.125-1.125-1.125H3.375c-.621 0-1.125.504-1.125 1.125v1.5c0 .621.504 1.125 1.125 1.125z" /></svg>
+                <span>Producto Físico</span>
+              </button>
+              <button type="button" id="link-type-service-btn" onclick="setLinkType('servicio')" class="py-1.5 px-3 rounded-md text-xs font-semibold border flex items-center justify-center gap-1.5 transition-all bg-gray-50 text-gray-600 border-gray-200 hover:bg-gray-100">
+                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M21.75 6.75v10.5a2.25 2.25 0 01-2.25 2.25h-15a2.25 2.25 0 01-2.25-2.25V6.75m19.5 0A2.25 2.25 0 0019.5 4.5h-15a2.25 2.25 0 00-2.25 2.25m19.5 0v.243a2.25 2.25 0 01-1.07 1.916l-7.5 4.615a2.25 2.25 0 01-2.36 0L3.32 8.91a2.25 2.25 0 01-1.07-1.916V6.75" /></svg>
+                <span>Servicio</span>
+              </button>
+            </div>
+            <input type="hidden" id="link-item-type" value="producto">
+          </div>
+
           <div class="border border-gray-200 rounded-lg p-3 bg-white space-y-2">
-            <label class="block text-[9px] font-bold text-gray-400 uppercase tracking-widest">Productos del Catálogo (Opcional)</label>
+            <label id="link-catalog-product-label" class="block text-[9px] font-bold text-gray-400 uppercase tracking-widest">Productos Físicos del Catálogo (Opcional)</label>
             <div class="border border-gray-200 rounded-lg px-3 py-2 bg-white focus-within:ring-1 focus-within:ring-aura-primary focus-within:border-aura-primary transition-all flex items-center">
               <select id="link-product-select" onchange="onLinkProductSelect(this.value)" class="w-full bg-transparent border-none p-0 text-xs font-semibold text-gray-700 focus:ring-0 focus:outline-none cursor-pointer">
                 <!-- JS Populated -->
@@ -1447,6 +1472,48 @@
             </div>
           </div>
 
+          <!-- Desplegable Fiscal SAT Guatemala (Colapsado por defecto) -->
+          <details class="group border border-gray-200 rounded-lg bg-gray-50/30 overflow-hidden text-xs" id="link-tax-details">
+            <summary class="flex items-center justify-between px-3 py-2 text-[10px] font-bold text-gray-600 cursor-pointer list-none select-none hover:bg-gray-100/50 transition-colors">
+              <div class="flex items-center gap-1.5">
+                <span class="bg-amber-100 text-amber-800 text-[8.5px] font-bold px-1.5 py-0.5 rounded border border-amber-200">SAT</span>
+                <span>Detalle Fiscal e Impuesto Estimado</span>
+              </div>
+              <div class="flex items-center gap-1 text-[9px] text-gray-400 font-normal">
+                <span id="link-tax-summary-badge" class="font-semibold text-gray-700">Pequeño Contribuyente (5%)</span>
+                <svg class="w-3.5 h-3.5 text-gray-400 transform group-open:rotate-180 transition-transform duration-200" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M19.5 8.25l-7.5 7.5-7.5-7.5" /></svg>
+              </div>
+            </summary>
+            <div class="p-3 border-t border-gray-200 space-y-2.5 bg-white text-[11px]">
+              <div class="flex items-center justify-between">
+                <span class="text-gray-500 font-medium">Régimen Fiscal SAT:</span>
+                <select id="link-tax-regimen-select" onchange="updateCalculatedLinkPrice()" class="text-[11px] font-semibold text-gray-800 bg-gray-50 border border-gray-200 rounded px-2 py-1 focus:ring-1 focus:ring-aura-primary focus:outline-none cursor-pointer">
+                  <option value="PEQUEÑO_CONTRIBUYENTE">Pequeño Contribuyente (5% Fijo)</option>
+                  <option value="REGIMEN_GENERAL">Régimen General (12% IVA)</option>
+                  <option value="PEQUEÑO_ELECTRONICO">Pequeño Contribuyente Electrónico (4%)</option>
+                  <option value="EXENTO">Exento de IVA (0%)</option>
+                </select>
+              </div>
+              <div class="space-y-1 pt-1.5 border-t border-gray-100 font-mono text-[10.5px]">
+                <div class="flex justify-between text-gray-600">
+                  <span>Base Imponible:</span>
+                  <span class="font-semibold text-gray-900" id="link-tax-base-display">Q 0.00</span>
+                </div>
+                <div class="flex justify-between text-amber-700">
+                  <span id="link-tax-amount-label">Impuesto SAT (5%):</span>
+                  <span class="font-bold" id="link-tax-amount-display">Q 0.00</span>
+                </div>
+                <div class="flex justify-between text-emerald-700">
+                  <span id="link-tax-retention-label">Retención Operadora (Pago Definitivo):</span>
+                  <span class="font-bold" id="link-tax-retention-display">Q 0.00</span>
+                </div>
+              </div>
+              <div class="p-2 bg-amber-50/70 border border-amber-200/60 rounded text-[9.5px] text-amber-900 leading-relaxed font-sans" id="link-tax-explanation">
+                Tarifa simplificada del 5% sobre el total facturado (Decreto 27-92 Art. 47 y 48). Al cobrar con tarjeta o enlace de pago, la operadora retiene el 5% íntegro como pago definitivo, quedando el comercio 100% solvente ante la SAT por esta transacción. No genera derecho a crédito fiscal.
+              </div>
+            </div>
+          </details>
+
           <div class="grid grid-cols-2 gap-3.5">
             <!-- Cliente -->
             <div class="border border-gray-200 rounded-lg px-3 py-2 bg-white focus-within:ring-1 focus-within:ring-aura-primary focus-within:border-aura-primary transition-all">
@@ -1467,8 +1534,8 @@
             <input type="text" id="link-product-title" placeholder="ej. Café de Especialidad Huehuetenango" class="w-full bg-transparent border-none p-0 text-xs font-semibold text-gray-900 focus:ring-0 focus:outline-none mt-0.5">
           </div>
 
-          <!-- Configuración de Envío a Domicilio -->
-          <div class="border border-gray-200 rounded-lg p-3 bg-white flex items-center justify-between gap-3">
+          <!-- Configuración de Envío a Domicilio (Solo para productos físicos) -->
+          <div id="link-shipping-config-row" class="border border-gray-200 rounded-lg p-3 bg-white flex items-center justify-between gap-3">
             <div class="flex items-center gap-2.5 min-w-0">
               <div class="w-7 h-7 rounded-lg bg-amber-500/10 text-amber-600 flex items-center justify-center flex-shrink-0">
                 <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
@@ -1595,19 +1662,67 @@
       <form id="create-product-form" onsubmit="handleSaveProduct(event)" class="space-y-4 flex-1 lg:flex-none">
         <input type="hidden" id="edit-product-id">
 
+        <!-- Selector de Tipo de Ítem: Producto con inventario vs Servicio -->
+        <div class="border border-gray-200 rounded-lg p-2.5 bg-white">
+          <label class="block text-[9px] font-bold text-gray-400 uppercase tracking-widest mb-1.5">Tipo de Ítem en Catálogo</label>
+          <div class="grid grid-cols-2 gap-2">
+            <button type="button" id="item-type-product-btn" onclick="setProductModalType('producto')" class="py-1.5 px-2.5 rounded-md text-xs font-semibold border flex items-center justify-center gap-1.5 transition-all bg-aura-primary text-white border-aura-primary shadow-xs">
+              <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M20.25 7.5l-.625 10.632a2.25 2.25 0 01-2.247 2.118H6.622a2.25 2.25 0 01-2.247-2.118L3.75 7.5M10 11.25h4M3.375 7.5h17.25c.621 0 1.125-.504 1.125-1.125v-1.5c0-.621-.504-1.125-1.125-1.125H3.375c-.621 0-1.125.504-1.125 1.125v1.5c0 .621.504 1.125 1.125 1.125z" /></svg>
+              <span>Producto (Inventario)</span>
+            </button>
+            <button type="button" id="item-type-service-btn" onclick="setProductModalType('servicio')" class="py-1.5 px-2.5 rounded-md text-xs font-semibold border flex items-center justify-center gap-1.5 transition-all bg-gray-50 text-gray-600 border-gray-200 hover:bg-gray-100">
+              <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M21.75 6.75v10.5a2.25 2.25 0 01-2.25 2.25h-15a2.25 2.25 0 01-2.25-2.25V6.75m19.5 0A2.25 2.25 0 0019.5 4.5h-15a2.25 2.25 0 00-2.25 2.25m19.5 0v.243a2.25 2.25 0 01-1.07 1.916l-7.5 4.615a2.25 2.25 0 01-2.36 0L3.32 8.91a2.25 2.25 0 01-1.07-1.916V6.75" /></svg>
+              <span>Servicio (Intangible)</span>
+            </button>
+          </div>
+          <input type="hidden" id="product-item-type" value="producto">
+        </div>
+
         <div class="border border-gray-200 rounded-lg px-3 py-2 bg-white focus-within:ring-1 focus-within:ring-aura-primary focus-within:border-aura-primary transition-all">
-          <label class="block text-[9px] font-bold text-gray-400 uppercase tracking-widest">Nombre del Producto</label>
+          <label class="block text-[9px] font-bold text-gray-400 uppercase tracking-widest">Nombre del Producto o Servicio</label>
           <input type="text" required id="product-name" placeholder="ej. Café Premium de Antigua" class="w-full bg-transparent border-none p-0 text-sm font-medium text-gray-900 focus:ring-0 focus:outline-none mt-1">
         </div>
 
         <div class="grid grid-cols-2 gap-4">
           <div class="border border-gray-200 rounded-lg px-3 py-2 bg-white focus-within:ring-1 focus-within:ring-aura-primary focus-within:border-aura-primary transition-all">
-            <label class="block text-[9px] font-bold text-gray-400 uppercase tracking-widest">Referencia (SKU)</label>
+            <label class="block text-[9px] font-bold text-gray-400 uppercase tracking-widest">Referencia (SKU / Cód)</label>
             <input type="text" id="product-ref" placeholder="ej. SKU-12345" class="w-full bg-transparent border-none p-0 text-sm font-medium text-gray-900 focus:ring-0 focus:outline-none mt-1">
           </div>
-          <div class="border border-gray-200 rounded-lg px-3 py-2 bg-white focus-within:ring-1 focus-within:ring-aura-primary focus-within:border-aura-primary transition-all">
+          <div id="product-stock-container" class="border border-gray-200 rounded-lg px-3 py-2 bg-white focus-within:ring-1 focus-within:ring-aura-primary focus-within:border-aura-primary transition-all">
             <label class="block text-[9px] font-bold text-gray-400 uppercase tracking-widest">Inventario</label>
-            <input type="number" id="product-stock" min="0" placeholder="Ilimitado" class="w-full bg-transparent border-none p-0 text-sm font-medium text-gray-900 focus:ring-0 focus:outline-none mt-1">
+            <input type="number" id="product-stock" min="0" placeholder="ej. 50" class="w-full bg-transparent border-none p-0 text-sm font-medium text-gray-900 focus:ring-0 focus:outline-none mt-1">
+          </div>
+          <div id="product-service-hint" class="hidden border border-blue-100 bg-blue-50/50 rounded-lg px-3 py-2 flex items-center text-[10.5px] text-blue-700 font-medium col-span-2">
+            Servicio intangible (sin control de inventario ni envío a domicilio).
+          </div>
+        </div>
+
+        <!-- Dimensiones y Peso para Envíos (Solo productos con inventario) -->
+        <div id="product-dimensions-container" class="border border-gray-200 rounded-lg p-3 bg-white space-y-2">
+          <div class="flex items-center justify-between">
+            <label class="block text-[9px] font-bold text-gray-400 uppercase tracking-widest flex items-center gap-1.5">
+              <svg class="w-3.5 h-3.5 text-aura-primary" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M20.25 7.5l-.625 10.632a2.25 2.25 0 01-2.247 2.118H6.622a2.25 2.25 0 01-2.247-2.118L3.75 7.5M10 11.25h4M3.375 7.5h17.25c.621 0 1.125-.504 1.125-1.125v-1.5c0-.621-.504-1.125-1.125-1.125H3.375c-.621 0-1.125.504-1.125 1.125v1.5c0 .621.504 1.125 1.125 1.125z" /></svg>
+              <span>Dimensiones y Peso para Envío</span>
+            </label>
+            <span class="text-[9px] text-gray-400 font-medium">Logística</span>
+          </div>
+          <div class="grid grid-cols-4 gap-2">
+            <div class="border border-gray-200 rounded px-2.5 py-1.5 bg-gray-50/40 focus-within:ring-1 focus-within:ring-aura-primary focus-within:border-aura-primary focus-within:bg-white transition-all">
+              <label class="block text-[8px] font-bold text-gray-400 uppercase tracking-wider">Peso (lb)</label>
+              <input type="number" step="0.01" min="0" id="product-weight" placeholder="ej. 1.0" class="w-full bg-transparent border-none p-0 text-xs font-semibold text-gray-900 focus:ring-0 focus:outline-none mt-0.5">
+            </div>
+            <div class="border border-gray-200 rounded px-2.5 py-1.5 bg-gray-50/40 focus-within:ring-1 focus-within:ring-aura-primary focus-within:border-aura-primary focus-within:bg-white transition-all">
+              <label class="block text-[8px] font-bold text-gray-400 uppercase tracking-wider">Largo (cm)</label>
+              <input type="number" step="0.1" min="0" id="product-length" placeholder="ej. 20" class="w-full bg-transparent border-none p-0 text-xs font-semibold text-gray-900 focus:ring-0 focus:outline-none mt-0.5">
+            </div>
+            <div class="border border-gray-200 rounded px-2.5 py-1.5 bg-gray-50/40 focus-within:ring-1 focus-within:ring-aura-primary focus-within:border-aura-primary focus-within:bg-white transition-all">
+              <label class="block text-[8px] font-bold text-gray-400 uppercase tracking-wider">Ancho (cm)</label>
+              <input type="number" step="0.1" min="0" id="product-width" placeholder="ej. 15" class="w-full bg-transparent border-none p-0 text-xs font-semibold text-gray-900 focus:ring-0 focus:outline-none mt-0.5">
+            </div>
+            <div class="border border-gray-200 rounded px-2.5 py-1.5 bg-gray-50/40 focus-within:ring-1 focus-within:ring-aura-primary focus-within:border-aura-primary focus-within:bg-white transition-all">
+              <label class="block text-[8px] font-bold text-gray-400 uppercase tracking-wider">Alto (cm)</label>
+              <input type="number" step="0.1" min="0" id="product-height" placeholder="ej. 10" class="w-full bg-transparent border-none p-0 text-xs font-semibold text-gray-900 focus:ring-0 focus:outline-none mt-0.5">
+            </div>
           </div>
         </div>
 
@@ -1644,42 +1759,42 @@
           </div>
         </div>
 
-        <!-- Card de Desglose Fiscal IVA y Retenciones SAT Guatemala -->
-        <div id="product-tax-breakdown-card" class="bg-slate-900 text-white rounded-xl p-3.5 space-y-2 text-xs shadow-sm">
-          <div class="flex items-center justify-between border-b border-white/10 pb-2">
+        <!-- Desplegable Fiscal SAT Guatemala (Colapsado por defecto) -->
+        <details class="group border border-gray-200 rounded-lg bg-gray-50/30 overflow-hidden text-xs" id="product-tax-breakdown-details">
+          <summary class="flex items-center justify-between px-3 py-2 text-[10px] font-bold text-gray-600 cursor-pointer list-none select-none hover:bg-gray-100/50 transition-colors">
             <div class="flex items-center gap-1.5">
-              <span class="bg-amber-400/20 text-amber-300 text-[9px] font-bold px-2 py-0.5 rounded border border-amber-400/30">SAT Guatemala</span>
-              <span class="font-bold text-ivory-soft text-[11px]" id="product-tax-regimen-title">Pequeño Contribuyente (5% IVA)</span>
+              <span class="bg-amber-100 text-amber-800 text-[8.5px] font-bold px-1.5 py-0.5 rounded border border-amber-200">SAT</span>
+              <span id="product-tax-regimen-title">Pequeño Contribuyente (5% IVA)</span>
             </div>
-            <span class="text-[9.5px] text-amber-300 font-mono font-bold" id="product-tax-rate-badge">5% IVA Fijo</span>
-          </div>
-
-          <div class="space-y-1.5 font-mono text-[11px]">
-            <div class="flex justify-between text-gray-300">
-              <span>Precio de Venta al Público:</span>
-              <span class="font-bold text-white" id="product-tax-sale-price">Q 0.00</span>
+            <div class="flex items-center gap-1 text-[9px] text-gray-400 font-normal">
+              <span class="text-amber-700 font-semibold font-mono" id="product-tax-rate-badge">5% IVA Fijo</span>
+              <svg class="w-3.5 h-3.5 text-gray-400 transform group-open:rotate-180 transition-transform duration-200" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M19.5 8.25l-7.5 7.5-7.5-7.5" /></svg>
             </div>
-            <div class="flex justify-between text-amber-300">
-              <span id="product-tax-total-iva-label">Impuesto SAT Calculado (5% sobre Facturado):</span>
-              <span class="font-bold" id="product-tax-total-iva">Q 0.00</span>
+          </summary>
+          <div class="p-3 border-t border-gray-200 space-y-2.5 bg-white text-[11px]">
+            <div class="space-y-1 font-mono text-[10.5px]">
+              <div class="flex justify-between text-gray-600">
+                <span>Precio de Venta al Público:</span>
+                <span class="font-bold text-gray-900" id="product-tax-sale-price">Q 0.00</span>
+              </div>
+              <div class="flex justify-between text-amber-700">
+                <span id="product-tax-total-iva-label">Impuesto SAT Calculado (5% sobre Facturado):</span>
+                <span class="font-bold" id="product-tax-total-iva">Q 0.00</span>
+              </div>
+              <div class="flex justify-between text-emerald-700 pt-1 border-t border-gray-100">
+                <span id="product-tax-retention-label">Retención Operadora (Pago Definitivo):</span>
+                <span class="font-bold" id="product-tax-platform-retention">Q 0.00</span>
+              </div>
+              <div class="flex justify-between text-gray-700 font-bold pt-1 border-t border-gray-100">
+                <span id="product-tax-due-label">Saldo a Liquidar ante SAT:</span>
+                <span class="text-aura-primary font-bold" id="product-tax-merchant-due">Q 0.00</span>
+              </div>
             </div>
-            <div class="flex justify-between text-emerald-400 border-t border-white/10 pt-1">
-              <span id="product-tax-retention-label">(-) Retención SAT (5% sobre Facturado - Pago Definitivo):</span>
-              <span class="font-bold" id="product-tax-platform-retention">Q 0.00</span>
-            </div>
-            <div class="flex justify-between text-gray-200 font-bold border-t border-white/10 pt-1 text-xs">
-              <span id="product-tax-due-label">(=) Saldo IVA a Declarar en SAT:</span>
-              <span class="text-aura-gold" id="product-tax-merchant-due">Q 0.00</span>
-            </div>
-          </div>
-
-          <div class="p-2 bg-white/5 border border-white/10 rounded-lg text-[10px] text-gray-300 leading-tight mt-1 flex items-start gap-1.5">
-            <svg class="w-3.5 h-3.5 text-emerald-400 shrink-0 mt-0.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
-            <span id="product-tax-helper-text">
+            <div class="p-2 bg-amber-50/70 border border-amber-200/60 rounded text-[9.5px] text-amber-900 leading-relaxed font-sans" id="product-tax-helper-text">
               Conforme al Art. 48 de la Ley del IVA (Decreto 27-92), los emisores y operadores retienen el 5% sobre el total facturado con carácter de pago definitivo del impuesto.
-            </span>
+            </div>
           </div>
-        </div>
+        </details>
 
         <div class="border border-gray-200 rounded-lg px-3 py-2 bg-white focus-within:ring-1 focus-within:ring-aura-primary focus-within:border-aura-primary transition-all">
           <label class="block text-[9px] font-bold text-gray-400 uppercase tracking-widest">Descripción</label>
@@ -2112,6 +2227,10 @@
           <span class="text-[9px] font-semibold text-gray-400 uppercase tracking-wider block" id="drawer-subtitle">Código de Cobro</span>
           <div class="flex flex-wrap items-center gap-2 mt-0.5">
             <h3 class="text-sm font-bold text-gray-900 truncate" id="drawer-title">chk_7x89ab</h3>
+            <span id="drawer-payment-badge" class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[10px] font-semibold border shadow-xs bg-amber-50 text-amber-800 border-amber-200">
+              <span id="drawer-payment-badge-dot" class="w-1.5 h-1.5 rounded-full bg-amber-500 animate-pulse"></span>
+              <span id="drawer-payment-badge-text">Pendiente</span>
+            </span>
             <span id="drawer-delivery-badge" class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[10px] font-semibold border shadow-xs bg-amber-50 text-amber-800 border-amber-200">
               <span id="drawer-delivery-badge-dot" class="w-1.5 h-1.5 rounded-full bg-amber-500 animate-pulse"></span>
               <span id="drawer-delivery-badge-text">En proceso de entrega</span>
@@ -2210,7 +2329,7 @@
               </div>
               <div>
                 <span class="text-gray-400 block mb-0.5">Modalidad de Pago</span>
-                <span class="font-semibold text-gray-900 animate-fade-in" id="detail-modality">Contado</span>
+                <span class="font-semibold text-gray-900 animate-fade-in" id="detail-modality">Al contado</span>
               </div>
               <div>
                 <span class="text-gray-400 block mb-0.5 text-emerald-600 font-semibold">Líquido a Recibir</span>
@@ -2282,12 +2401,42 @@
                 <span class="text-gray-400 block mb-0.5">Correo de Contacto</span>
                 <span class="font-semibold text-gray-950" id="detail-contact-email">-</span>
               </div>
-              <div class="col-span-2 bg-amber-50/60 border border-amber-200/80 rounded-lg p-2.5 space-y-1 mt-1">
-                <div class="flex justify-between items-center text-[10.5px]">
-                  <span class="text-amber-900 font-semibold" id="detail-gt-iva-label">IVA Guatemala (5% Pequeño Contribuyente):</span>
-                  <span class="font-bold font-mono text-amber-950" id="detail-gt-iva-amount">Q 0.00</span>
-                </div>
-                <p class="text-[9.5px] text-amber-800/90 leading-tight" id="detail-gt-iva-regimen-text">Decreto 27-92 Art. 47 · No genera derecho a crédito fiscal.</p>
+              <div class="col-span-2 mt-1">
+                <details class="group border border-gray-200 rounded-lg bg-gray-50/40 overflow-hidden text-xs" id="detail-tax-breakdown-details">
+                  <summary class="flex items-center justify-between p-2.5 text-[10px] font-bold text-gray-700 cursor-pointer list-none select-none hover:bg-gray-100/50 transition-colors">
+                    <div class="flex items-center gap-1.5">
+                      <span class="bg-amber-100 text-amber-800 text-[8.5px] font-bold px-1.5 py-0.5 rounded border border-amber-200">SAT</span>
+                      <span id="detail-gt-iva-label">Desglose Fiscal (IVA Guatemala)</span>
+                    </div>
+                    <div class="flex items-center gap-1 text-[9px] text-gray-400 font-normal">
+                      <span id="detail-gt-iva-amount" class="font-bold font-mono text-gray-900">Q 0.00</span>
+                      <svg class="w-3.5 h-3.5 text-gray-400 transform group-open:rotate-180 transition-transform duration-200" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M19.5 8.25l-7.5 7.5-7.5-7.5" /></svg>
+                    </div>
+                  </summary>
+                  <div class="p-3 border-t border-gray-200 space-y-2 bg-white text-[11px]">
+                    <div class="flex justify-between items-center text-gray-600">
+                      <span>Régimen Fiscal Aplicado:</span>
+                      <span class="font-bold text-gray-900" id="detail-tax-regimen-name">Pequeño Contribuyente</span>
+                    </div>
+                    <div class="space-y-1 pt-1.5 border-t border-gray-150 font-mono text-[10.5px]">
+                      <div class="flex justify-between text-gray-600">
+                        <span>Base Imponible:</span>
+                        <span class="font-semibold text-gray-900" id="detail-tax-base">Q 0.00</span>
+                      </div>
+                      <div class="flex justify-between text-amber-700">
+                        <span id="detail-tax-iva-title">Impuesto Calculado:</span>
+                        <span class="font-bold" id="detail-tax-iva-val">Q 0.00</span>
+                      </div>
+                      <div class="flex justify-between text-emerald-700">
+                        <span>Retención por Operadora (Tarjeta):</span>
+                        <span class="font-bold" id="detail-tax-retention-val">Q 0.00</span>
+                      </div>
+                    </div>
+                    <div class="p-2 bg-amber-50/70 border border-amber-200/60 rounded text-[9.5px] text-amber-900 leading-relaxed font-sans" id="detail-gt-iva-regimen-text">
+                      Decreto 27-92 Art. 47 · No genera derecho a crédito fiscal.
+                    </div>
+                  </div>
+                </details>
               </div>
             </div>
           </div>
