@@ -422,7 +422,7 @@
                 <div>
                   <div class="flex items-center gap-2">
                     <span class="text-xs font-bold text-aura-goldText bg-amber-50 px-2 py-0.5 rounded border border-amber-200/50 uppercase tracking-wide">Comercio Activo</span>
-                    <span class="text-[11px] text-gray-400 font-mono">NIT: 3849102-5</span>
+                    <span class="text-[11px] text-gray-400 font-mono" id="header-merchant-nit">NIT: 8492019-3</span>
                   </div>
                   <h1 class="text-lg font-extrabold text-gray-950 tracking-tight mt-0.5">Café Don Arturo, S.A.</h1>
                 </div>
@@ -574,7 +574,7 @@
               </div>
 
               <div class="px-6 py-3.5 border-t border-gray-200 bg-white flex justify-between items-center text-xs text-gray-500">
-                <span id="table-total-count">Mostrando 5 de 5 transacciones</span>
+                <span id="table-total-count">Cargando transacciones...</span>
                 <div class="flex gap-1">
                   <button class="px-2 py-1 border border-gray-200 rounded text-gray-400 cursor-not-allowed text-[11px] font-medium bg-white">Anterior</button>
                   <button class="px-2 py-1 border border-gray-200 rounded text-gray-600 hover:bg-gray-50 transition-colors text-[11px] font-medium bg-white">Siguiente</button>
@@ -1025,9 +1025,9 @@
             <div class="bg-white border border-gray-200 rounded-xl shadow-sm p-5">
               <h3 class="text-xs font-bold text-gray-400 uppercase tracking-wider mb-4">Datos de la Cuenta</h3>
               <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 text-xs">
-                <div><span class="text-gray-400 block mb-0.5">Comercio</span><span class="font-semibold text-gray-900">Academia de Barismo</span></div>
+                <div><span class="text-gray-400 block mb-0.5">Comercio</span><span class="font-semibold text-gray-900" id="info-account-merchant-name">Café Don Arturo, S.A.</span></div>
                 <div><span class="text-gray-400 block mb-0.5">Moneda</span><span class="font-semibold text-gray-900">Quetzales (GTQ)</span></div>
-                <div><span class="text-gray-400 block mb-0.5">Tipo de cuenta</span><span class="font-semibold text-gray-900">AuraPay Omnicanal</span></div>
+                <div><span class="text-gray-400 block mb-0.5">Tipo de cuenta</span><span class="font-semibold text-gray-900">EthosPay Omnicanal</span></div>
                 <div><span class="text-gray-400 block mb-0.5">Vigencia del link</span><span class="font-semibold text-gray-900">48 horas</span></div>
                 <div><span class="text-gray-400 block mb-0.5">Intentos máximos por link</span><span class="font-semibold text-gray-900">3 intentos</span></div>
                 <div><span class="text-gray-400 block mb-0.5">Cuotas máximas por defecto</span><span class="font-semibold text-gray-900">48 meses</span></div>
@@ -1070,8 +1070,8 @@
                   <div class="space-y-4 text-xs">
                     <div>
                       <label class="block text-gray-700 font-semibold mb-1.5">Nombre Comercial del Comercio</label>
-                      <input type="text" value="Academia de Barismo" class="w-full px-3 py-2 bg-gray-50 border border-gray-250 rounded-md focus:outline-none focus:bg-white focus:ring-1 focus:ring-aura-primary focus:border-aura-primary transition-all text-xs" readonly>
-                      <span class="text-[10px] text-gray-400 mt-1 block">Para cambiar el nombre comercial registrado ante Aura, contacta a tu asesor.</span>
+                      <input type="text" id="settings-general-merchant-name" value="Café Don Arturo, S.A." class="w-full px-3 py-2 bg-gray-50 border border-gray-250 rounded-md focus:outline-none focus:bg-white focus:ring-1 focus:ring-aura-primary focus:border-aura-primary transition-all text-xs" readonly>
+                      <span class="text-[10px] text-gray-400 mt-1 block">Para cambiar el nombre comercial registrado ante EthosPay, contacta a tu asesor.</span>
                     </div>
 
                     <div>
@@ -1190,7 +1190,7 @@
                     <div class="bg-gray-950 text-amber-200 font-mono p-3 rounded-lg text-[9.5px] leading-relaxed shadow-inner overflow-x-auto">
                       <p class="text-gray-500">&gt; POST <span class="text-white" id="web-sim-url">https://tu-comercio.com/api/...</span></p>
                       <p class="text-gray-500">&gt; Content-Type: application/json</p>
-                      <p class="text-gray-500">&gt; X-AuraPay-Signature: sha256=2b189ff78ac76bde1e882aef1...</p>
+                      <p class="text-gray-500">&gt; X-EthosPay-Signature: sha256=2b189ff78ac76bde1e882aef1...</p>
                       <p class="mt-1.5 text-yellow-350">Request Body:</p>
                       <pre class="text-amber-300 mt-1" id="web-sim-payload">{
   "event": "webhook.test_ping",
@@ -1391,7 +1391,7 @@
         </div>
 
         <div class="flex-shrink-0">
-          <h3 class="text-sm font-semibold text-gray-900">Crear enlace de cobro AuraPay</h3>
+          <h3 class="text-sm font-semibold text-gray-900">Crear enlace de cobro EthosPay</h3>
         </div>
 
         <!-- Modal Form -->
@@ -1465,6 +1465,23 @@
           <div class="border border-gray-200 rounded-lg px-3 py-2 bg-white focus-within:ring-1 focus-within:ring-aura-primary focus-within:border-aura-primary transition-all">
             <label class="block text-[9px] font-bold text-gray-400 uppercase tracking-widest">Concepto del Cobro <span class="text-gray-400 font-normal lowercase">(opcional)</span></label>
             <input type="text" id="link-product-title" placeholder="ej. Café de Especialidad Huehuetenango" class="w-full bg-transparent border-none p-0 text-xs font-semibold text-gray-900 focus:ring-0 focus:outline-none mt-0.5">
+          </div>
+
+          <!-- Configuración de Envío a Domicilio -->
+          <div class="border border-gray-200 rounded-lg p-3 bg-white flex items-center justify-between gap-3">
+            <div class="flex items-center gap-2.5 min-w-0">
+              <div class="w-7 h-7 rounded-lg bg-amber-500/10 text-amber-600 flex items-center justify-center flex-shrink-0">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" d="M8.25 18.75a1.5 1.5 0 01-3 0m3 0a1.5 1.5 0 00-3 0m3 0h6m-9 0H3.375a1.125 1.125 0 01-1.125-1.125V14.25m17.25 4.5a1.5 1.5 0 01-3 0m3 0a1.5 1.5 0 00-3 0m3 0h1.125c.621 0 1.129-.504 1.09-1.124a17.902 17.902 0 00-3.213-9.193 2.056 2.056 0 00-1.58-.86H14.25M16.5 18.75h-2.25m0-11.25V3.75A1.125 1.125 0 0013.125 2.625h-7.5A1.125 1.125 0 004.5 3.75v10.5m9.75-8.25h3.375c.621 0 1.125.504 1.125 1.125v4.5M4.5 14.25h15" />
+                </svg>
+              </div>
+              <label for="link-require-shipping" class="text-xs font-bold text-gray-900 cursor-pointer block leading-tight">¿Requiere Envío a Domicilio?</label>
+            </div>
+            <label class="ethos-toggle-switch">
+              <input type="checkbox" id="link-require-shipping" onchange="toggleShippingConfig(this.checked)">
+              <div class="ethos-toggle-track"></div>
+              <div class="ethos-toggle-knob"></div>
+            </label>
           </div>
 
           <!-- Collapsible Advanced Options -->
@@ -1643,15 +1660,15 @@
               <span class="font-bold text-white" id="product-tax-sale-price">Q 0.00</span>
             </div>
             <div class="flex justify-between text-amber-300">
-              <span id="product-tax-total-iva-label">Monto IVA Total (5%):</span>
+              <span id="product-tax-total-iva-label">Impuesto SAT Calculado (5% sobre Facturado):</span>
               <span class="font-bold" id="product-tax-total-iva">Q 0.00</span>
             </div>
             <div class="flex justify-between text-emerald-400 border-t border-white/10 pt-1">
-              <span>(-) Retención Plataforma EthosPay (5%):</span>
+              <span id="product-tax-retention-label">(-) Retención SAT (5% sobre Facturado - Pago Definitivo):</span>
               <span class="font-bold" id="product-tax-platform-retention">Q 0.00</span>
             </div>
             <div class="flex justify-between text-gray-200 font-bold border-t border-white/10 pt-1 text-xs">
-              <span>(=) Remanente IVA a Pagar por el Comercio:</span>
+              <span id="product-tax-due-label">(=) Saldo IVA a Declarar en SAT:</span>
               <span class="text-aura-gold" id="product-tax-merchant-due">Q 0.00</span>
             </div>
           </div>
@@ -1659,7 +1676,7 @@
           <div class="p-2 bg-white/5 border border-white/10 rounded-lg text-[10px] text-gray-300 leading-tight mt-1 flex items-start gap-1.5">
             <svg class="w-3.5 h-3.5 text-emerald-400 shrink-0 mt-0.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
             <span id="product-tax-helper-text">
-              La plataforma retendrá automáticamente el 5% de retención del impuesto por cada transacción realizada. La constancia de retención SAT se genera de forma automática.
+              Conforme al Art. 48 de la Ley del IVA (Decreto 27-92), los emisores y operadores retienen el 5% sobre el total facturado con carácter de pago definitivo del impuesto.
             </span>
           </div>
         </div>
@@ -2095,6 +2112,10 @@
           <span class="text-[9px] font-semibold text-gray-400 uppercase tracking-wider block" id="drawer-subtitle">Código de Cobro</span>
           <div class="flex flex-wrap items-center gap-2 mt-0.5">
             <h3 class="text-sm font-bold text-gray-900 truncate" id="drawer-title">chk_7x89ab</h3>
+            <span id="drawer-delivery-badge" class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[10px] font-semibold border shadow-xs bg-amber-50 text-amber-800 border-amber-200">
+              <span id="drawer-delivery-badge-dot" class="w-1.5 h-1.5 rounded-full bg-amber-500 animate-pulse"></span>
+              <span id="drawer-delivery-badge-text">En proceso de entrega</span>
+            </span>
             <button id="drawer-free-inventory-btn" onclick="freeInventory(selectedTransaction)" class="hidden bg-white hover:bg-red-50 text-red-600 border border-red-200 text-[10px] font-bold px-2.5 py-1 rounded shadow-sm transition-colors flex items-center gap-1">
               <svg width="12" height="12" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h10a8 8 0 018 8v2M3 10l6 6m-6-6l6-6"/></svg>
               <span>Liberar Inventario</span>
@@ -2207,8 +2228,24 @@
                 </div>
                 <div class="col-span-2">
                   <span class="text-gray-400 block mb-0.5">Comisión / Plazo Máximo</span>
-                  <span class="font-medium text-gray-700 text-[11px]" id="detail-fee-rate">1 mes (3.50%)</span>
+                  <span class="font-medium text-gray-700 text-[11px]" id="detail-fee-rate">1 mes (4.50%)</span>
                 </div>
+              </div>
+
+              <!-- Package Delivery Status Item (Only 'Entregado' or 'En proceso de entrega') -->
+              <div class="col-span-2 bg-amber-50/70 border border-amber-200/90 rounded-lg p-3 flex items-center justify-between transition-colors mt-1" id="drawer-delivery-status-card">
+                <div class="flex items-center gap-2.5 min-w-0 pr-2">
+                  <div id="detail-delivery-status-icon-wrap" class="w-8 h-8 rounded-lg flex items-center justify-center bg-amber-100 text-amber-700 flex-shrink-0">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M8.25 18.75a1.5 1.5 0 01-3 0m3 0a1.5 1.5 0 00-3 0m3 0h6m-9 0H3.375a1.125 1.125 0 01-1.125-1.125V14.25m17.25 4.5a1.5 1.5 0 01-3 0m3 0a1.5 1.5 0 00-3 0m3 0h1.125c.621 0 1.129-.504 1.09-1.124a17.902 17.902 0 00-3.213-9.193 2.056 2.056 0 00-1.58-.86H14.25M16.5 18.75h-2.25m0-11.25V3.75A1.125 1.125 0 0013.125 2.625h-7.5A1.125 1.125 0 004.5 3.75v10.5m9.75-8.25h3.375c.621 0 1.125.504 1.125 1.125v4.5M4.5 14.25h15" /></svg>
+                  </div>
+                  <div class="min-w-0">
+                    <span class="text-gray-400 block text-[9.5px] uppercase font-bold tracking-wider">Estatus del Paquete</span>
+                    <span class="text-xs font-bold block mt-0.5 truncate text-amber-900" id="detail-delivery-status-text">En proceso de entrega</span>
+                  </div>
+                </div>
+                <button type="button" id="detail-delivery-status-toggle-btn" onclick="toggleCurrentDeliveryStatus()" class="px-2.5 py-1 text-[11px] font-semibold rounded-md border transition-all shadow-xs flex items-center gap-1.5 active:scale-95 focus:outline-none flex-shrink-0 bg-emerald-600 text-white border-emerald-600 hover:bg-emerald-700 shadow-sm">
+                  <span id="detail-delivery-toggle-btn-text">Marcar como Entregado</span>
+                </button>
               </div>
             </div>
           </div>
@@ -2251,6 +2288,42 @@
                   <span class="font-bold font-mono text-amber-950" id="detail-gt-iva-amount">Q 0.00</span>
                 </div>
                 <p class="text-[9.5px] text-amber-800/90 leading-tight" id="detail-gt-iva-regimen-text">Decreto 27-92 Art. 47 · No genera derecho a crédito fiscal.</p>
+              </div>
+            </div>
+          </div>
+
+          <!-- Shipping Details Card in Drawer -->
+          <div class="border-t border-gray-100 pt-5 space-y-3 hidden" id="detail-shipping-card">
+            <div class="flex items-center justify-between">
+              <h4 class="text-[9px] font-bold text-gray-400 uppercase tracking-wider flex items-center gap-1.5">
+                <svg class="w-3.5 h-3.5 text-amber-600" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M8.25 18.75a1.5 1.5 0 01-3 0m3 0a1.5 1.5 0 00-3 0m3 0h6m-9 0H3.375a1.125 1.125 0 01-1.125-1.125V14.25m17.25 4.5a1.5 1.5 0 01-3 0m3 0a1.5 1.5 0 00-3 0m3 0h1.125c.621 0 1.129-.504 1.09-1.124a17.902 17.902 0 00-3.213-9.193 2.056 2.056 0 00-1.58-.86H14.25M16.5 18.75h-2.25m0-11.25V3.75A1.125 1.125 0 0013.125 2.625h-7.5A1.125 1.125 0 004.5 3.75v10.5m9.75-8.25h3.375c.621 0 1.125.504 1.125 1.125v4.5M4.5 14.25h15" /></svg>
+                Datos de Envío a Domicilio
+              </h4>
+              <div class="flex items-center gap-1.5">
+                <span id="detail-shipping-status-label" class="px-2 py-0.5 rounded-full text-[10px] font-bold border bg-amber-50 text-amber-800 border-amber-200">
+                  En proceso de entrega
+                </span>
+                <span id="detail-shipping-fee-badge" class="px-2 py-0.5 rounded text-[10px] font-bold bg-amber-50 text-amber-700 border border-amber-200">
+                  Tarifa: <span id="detail-shipping-fee">Q 0.00</span>
+                </span>
+              </div>
+            </div>
+            <div class="bg-gray-50/70 border border-gray-200 rounded-lg p-3 grid grid-cols-2 gap-3 text-xs">
+              <div>
+                <span class="text-gray-400 block mb-0.5 text-[10px]">Departamento</span>
+                <span class="font-semibold text-gray-900" id="detail-shipping-dept">-</span>
+              </div>
+              <div>
+                <span class="text-gray-400 block mb-0.5 text-[10px]">Municipio</span>
+                <span class="font-semibold text-gray-900" id="detail-shipping-muni">-</span>
+              </div>
+              <div class="col-span-2">
+                <span class="text-gray-400 block mb-0.5 text-[10px]">Dirección Exacta</span>
+                <span class="font-semibold text-gray-950 block" id="detail-shipping-address">-</span>
+              </div>
+              <div class="col-span-2">
+                <span class="text-gray-400 block mb-0.5 text-[10px]">Indicaciones / Referencias</span>
+                <span class="text-gray-700 block italic text-[11px]" id="detail-shipping-notes">-</span>
               </div>
             </div>
           </div>

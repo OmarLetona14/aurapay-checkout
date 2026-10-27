@@ -447,7 +447,7 @@
   .hint{font-size:11px;color:var(--ink-400);margin-top:4px;line-height:1.4;}
   .field .err{font-size:11px;color:var(--red-600);margin-top:4px;display:none;}
   .field.invalid .err{display:block;}
-  .field.invalid input{border-color:var(--red-600);background:#fff5f5;}
+  .field.invalid input, .field.invalid select{border-color:var(--red-600);background:#fff5f5;}
 
   .input-row{position:relative;display:flex;align-items:center;}
   input[type=text], input[type=email], input[type=tel], input[type=number], select{
@@ -553,19 +553,394 @@
     font-size:10px;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:1px;
   }
 
+  /* ---- CHECKOUT STEPPER (WIZARD 2 PASOS) ---- */
+  .checkout-stepper {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    position: relative;
+    margin-bottom: 22px;
+    padding-bottom: 14px;
+    border-bottom: 1px solid var(--line);
+  }
+  .stepper-step {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    background: var(--card);
+    border: none;
+    cursor: pointer;
+    padding: 4px 10px;
+    border-radius: 8px;
+    transition: all .2s ease;
+    z-index: 2;
+    position: relative;
+  }
+  .stepper-step:hover {
+    background: rgba(0,0,0,.04);
+  }
+  .step-num {
+    width: 24px;
+    height: 24px;
+    border-radius: 50%;
+    background: #e2e8f0;
+    color: #64748b;
+    font-size: 11.5px;
+    font-weight: 700;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all .25s cubic-bezier(.34,1.56,.64,1);
+  }
+  .step-text {
+    font-size: 12.5px;
+    font-weight: 600;
+    color: #64748b;
+    transition: all .2s ease;
+  }
+  .stepper-step.active .step-num {
+    background: var(--navy-900);
+    color: #ffffff;
+    box-shadow: 0 2px 8px rgba(13,13,66,.25);
+  }
+  .stepper-step.active .step-text {
+    color: var(--navy-900);
+    font-weight: 700;
+  }
+  .stepper-step.completed .step-num {
+    background: #059669;
+    color: #ffffff;
+  }
+  .stepper-step.completed .step-text {
+    color: #059669;
+  }
+  .stepper-line {
+    position: absolute;
+    top: 16px;
+    left: 20px;
+    right: 20px;
+    height: 2px;
+    background: #e2e8f0;
+    z-index: 1;
+    overflow: hidden;
+  }
+  .stepper-line-progress {
+    height: 100%;
+    width: 0%;
+    background: var(--navy-900);
+    transition: width .3s ease;
+  }
+
+  .checkout-step-panel {
+    animation: stepFadeIn .28s ease;
+  }
+  @keyframes stepFadeIn {
+    from { opacity: 0; transform: translateY(6px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  /* ---- STEP 2 REVIEW CARD ---- */
+  .step1-review-card {
+    background: #f8fafc;
+    border: 1px solid var(--line);
+    border-radius: 10px;
+    padding: 11px 14px;
+    margin-bottom: 18px;
+    display: flex;
+    flex-direction: column;
+    gap: 7px;
+    font-size: 12px;
+  }
+  .review-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+  }
+  .review-meta {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    min-width: 0;
+    flex: 1;
+  }
+  .review-label {
+    font-weight: 700;
+    color: var(--ink-400);
+    font-size: 10.5px;
+    text-transform: uppercase;
+    letter-spacing: .03em;
+    flex-shrink: 0;
+  }
+  .review-value {
+    color: var(--ink-900);
+    font-weight: 600;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .review-edit-btn {
+    background: transparent;
+    border: none;
+    color: var(--navy-800);
+    font-size: 11.5px;
+    font-weight: 700;
+    cursor: pointer;
+    padding: 2px 6px;
+    border-radius: 4px;
+    text-decoration: underline;
+    flex-shrink: 0;
+  }
+  .review-edit-btn:hover {
+    color: var(--teal-500);
+  }
+
+  /* ---- PAYMENT METHOD TABS (PILLS) ---- */
+  .payment-tabs-nav {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(82px, 1fr));
+    gap: 8px;
+    margin-bottom: 16px;
+  }
+  .pay-tab-pill {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 10px 6px;
+    border: 1.5px solid var(--line);
+    border-radius: 10px;
+    background: #ffffff;
+    cursor: pointer;
+    transition: all .2s cubic-bezier(.16, 1, .3, 1);
+    text-align: center;
+    position: relative;
+    gap: 4px;
+    user-select: none;
+  }
+  .pay-tab-pill:hover {
+    border-color: #cbd5e1;
+    background: #f8fafc;
+  }
+  .pay-tab-pill.active {
+    border-color: var(--navy-900);
+    background: #f0f4ff;
+    box-shadow: 0 2px 8px rgba(13, 13, 66, 0.08);
+  }
+  .pay-tab-pill .tab-icon {
+    width: 20px;
+    height: 20px;
+    color: #64748b;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: color .2s;
+  }
+  .pay-tab-pill.active .tab-icon {
+    color: var(--navy-900);
+  }
+  .pay-tab-pill .tab-title {
+    font-size: 11px;
+    font-weight: 600;
+    color: #334155;
+    line-height: 1.2;
+    white-space: nowrap;
+  }
+  .pay-tab-pill.active .tab-title {
+    color: var(--navy-900);
+    font-weight: 700;
+  }
+  .pay-tab-pill .tab-badge {
+    font-size: 8px;
+    font-weight: 800;
+    text-transform: uppercase;
+    color: #b45309;
+    background: #fef3c7;
+    padding: 1px 4px;
+    border-radius: 4px;
+    letter-spacing: .02em;
+  }
+
+  /* In modern tab mode, hide old accordion headers and show active method body */
+  .method-list .method-header {
+    display: none;
+  }
+  .method-list .method-item {
+    border: none;
+    border-radius: 0;
+    display: none;
+    background: transparent;
+  }
+  .method-list .method-item.active {
+    display: block;
+    animation: stepFadeIn .25s ease;
+  }
+  .method-list .method-item.active .method-body {
+    max-height: none;
+    opacity: 1;
+    background: transparent;
+  }
+  .method-list .method-body-inner {
+    padding: 0;
+  }
+
+  .back-to-step1-btn {
+    background: transparent;
+    border: none;
+    color: #64748b;
+    font-size: 12px;
+    font-weight: 600;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 6px 12px;
+    border-radius: 6px;
+    transition: all .15s ease;
+  }
+  .back-to-step1-btn:hover {
+    color: var(--navy-900);
+    background: #f1f5f9;
+  }
+
+  /* ---- MOBILE STICKY ORDER SUMMARY BAR (SHOPIFY STYLE) ---- */
+  .mobile-order-summary-bar {
+    grid-column: 1 / -1;
+    display: none;
+    width: 100%;
+    background: #ffffff;
+    border-bottom: 1px solid var(--line);
+    padding: 13px 18px;
+    cursor: pointer;
+    align-items: center;
+    justify-content: space-between;
+    user-select: none;
+    -webkit-tap-highlight-color: transparent;
+    position: sticky;
+    top: 0;
+    z-index: 50;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.04);
+  }
+  @media (min-width: 901px) {
+    .mobile-order-summary-bar {
+      display: none !important;
+    }
+  }
+  .mob-summary-left {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--navy-900);
+  }
+  .mob-cart-icon {
+    color: var(--navy-900);
+    display: flex;
+    align-items: center;
+  }
+  .mob-chevron {
+    transition: transform .25s ease;
+    color: var(--navy-900);
+  }
+  .mobile-order-summary-bar.expanded .mob-chevron {
+    transform: rotate(180deg);
+  }
+  .mob-summary-right {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+  }
+  .mob-total-label {
+    font-size: 11.5px;
+    color: var(--ink-400);
+  }
+  .mob-total-amount {
+    font-size: 15px;
+    font-weight: 800;
+    color: var(--navy-900);
+    letter-spacing: -.01em;
+  }
+
+  /* Dark mode support for new components */
+  html[data-theme="dark"] .mobile-order-summary-bar {
+    background: var(--card);
+    border-bottom-color: var(--line);
+  }
+  html[data-theme="dark"] .mob-summary-left,
+  html[data-theme="dark"] .mob-cart-icon,
+  html[data-theme="dark"] .mob-chevron,
+  html[data-theme="dark"] .mob-total-amount {
+    color: #f1f5f9;
+  }
+  html[data-theme="dark"] .stepper-step.active .step-text {
+    color: #f1f5f9;
+  }
+  html[data-theme="dark"] .step-num {
+    background: #1e293b;
+    color: #94a3b8;
+  }
+  html[data-theme="dark"] .stepper-line {
+    background: #334155;
+  }
+  html[data-theme="dark"] .step1-review-card {
+    background: #1e293b;
+    border-color: #334155;
+  }
+  html[data-theme="dark"] .review-value {
+    color: #f1f5f9;
+  }
+  html[data-theme="dark"] .review-edit-btn {
+    color: #93c5fd;
+  }
+  html[data-theme="dark"] .pay-tab-pill {
+    background: var(--card);
+    border-color: var(--line);
+  }
+  html[data-theme="dark"] .pay-tab-pill:hover {
+    background: #1e293b;
+  }
+  html[data-theme="dark"] .pay-tab-pill.active {
+    border-color: #6366f1;
+    background: #1e2442;
+  }
+  html[data-theme="dark"] .pay-tab-pill.active .tab-title,
+  html[data-theme="dark"] .pay-tab-pill.active .tab-icon {
+    color: #e0e7ff;
+  }
+  html[data-theme="dark"] .pay-tab-pill .tab-title {
+    color: #cbd5e1;
+  }
+  html[data-theme="dark"] .back-to-step1-btn:hover {
+    background: #1e293b;
+    color: #f1f5f9;
+  }
+
   /* Tablet / ventanas angostas: apilar en una columna, mantener la tarjeta */
   @media (max-width:900px){
     body{padding:28px 16px;justify-content:flex-start;}
     .checkout{display:flex;flex-direction:column;height:auto;overflow:visible;}
-    .summary{border-right:none;border-bottom:1px solid var(--line);padding:32px clamp(20px,5vw,48px);overflow-y:visible;}
-    .pay{padding:32px clamp(20px,5vw,48px);align-items:flex-start;overflow-y:visible;}
-    .product-hero img, .product-hero svg{height:200px;}
+    .mobile-order-summary-bar{display:flex;}
+    .summary{
+      border-right:none;
+      border-bottom:1px solid var(--line);
+      overflow:hidden;
+      max-height:0;
+      opacity:0;
+      padding:0 clamp(20px,5vw,48px);
+      transition:max-height .35s cubic-bezier(.4,0,.2,1), opacity .25s ease, padding .35s ease;
+    }
+    .summary.mob-expanded{
+      max-height:1000px;
+      opacity:1;
+      padding:24px clamp(20px,5vw,48px);
+      overflow-y:auto;
+    }
+    .pay{padding:28px clamp(20px,5vw,48px);align-items:flex-start;overflow-y:visible;}
+    .product-hero img, .product-hero svg{height:180px;}
   }
 
-  /* Solo en dispositivos táctiles reales (teléfono/tablet) se reemplaza el QR
-     por el botón que abre/redirige a la app: ahí el usuario NO puede escanear
-     el QR con el mismo dispositivo. En escritorio —aunque la ventana sea
-     angosta— el QR sí tiene sentido y el botón "Abrir app" NO debe aparecer. */
+  /* Solo en dispositivos táctiles reales (teléfono/tablet) se reemplaza el QR */
   @media (hover: none) and (pointer: coarse){
     .qr-only{display:none;}
     .mobile-redirect-note{display:block;}
@@ -576,14 +951,18 @@
   @media (max-width:560px){
     body{padding:0;justify-content:flex-start;}
     .checkout{border-radius:0;box-shadow:none;height:auto;min-height:100vh;overflow:visible;}
-    .summary{padding:24px 18px;}
-    .pay{padding:24px 18px;padding-bottom:calc(24px + env(safe-area-inset-bottom, 0px));}
+    .summary.mob-expanded{padding:20px 18px;}
+    .pay{padding:20px 18px;padding-bottom:calc(24px + env(safe-area-inset-bottom, 0px));}
+    .payment-tabs-nav{grid-template-columns:repeat(3, 1fr);gap:6px;}
+    .pay-tab-pill{padding:8px 4px;}
+    .pay-tab-pill .tab-title{font-size:10.5px;}
   }
 
   /* Móvil pequeño: campos en una sola columna, tipografía compacta */
   @media (max-width:420px){
     .grid2, .grid3{grid-template-columns:1fr;gap:8px;}
     .product-hero img, .product-hero svg{height:160px;}
+    .payment-tabs-nav{grid-template-columns:repeat(2, 1fr);}
   }
 
   select{-webkit-appearance:none;-moz-appearance:none;appearance:none;background-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='12' height='8'><path d='M1 1l5 5 5-5' stroke='%2398a2b3' stroke-width='1.6' fill='none'/></svg>");background-repeat:no-repeat;background-position:right 12px center;}
@@ -757,6 +1136,22 @@
 <body>
 <main class="checkout">
 <div class="brand-strip"><span></span><span></span><span></span><span></span><span></span></div>
+
+<!-- Mobile Sticky Collapsible Order Summary Bar (Shopify style) -->
+<div class="mobile-order-summary-bar" id="mobile-order-summary-bar" onclick="toggleMobileSummary()" role="button" aria-expanded="false" tabindex="0">
+  <div class="mob-summary-left">
+    <div class="mob-cart-icon">
+      <svg width="17" height="17" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M2.25 3h1.386c.51 0 .955.343 1.087.835l.383 1.437M7.5 14.25a3 3 0 00-3 3h15.75m-12.75-3h11.218c1.121-2.3 2.1-4.684 2.924-7.138a60.114 60.114 0 00-16.536-1.84M7.5 14.25L5.106 5.272M6 20.25a.75.75 0 11-1.5 0 .75.75 0 011.5 0zm12.75 0a.75.75 0 11-1.5 0 .75.75 0 011.5 0z"/></svg>
+    </div>
+    <span id="mob-summary-toggle-text">Mostrar resumen del pedido</span>
+    <svg class="mob-chevron" id="mob-summary-chevron" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2.2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M19.5 8.25l-7.5 7.5-7.5-7.5"/></svg>
+  </div>
+  <div class="mob-summary-right">
+    <span class="mob-total-label">Total:</span>
+    <span class="mob-total-amount" id="mob-total-amount">Q 0.00</span>
+  </div>
+</div>
+
 <!-- IZQUIERDA: resumen -->
 <aside class="summary">
 <div class="summary-utils">
@@ -792,6 +1187,22 @@
 <!-- JS Populated -->
 </div>
 <div id="checkout-price-breakdown" style="border-top:1px dashed var(--line); margin: 10px 0; padding-top: 8px; display: none;"></div>
+
+<!-- Desglose de Envío a Domicilio en el Resumen -->
+<div id="checkout-shipping-summary-row" style="display: none; border-top:1px dashed var(--line); margin: 10px 0 0; padding-top: 8px; font-size: 12px; color: var(--ink-700);">
+  <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px;">
+    <span>Subtotal productos:</span>
+    <span id="checkout-subtotal-val" style="font-family: var(--font-mono); font-weight: 600;">Q 145.00</span>
+  </div>
+  <div style="display: flex; justify-content: space-between; align-items: center; color: var(--gold-800);">
+    <span style="display: flex; align-items: center; gap: 4px;">
+      <svg width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M8.25 18.75a1.5 1.5 0 01-3 0m3 0a1.5 1.5 0 00-3 0m3 0h6m-9 0H3.375a1.125 1.125 0 01-1.125-1.125V14.25m17.25 4.5a1.5 1.5 0 01-3 0m3 0a1.5 1.5 0 00-3 0m3 0h1.125c.621 0 1.129-.504 1.09-1.124a17.902 17.902 0 00-3.213-9.193 2.056 2.056 0 00-1.58-.86H14.25M16.5 18.75h-2.25m0-11.25V3.75A1.125 1.125 0 0013.125 2.625h-7.5A1.125 1.125 0 004.5 3.75v10.5m9.75-8.25h3.375c.621 0 1.125.504 1.125 1.125v4.5M4.5 14.25h15" /></svg>
+      Envío a domicilio:
+    </span>
+    <span id="checkout-shipping-val" style="font-family: var(--font-mono); font-weight: 700;">+ Q 25.00</span>
+  </div>
+</div>
+
 <div class="total"><span>Total</span><span id="checkout-total-price">Q 145.00</span></div>
 
 <div id="checkout-gt-iva-info" style="margin-top: 8px; padding-top: 8px; border-top: 1px dashed var(--line); font-size: 11px; color: var(--ink-500);">
@@ -826,52 +1237,25 @@
 <!-- DERECHA: formulario -->
 <section class="pay">
 <div class="pay-inner">
-<!-- PAGO EXPRÉS: wallets. En producción, cada botón solo se muestra si el
-         dispositivo/navegador lo soporta (ApplePaySession.canMakePayments() /
-         Google Pay isReadyToPay()); aquí se muestran ambos para la demo. -->
-<div class="express-pay" id="express-pay">
-<div class="reveal open" id="wallet-select-step">
-<div class="express-buttons">
-<button aria-label="Pagar con Apple Pay" class="wallet-btn apple-pay" onclick="startWalletAuth(this)" type="button">
-<svg aria-hidden="true" fill="currentColor" viewbox="0 0 24 24"><path d="M16.365 1.43c0 1.14-.493 2.27-1.177 3.08-.744.9-1.99 1.57-3.014 1.57-.12 0-.23-.02-.3-.03-.014-.1-.04-.31-.04-.52 0-1.14.572-2.27 1.206-2.98.804-.94 2.142-1.64 3.204-1.68.03.13.05.36.05.56zm4.565 16.4c-.03.07-.463 1.58-1.518 3.12-.945 1.34-1.94 2.71-3.49 2.71-1.518 0-2.017-.86-3.735-.86-1.762 0-2.336.83-3.75.86-1.49.03-2.615-1.44-3.585-2.77-1.955-2.71-3.45-7.66-1.44-11.02.996-1.66 2.78-2.71 4.71-2.74 1.464-.03 2.845.984 3.735.984.87 0 2.55-1.22 4.29-1.04.735.03 2.79.297 4.11 2.24-.105.065-2.454 1.43-2.424 4.27.03 3.39 2.97 4.52 3 4.53z"></path></svg>
-            Pay
-          </button>
-<button aria-label="Pagar con Google Pay" class="wallet-btn google-pay" onclick="startWalletAuth(this)" type="button">
-<svg aria-hidden="true" viewbox="0 0 48 48">
-<path d="M45.12 24.5c0-1.56-.14-3.06-.4-4.5H24v8.51h11.84c-.51 2.75-2.06 5.08-4.39 6.64v5.52h7.11c4.16-3.83 6.56-9.47 6.56-16.17z" fill="#4285F4"></path>
-<path d="M24 46c5.94 0 10.92-1.97 14.56-5.33l-7.11-5.52c-1.97 1.32-4.49 2.1-7.45 2.1-5.73 0-10.58-3.87-12.31-9.07H4.34v5.7C7.96 41.07 15.4 46 24 46z" fill="#34A853"></path>
-<path d="M11.69 28.18C11.25 26.86 11 25.45 11 24s.25-2.86.69-4.18v-5.7H4.34C2.85 17.09 2 20.45 2 24s.85 6.91 2.34 9.88l7.35-5.7z" fill="#FBBC05"></path>
-<path d="M24 10.75c3.23 0 6.13 1.11 8.41 3.29l6.31-6.31C34.91 4.18 29.93 2 24 2 15.4 2 7.96 6.93 4.34 14.12l7.35 5.7c1.73-5.2 6.58-9.07 12.31-9.07z" fill="#EA4335"></path>
-</svg>
-            Pay
-          </button>
-</div>
-<div class="express-divider"><span>O paga con</span></div>
-</div>
-<!-- Confirmación por OTP, igual que en "Paga con un clic" -->
-<div class="reveal" id="wallet-auth-step">
-<div class="auth-box">
-<span class="auth-icon">
-<svg aria-hidden="true" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" viewbox="0 0 24 24"><path d="M12 3l8 3v6c0 5-3.5 8.5-8 9-4.5-.5-8-4-8-9V6l8-3z"></path><path d="M9 12l2 2 4-4"></path></svg>
-</span>
-<p class="auth-title">Confirma tu identidad</p>
-<p class="auth-sub">Enviamos un código de 6 dígitos por SMS para autorizar este pago con <strong id="wallet-auth-name">Apple Pay</strong>.</p>
-</div>
-<div class="field">
-<label for="wallet-otp">Código de verificación</label>
-<input class="otp-input" id="wallet-otp" inputmode="numeric" pattern="[0-9]*" maxlength="6" placeholder="000000" type="tel"/>
-<p class="err">Campo requerido.</p>
-</div>
-<button class="pay-btn" onclick="confirmWalletPay(this)" type="button">
-<span class="ic"><svg aria-hidden="true" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" viewbox="0 0 24 24"><rect height="10" rx="2" width="16" x="4" y="11"></rect><path d="M8 11V7a4 4 0 0 1 8 0v4"></path></svg></span> Confirmar y pagar
-        </button>
-<p class="auth-links">
-<a class="otp-resend" href="#" onclick="resendCode(event)">Reenviar código</a> ·
-          <a class="otp-call" href="#" onclick="requestVoiceCall(event)">Recibir llamada</a> ·
-          <a href="#" onclick="cancelWalletAuth();return false;">Usar otro método</a>
-</p>
-</div>
-</div>
+
+  <!-- STEPPER (WIZARD 2 PASOS) -->
+  <div class="checkout-stepper" id="checkout-stepper">
+    <button type="button" class="stepper-step active" id="stepper-step-1" onclick="goToStep(1)">
+      <span class="step-num" id="step-num-1">1</span>
+      <span class="step-text" id="step-text-1">Datos y Envío</span>
+    </button>
+    <div class="stepper-line" id="stepper-line">
+      <div class="stepper-line-progress" id="stepper-line-progress"></div>
+    </div>
+    <button type="button" class="stepper-step" id="stepper-step-2" onclick="validateAndGoToStep2()">
+      <span class="step-num" id="step-num-2">2</span>
+      <span class="step-text">Método de Pago</span>
+    </button>
+  </div>
+
+  <!-- PASO 1: DATOS Y ENVÍO -->
+  <div id="checkout-step-1" class="checkout-step-panel">
+
 <!-- BLOQUE COMPARTIDO: se llena una sola vez, aplica a cualquier método -->
 <div class="shared-billing" id="shared-billing">
 <p class="section-title">Tus datos</p>
@@ -904,6 +1288,205 @@
 <input id="merchant-field-1" placeholder="Ej. OC-00231" type="text"/>
 </div>
 </div>
+
+<!-- BLOQUE COMPARTIDO: ENVÍO A DOMICILIO -->
+<div class="shared-billing shipping-section" id="shipping-section" style="margin-top: 14px;">
+  <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom: 10px;">
+    <p class="section-title" style="margin-bottom:0; display:flex; align-items:center; gap:6px;">
+      <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" style="color:var(--gold-600); flex-shrink:0;"><path stroke-linecap="round" stroke-linejoin="round" d="M8.25 18.75a1.5 1.5 0 01-3 0m3 0a1.5 1.5 0 00-3 0m3 0h6m-9 0H3.375a1.125 1.125 0 01-1.125-1.125V14.25m17.25 4.5a1.5 1.5 0 01-3 0m3 0a1.5 1.5 0 00-3 0m3 0h1.125c.621 0 1.129-.504 1.09-1.124a17.902 17.902 0 00-3.213-9.193 2.056 2.056 0 00-1.58-.86H14.25M16.5 18.75h-2.25m0-11.25V3.75A1.125 1.125 0 0013.125 2.625h-7.5A1.125 1.125 0 004.5 3.75v10.5m9.75-8.25h3.375c.621 0 1.125.504 1.125 1.125v4.5M4.5 14.25h15" /></svg>
+      Dirección de entrega
+    </p>
+  </div>
+
+  <input id="shipping-toggle-check" type="hidden" value="1"/>
+
+  <div id="shipping-fields-body" class="space-y-2">
+
+    <div class="grid2">
+      <div class="field">
+        <label for="shipping-dept">Departamento <span style="color:var(--red-600)">*</span></label>
+        <select id="shipping-dept" onchange="onShippingDeptChanged(this.value)">
+          <option value="" disabled selected>Selecciona departamento</option>
+          <option value="Guatemala">Guatemala</option>
+          <option value="Sacatepéquez">Sacatepéquez</option>
+          <option value="Chimaltenango">Chimaltenango</option>
+          <option value="El Progreso">El Progreso</option>
+          <option value="Escuintla">Escuintla</option>
+          <option value="Santa Rosa">Santa Rosa</option>
+          <option value="Sololá">Sololá</option>
+          <option value="Totonicapán">Totonicapán</option>
+          <option value="Quetzaltenango">Quetzaltenango</option>
+          <option value="Suchitepéquez">Suchitepéquez</option>
+          <option value="Retalhuleu">Retalhuleu</option>
+          <option value="San Marcos">San Marcos</option>
+          <option value="Huehuetenango">Huehuetenango</option>
+          <option value="Quiché">Quiché</option>
+          <option value="Baja Verapaz">Baja Verapaz</option>
+          <option value="Alta Verapaz">Alta Verapaz</option>
+          <option value="Petén">Petén</option>
+          <option value="Izabal">Izabal</option>
+          <option value="Zacapa">Zacapa</option>
+          <option value="Chiquimula">Chiquimula</option>
+          <option value="Jalapa">Jalapa</option>
+          <option value="Jutiapa">Jutiapa</option>
+        </select>
+        <p class="err">Selecciona tu departamento para calcular el envío.</p>
+      </div>
+
+      <div class="field">
+        <label for="shipping-muni">Municipio <span style="color:var(--red-600)">*</span></label>
+        <select id="shipping-muni" onchange="onShippingMuniChanged(this.value)">
+          <option value="" disabled selected>Primero elige departamento</option>
+        </select>
+        <p class="err">Selecciona tu municipio.</p>
+      </div>
+    </div>
+
+    <div class="field" style="margin-top: 8px;">
+      <label for="shipping-address">Dirección exacta <span style="color:var(--red-600)">*</span></label>
+      <input id="shipping-address" placeholder="Ej. 14 Calle 3-45 Zona 10, Edificio Las Palmas, Apto 402" type="text" oninput="onShippingAddressChanged()"/>
+      <p class="err">Ingresa tu dirección completa de entrega.</p>
+      <p class="hint">Incluye calle/avenida, número de inmueble, zona, colonia o residencial.</p>
+    </div>
+
+    <div class="field" style="margin-top: 8px;">
+      <label for="shipping-notes">Punto de referencia o indicaciones <span class="field-optional">(opcional)</span></label>
+      <input id="shipping-notes" placeholder="Ej. Casa de portón negro, frente a tienda El Sol" type="text"/>
+    </div>
+
+    <!-- Live calculation feedback card -->
+    <div id="shipping-rate-banner" style="display:none; margin-top:12px; padding:10px 12px; border-radius:8px; background:#fbf8f2; border:1px solid #ebd9bf; align-items:center; justify-content:space-between;">
+      <div style="display:flex; align-items:center; gap:8px;">
+        <div style="width:28px; height:28px; border-radius:6px; background:#f0dfc8; color:#78350f; display:flex; align-items:center; justify-content:center; flex-shrink:0;">
+          <svg width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M4.5 12.75l6 6 9-13.5" /></svg>
+        </div>
+        <div>
+          <p id="shipping-rate-zone" style="margin:0; font-size:12px; font-weight:700; color:#451a03;">Cobertura: Área Metropolitana</p>
+          <p id="shipping-rate-time" style="margin:0; font-size:11px; color:#78350f;">Entrega estimada: 24 a 48 horas hábiles</p>
+        </div>
+      </div>
+      <div style="text-align:right;">
+        <span style="font-size:9.5px; color:#78350f; text-transform:uppercase; font-weight:700; display:block;">Tarifa asignada</span>
+        <span id="shipping-rate-amount" style="font-family:var(--font-mono); font-size:14px; font-weight:800; color:#451a03;">+ Q 25.00</span>
+      </div>
+    </div>
+  </div>
+</div>
+
+    <!-- Botón para avanzar a Paso 2 -->
+    <div class="step-actions" style="margin-top: 22px;">
+      <button type="button" class="pay-btn next-step-btn" id="btn-goto-step-2" onclick="validateAndGoToStep2()">
+        <span>Continuar al Pago</span>
+        <svg width="15" height="15" fill="none" stroke="currentColor" stroke-width="2.2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M13.5 4.5L21 12m0 0l-7.5 7.5M21 12H3"/></svg>
+      </button>
+    </div>
+  </div><!-- FIN PASO 1 -->
+
+  <!-- PASO 2: MÉTODO DE PAGO (INICIA OCULTO) -->
+  <div id="checkout-step-2" class="checkout-step-panel" style="display:none;">
+    <!-- Step 1 Summary / Review Card -->
+    <div class="step1-review-card" id="step1-review-card">
+      <div class="review-row">
+        <div class="review-meta">
+          <span class="review-label">Contacto:</span>
+          <span class="review-value" id="review-email-val">nombre@correo.com</span>
+        </div>
+        <button type="button" class="review-edit-btn" onclick="goToStep(1)">Cambiar</button>
+      </div>
+      <div class="review-row" id="review-shipping-row" style="display:none;">
+        <div class="review-meta">
+          <span class="review-label">Envío:</span>
+          <span class="review-value" id="review-shipping-val">Guatemala</span>
+        </div>
+        <button type="button" class="review-edit-btn" onclick="goToStep(1)">Cambiar</button>
+      </div>
+    </div>
+
+    <!-- PAGO EXPRÉS: Wallets digitales (Apple Pay / Google Pay) -->
+    <div class="express-pay" id="express-pay">
+      <div class="reveal open" id="wallet-select-step">
+        <div class="express-buttons">
+          <button aria-label="Pagar con Apple Pay" class="wallet-btn apple-pay" onclick="startWalletAuth(this)" type="button">
+            <svg aria-hidden="true" fill="currentColor" viewbox="0 0 24 24"><path d="M16.365 1.43c0 1.14-.493 2.27-1.177 3.08-.744.9-1.99 1.57-3.014 1.57-.12 0-.23-.02-.3-.03-.014-.1-.04-.31-.04-.52 0-1.14.572-2.27 1.206-2.98.804-.94 2.142-1.64 3.204-1.68.03.13.05.36.05.56zm4.565 16.4c-.03.07-.463 1.58-1.518 3.12-.945 1.34-1.94 2.71-3.49 2.71-1.518 0-2.017-.86-3.735-.86-1.762 0-2.336.83-3.75.86-1.49.03-2.615-1.44-3.585-2.77-1.955-2.71-3.45-7.66-1.44-11.02.996-1.66 2.78-2.71 4.71-2.74 1.464-.03 2.845.984 3.735.984.87 0 2.55-1.22 4.29-1.04.735.03 2.79.297 4.11 2.24-.105.065-2.454 1.43-2.424 4.27.03 3.39 2.97 4.52 3 4.53z"></path></svg>
+            Pay
+          </button>
+          <button aria-label="Pagar con Google Pay" class="wallet-btn google-pay" onclick="startWalletAuth(this)" type="button">
+            <svg aria-hidden="true" viewbox="0 0 48 48">
+              <path d="M45.12 24.5c0-1.56-.14-3.06-.4-4.5H24v8.51h11.84c-.51 2.75-2.06 5.08-4.39 6.64v5.52h7.11c4.16-3.83 6.56-9.47 6.56-16.17z" fill="#4285F4"></path>
+              <path d="M24 46c5.94 0 10.92-1.97 14.56-5.33l-7.11-5.52c-1.97 1.32-4.49 2.1-7.45 2.1-5.73 0-10.58-3.87-12.31-9.07H4.34v5.7C7.96 41.07 15.4 46 24 46z" fill="#34A853"></path>
+              <path d="M11.69 28.18C11.25 26.86 11 25.45 11 24s.25-2.86.69-4.18v-5.7H4.34C2.85 17.09 2 20.45 2 24s.85 6.91 2.34 9.88l7.35-5.7z" fill="#FBBC05"></path>
+              <path d="M24 10.75c3.23 0 6.13 1.11 8.41 3.29l6.31-6.31C34.91 4.18 29.93 2 24 2 15.4 2 7.96 6.93 4.34 14.12l7.35 5.7c1.73-5.2 6.58-9.07 12.31-9.07z" fill="#EA4335"></path>
+            </svg>
+            Pay
+          </button>
+        </div>
+        <div class="express-divider"><span>O selecciona otro método de pago</span></div>
+      </div>
+      <!-- Confirmación por OTP, igual que en "Paga con un clic" -->
+      <div class="reveal" id="wallet-auth-step">
+        <div class="auth-box">
+          <span class="auth-icon">
+            <svg aria-hidden="true" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" viewbox="0 0 24 24"><path d="M12 3l8 3v6c0 5-3.5 8.5-8 9-4.5-.5-8-4-8-9V6l8-3z"></path><path d="M9 12l2 2 4-4"></path></svg>
+          </span>
+          <p class="auth-title">Confirma tu identidad</p>
+          <p class="auth-sub">Enviamos un código de 6 dígitos por SMS para autorizar este pago con <strong id="wallet-auth-name">Apple Pay</strong>.</p>
+        </div>
+        <div class="field">
+          <label for="wallet-otp">Código de verificación</label>
+          <input class="otp-input" id="wallet-otp" inputmode="numeric" pattern="[0-9]*" maxlength="6" placeholder="000000" type="tel"/>
+          <p class="err">Campo requerido.</p>
+        </div>
+        <button class="pay-btn" onclick="confirmWalletPay(this)" type="button">
+          <span class="ic"><svg aria-hidden="true" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" viewbox="0 0 24 24"><rect height="10" rx="2" width="16" x="4" y="11"></rect><path d="M8 11V7a4 4 0 0 1 8 0v4"></path></svg></span> Confirmar y pagar
+        </button>
+        <p class="auth-links">
+          <a class="otp-resend" href="#" onclick="resendCode(event)">Reenviar código</a> ·
+          <a class="otp-call" href="#" onclick="requestVoiceCall(event)">Recibir llamada</a> ·
+          <a href="#" onclick="cancelWalletAuth();return false;">Usar otro método</a>
+        </p>
+      </div>
+    </div>
+
+    <!-- Pestañas modernas de método de pago -->
+    <p class="section-title" style="margin-bottom: 8px;">Selecciona tu forma de pago</p>
+    <div class="payment-tabs-nav" id="payment-tabs-nav" role="tablist">
+      <button type="button" class="pay-tab-pill active" data-tab="tarjeta" role="tab" aria-selected="true" onclick="selectPaymentTab('tarjeta')">
+        <div class="tab-icon">
+          <svg width="17" height="17" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><rect height="14" rx="2.2" width="20" x="2" y="5"></rect><line x1="2" x2="22" y1="10" y2="10"></line></svg>
+        </div>
+        <span class="tab-title">Tarjeta</span>
+      </button>
+      
+      <button type="button" class="pay-tab-pill" data-tab="oneclick" role="tab" aria-selected="false" onclick="selectPaymentTab('oneclick')">
+        <div class="tab-icon">
+          <svg width="17" height="17" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M3.75 13.5l10.5-11.25L12 10.5h8.25L9.75 21.75 12 13.5H3.75z"/></svg>
+        </div>
+        <span class="tab-title">1-Clic</span>
+        <span class="tab-badge">Rápido</span>
+      </button>
+
+      <button type="button" class="pay-tab-pill" data-tab="bi-linea" role="tab" aria-selected="false" onclick="selectPaymentTab('bi-linea')">
+        <div class="tab-icon">
+          <svg width="17" height="17" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><path d="M3 10l9-6 9 6"></path><path d="M5 10v9M10 10v9M14 10v9M19 10v9"></path><path d="M3 21h18"></path></svg>
+        </div>
+        <span class="tab-title">Banca</span>
+      </button>
+
+      <button type="button" class="pay-tab-pill" data-tab="agente-bi" role="tab" aria-selected="false" onclick="selectPaymentTab('agente-bi')">
+        <div class="tab-icon">
+          <svg width="17" height="17" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><rect height="12" rx="2" width="20" x="2" y="6"></rect><circle cx="12" cy="12" r="3"></circle><path d="M6 9v.01M18 15v.01"></path></svg>
+        </div>
+        <span class="tab-title">Efectivo</span>
+      </button>
+
+      <button type="button" class="pay-tab-pill" data-tab="zigi" role="tab" aria-selected="false" onclick="selectPaymentTab('zigi')">
+        <div class="tab-icon">
+          <svg width="17" height="17" fill="currentColor" viewBox="0 0 24 24"><path d="M3 3h7v7H3V3zm2 2v3h3V5H5zm9-2h7v7h-7V3zm2 2v3h3V5h-3zM3 14h7v7H3v-7zm2 2v3h3v-3H5zm9-2h3v3h-3v-3zm4 0h3v3h-3v-3zm-4 4h3v3h-3v-3zm4 0h3v3h-3v-3z"></path></svg>
+        </div>
+        <span class="tab-title">Billetera</span>
+      </button>
+    </div>
+
 <div class="method-list" id="method-list"><div class="method-item active" data-method="tarjeta">
 <button aria-expanded="true" class="method-header" type="button">
 <span class="m-icon"><svg aria-hidden="true" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" viewbox="0 0 24 24"><rect height="14" rx="2.2" width="20" x="2" y="5"></rect><line x1="2" x2="22" y1="10" y2="10"></line></svg></span>
@@ -1111,7 +1694,7 @@
 <p class="section-title">Transferencia o Banca en línea</p>
 <div class="qr-only">
 <div class="qr-box">
-<svg aria-label="Código QR de AuraPay Virtual" role="img" viewbox="0 0 210 210" xmlns="http://www.w3.org/2000/svg">
+<svg aria-label="Código QR de EthosPay Virtual" role="img" viewbox="0 0 210 210" xmlns="http://www.w3.org/2000/svg">
 <rect fill="#fff" height="210" width="210"></rect>
 <defs>
 <pattern height="20" id="qrNoiseBi" patternunits="userSpaceOnUse" width="20">
@@ -1133,18 +1716,18 @@
 <g transform="translate(0,140)"><rect fill="#111827" height="70" width="70"></rect><rect fill="#fff" height="50" width="50" x="10" y="10"></rect><rect fill="#111827" height="30" width="30" x="20" y="20"></rect></g>
 </svg>
 </div>
-<p class="qr-caption">Escanea este código con tu app AuraPay Móvil para autorizar el pago desde tu teléfono, o continúa en este mismo dispositivo:</p>
+<p class="qr-caption">Escanea este código con tu app EthosPay Móvil para autorizar el pago desde tu teléfono, o continúa en este mismo dispositivo:</p>
 <ul class="steps qr-only">
-<li><span class="n">1</span> Abre tu app AuraPay M&oacute;vil.</li>
+<li><span class="n">1</span> Abre tu app EthosPay M&oacute;vil.</li>
 <li><span class="n">2</span> Escanea este c&oacute;digo QR.</li>
 <li><span class="n">3</span> Autoriza el pago para finalizar.</li>
 </ul>
 <ul class="steps mobile-only">
-<li><span class="n">1</span> Presiona "Abrir app AuraPay M&oacute;vil".</li>
+<li><span class="n">1</span> Presiona "Abrir app EthosPay M&oacute;vil".</li>
 <li><span class="n">2</span> Inicia sesi&oacute;n y autoriza el pago.</li>
 </ul>
 </div>
-<p class="mobile-redirect-note">Te llevaremos directo a tu app AuraPay Móvil para iniciar sesión y autorizar el pago desde tu teléfono.</p>
+<p class="mobile-redirect-note">Te llevaremos directo a tu app EthosPay Móvil para iniciar sesión y autorizar el pago desde tu teléfono.</p>
 <div class="field">
 <span class="field-label">Monto a pagar</span>
 <div class="amount-fixed">Q 145.00</div>
@@ -1155,7 +1738,7 @@
 <p style="font-size:13px; color:#6b7280; font-weight:500;">Esperando confirmaci&oacute;n de pago desde la app externa...</p>
 </div>
 <button class="pay-btn mobile-redirect-btn" onclick="fakePay(this)" type="button">
-<span class="ic"><svg aria-hidden="true" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" viewbox="0 0 24 24"><rect height="20" rx="2" width="14" x="5" y="2"></rect><path d="M11 18h2"></path></svg></span> Abrir app AuraPay Móvil
+<span class="ic"><svg aria-hidden="true" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" viewbox="0 0 24 24"><rect height="20" rx="2" width="14" x="5" y="2"></rect><path d="M11 18h2"></path></svg></span> Abrir app EthosPay Móvil
             </button>
 <div class="secure-note">
 <svg aria-hidden="true" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" viewbox="0 0 24 24"><rect height="10" rx="2" width="16" x="4" y="11"></rect><path d="M8 11V7a4 4 0 0 1 8 0v4"></path></svg>
@@ -1274,6 +1857,16 @@
 </div>
 </div>
 </div>
+
+    <!-- Botón Volver a Paso 1 -->
+    <div style="margin-top: 16px; text-align: center;">
+      <button type="button" class="back-to-step1-btn" onclick="goToStep(1)">
+        <svg width="13" height="13" fill="none" stroke="currentColor" stroke-width="2.2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M10.5 19.5L3 12m0 0l7.5-7.5M3 12h18"/></svg>
+        <span>Volver a datos de contacto y entrega</span>
+      </button>
+    </div>
+  </div><!-- FIN PASO 2 -->
+
 </div>
 </section>
 <!-- OVERLAY: transacción aprobada -->
@@ -1503,15 +2096,15 @@
     'y la': 'and the',
     'Política de privacidad': 'Privacy Policy',
     'Pagar Q 145.00': 'Pay Q 145.00',
-    // AuraPay Virtual
-    'Paga con AuraPay Virtual': 'Pay with AuraPay Virtual',
-    'Escanea este código con tu app AuraPay Móvil para autorizar el pago desde tu teléfono, o continúa en este mismo dispositivo:': 'Scan this code with your AuraPay Móvil app to authorize the payment from your phone, or continue on this device:',
-    'Presiona "Continuar a AuraPay Virtual".': 'Tap "Continue to AuraPay Virtual".',
-    'Inicia sesión en AuraPay Virtual.': 'Log in to AuraPay Virtual.',
+    // EthosPay Virtual
+    'Paga con EthosPay Virtual': 'Pay with EthosPay Virtual',
+    'Escanea este código con tu app EthosPay Móvil para autorizar el pago desde tu teléfono, o continúa en este mismo dispositivo:': 'Scan this code with your EthosPay Móvil app to authorize the payment from your phone, or continue on this device:',
+    'Presiona "Continuar a EthosPay Virtual".': 'Tap "Continue to EthosPay Virtual".',
+    'Inicia sesión en EthosPay Virtual.': 'Log in to EthosPay Virtual.',
     'Autoriza el pago y vuelve automáticamente aquí.': 'Authorize the payment and return here automatically.',
-    'Te llevaremos directo a tu app AuraPay Móvil para iniciar sesión y autorizar el pago desde tu teléfono.': "We'll take you straight to your AuraPay Móvil app to log in and authorize the payment from your phone.",
-    'Continuar a AuraPay Virtual': 'Continue to AuraPay Virtual',
-    'Abrir app AuraPay Móvil': 'Open AuraPay Móvil app',
+    'Te llevaremos directo a tu app EthosPay Móvil para iniciar sesión y autorizar el pago desde tu teléfono.': "We'll take you straight to your EthosPay Móvil app to log in and authorize the payment from your phone.",
+    'Continuar a EthosPay Virtual': 'Continue to EthosPay Virtual',
+    'Abrir app EthosPay Móvil': 'Open EthosPay Móvil app',
     // Caja Rural
     'Pago en efectivo con Caja Rural': 'Cash payment with Caja Rural',
     'Genera tu código de pago.': 'Generate your payment code.',
@@ -1755,6 +2348,12 @@
     document.querySelectorAll('.method-item').forEach(i=>{
       i.classList.toggle('active', i.dataset.method === name);
     });
+    // Sync payment tab pills
+    document.querySelectorAll('.pay-tab-pill').forEach(btn => {
+      const isThis = (btn.dataset.tab === name);
+      btn.classList.toggle('active', isThis);
+      btn.setAttribute('aria-selected', isThis ? 'true' : 'false');
+    });
     if(focus && !isMobile()){
       const item = document.querySelector('.method-item[data-method="' + name + '"]');
       focusFirstField(item && item.querySelector('.method-body-inner'));
@@ -1764,6 +2363,167 @@
     }
     syncMethodAria();
   }
+
+  function selectPaymentTab(tabName) {
+    openMethod(tabName, true);
+  }
+  window.selectPaymentTab = selectPaymentTab;
+
+  // Stepper navigation logic
+  function goToStep(stepNum) {
+    const step1 = document.getElementById('checkout-step-1');
+    const step2 = document.getElementById('checkout-step-2');
+    const step1Btn = document.getElementById('stepper-step-1');
+    const step2Btn = document.getElementById('stepper-step-2');
+    const step1Num = document.getElementById('step-num-1');
+    const stepLineProgress = document.getElementById('stepper-line-progress');
+
+    if (stepNum === 1) {
+      if (step1) step1.style.display = 'block';
+      if (step2) step2.style.display = 'none';
+
+      if (step1Btn) {
+        step1Btn.classList.add('active');
+        step1Btn.classList.remove('completed');
+      }
+      if (step2Btn) {
+        step2Btn.classList.remove('active');
+      }
+      if (step1Num) step1Num.innerHTML = '1';
+      if (stepLineProgress) stepLineProgress.style.width = '0%';
+    } else if (stepNum === 2) {
+      if (step1) step1.style.display = 'none';
+      if (step2) {
+        step2.style.display = 'block';
+      }
+
+      if (step1Btn) {
+        step1Btn.classList.remove('active');
+        step1Btn.classList.add('completed');
+      }
+      if (step2Btn) {
+        step2Btn.classList.add('active');
+      }
+      if (step1Num) step1Num.innerHTML = '<svg width="12" height="12" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M4.5 12.75l6 6 9-13.5"/></svg>';
+      if (stepLineProgress) stepLineProgress.style.width = '100%';
+
+      updateStep1Review();
+
+      const payContainer = document.querySelector('.pay');
+      if (payContainer) payContainer.scrollTop = 0;
+    }
+  }
+  window.goToStep = goToStep;
+
+  function updateStep1Review() {
+    const emailInput = document.getElementById('contact-email');
+    const reviewEmail = document.getElementById('review-email-val');
+    if (reviewEmail) {
+      reviewEmail.textContent = (emailInput && emailInput.value.trim()) ? emailInput.value.trim() : 'No especificado';
+    }
+
+    const shippingToggle = document.getElementById('shipping-toggle-check');
+    const isShippingActive = shippingToggle ? (shippingToggle.type === 'hidden' ? shippingToggle.value === '1' : shippingToggle.checked) : false;
+    const reviewShippingRow = document.getElementById('review-shipping-row');
+    const reviewShippingVal = document.getElementById('review-shipping-val');
+
+    if (reviewShippingRow && reviewShippingVal) {
+      if (isShippingActive) {
+        reviewShippingRow.style.display = 'flex';
+        const dept = document.getElementById('shipping-dept')?.value || '';
+        const muni = document.getElementById('shipping-muni')?.value || '';
+        const addr = document.getElementById('shipping-address')?.value || '';
+        reviewShippingVal.textContent = `${addr ? addr + ', ' : ''}${muni ? muni + ', ' : ''}${dept}`;
+      } else {
+        reviewShippingRow.style.display = 'none';
+      }
+    }
+  }
+
+  function validateAndGoToStep2() {
+    let ok = true;
+    const emailInput = document.getElementById('contact-email');
+    if (emailInput && emailInput.value.trim()) {
+      const val = emailInput.value.trim();
+      const isEmailValid = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(val);
+      const field = emailInput.closest('.field');
+      if (!isEmailValid) {
+        if (field) field.classList.add('invalid');
+        ok = false;
+      } else if (field) {
+        field.classList.remove('invalid');
+      }
+    }
+
+    const needInvoice = document.getElementById('need-invoice');
+    if (needInvoice && needInvoice.checked) {
+      const nit = document.getElementById('billing-nit');
+      const name = document.getElementById('billing-name');
+      if (!nit || !nit.value.trim()) {
+        if (nit) nit.closest('.field')?.classList.add('invalid');
+        ok = false;
+      }
+      if (!name || !name.value.trim()) {
+        if (name) name.closest('.field')?.classList.add('invalid');
+        ok = false;
+      }
+    }
+
+    const shippingToggle = document.getElementById('shipping-toggle-check');
+    const isShippingActive = shippingToggle ? (shippingToggle.type === 'hidden' ? shippingToggle.value === '1' : shippingToggle.checked) : false;
+    if (isShippingActive) {
+      const dept = document.getElementById('shipping-dept');
+      const muni = document.getElementById('shipping-muni');
+      const addr = document.getElementById('shipping-address');
+      
+      if (!dept || !dept.value) {
+        if (dept) dept.closest('.field')?.classList.add('invalid');
+        ok = false;
+      } else {
+        dept.closest('.field')?.classList.remove('invalid');
+      }
+
+      if (!muni || !muni.value) {
+        if (muni) muni.closest('.field')?.classList.add('invalid');
+        ok = false;
+      } else {
+        muni.closest('.field')?.classList.remove('invalid');
+      }
+
+      if (!addr || !addr.value.trim()) {
+        if (addr) addr.closest('.field')?.classList.add('invalid');
+        ok = false;
+      } else {
+        addr.closest('.field')?.classList.remove('invalid');
+      }
+    }
+
+    if (!ok) {
+      const firstBad = document.querySelector('#checkout-step-1 .field.invalid input, #checkout-step-1 .field.invalid select');
+      if (firstBad) {
+        firstBad.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        firstBad.focus({ preventScroll: true });
+      }
+      return;
+    }
+
+    goToStep(2);
+  }
+  window.validateAndGoToStep2 = validateAndGoToStep2;
+
+  function toggleMobileSummary() {
+    const bar = document.getElementById('mobile-order-summary-bar');
+    const summary = document.querySelector('.summary');
+    const text = document.getElementById('mob-summary-toggle-text');
+    if (!bar || !summary) return;
+
+    const isExpanded = summary.classList.toggle('mob-expanded');
+    bar.classList.toggle('expanded', isExpanded);
+    if (text) {
+      text.textContent = isExpanded ? 'Ocultar resumen del pedido' : 'Mostrar resumen del pedido';
+    }
+  }
+  window.toggleMobileSummary = toggleMobileSummary;
 
   function toggleInvoice(checkbox){
     document.getElementById('nit-step').classList.toggle('open', checkbox.checked);
@@ -1983,6 +2743,18 @@
       if(nameInput) inputs.push(nameInput);
     }
 
+    // Si el envío está activo, validar departamento, municipio y dirección exacta
+    const shippingToggle = document.getElementById('shipping-toggle-check');
+    const isShippingActive = shippingToggle ? (shippingToggle.type === 'hidden' ? shippingToggle.value === '1' : shippingToggle.checked) : false;
+    if(isShippingActive){
+      const dept = document.getElementById('shipping-dept');
+      const muni = document.getElementById('shipping-muni');
+      const addr = document.getElementById('shipping-address');
+      if(dept) inputs.push(dept);
+      if(muni) inputs.push(muni);
+      if(addr) inputs.push(addr);
+    }
+
     inputs.forEach(inp=>{
       const field = inp.closest('.field');
       if(!field) return;
@@ -2015,6 +2787,10 @@
     if (!ok) {
       const bad = document.querySelector('.field.invalid input, .field.invalid select');
       if (bad) {
+        const inStep1 = bad.closest('#checkout-step-1');
+        if (inStep1) {
+          goToStep(1);
+        }
         bad.scrollIntoView({ behavior: 'smooth', block: 'center' });
         setTimeout(() => bad.focus({ preventScroll: true }), 400);
       }
@@ -2361,7 +3137,7 @@
         const urlParams = new URLSearchParams(window.location.search);
         const txId = urlParams.get('id');
         if (txId) {
-          const stored = localStorage.getItem('aurapay_transactions');
+          const stored = localStorage.getItem('ethospay_transactions') || localStorage.getItem('aurapay_transactions');
           if (stored) {
             const transactions = JSON.parse(stored);
             const tx = transactions.find(t => t.transaction_id === txId);
@@ -2370,6 +3146,7 @@
               tx.payment_modality = 'Pagos en efectivo';
               tx.cash_code = codeVal;
               tx.cash_expiry = formatted;
+              localStorage.setItem('ethospay_transactions', JSON.stringify(transactions));
               localStorage.setItem('aurapay_transactions', JSON.stringify(transactions));
               window.dispatchEvent(new Event('storage'));
             }
@@ -2815,7 +3592,7 @@
       let customSubtext = urlParams.get('subtext');
       let customLogo = urlParams.get('logo_url');
       
-      const storedBranding = localStorage.getItem('aurapay_merchant_branding');
+      const storedBranding = localStorage.getItem('ethospay_merchant_branding') || localStorage.getItem('aurapay_merchant_branding');
       if (storedBranding) {
         const branding = JSON.parse(storedBranding);
         if (!brandColor && branding.primary_color) brandColor = branding.primary_color;
@@ -2965,7 +3742,7 @@
       const txId = urlParams.get('id');
       if (!txId) return;
 
-      const stored = localStorage.getItem('aurapay_transactions');
+      const stored = localStorage.getItem('ethospay_transactions') || localStorage.getItem('aurapay_transactions');
       if (stored) {
         const transactions = JSON.parse(stored);
         const tx = transactions.find(t => t.transaction_id === txId);
@@ -3073,12 +3850,36 @@
           // Installment rate table (same as updateCheckoutPricing)
           const INST_RATES = { 2:0.0525, 3:0.0575, 6:0.0700, 10:0.0725, 12:0.0800, 15:0.1000, 18:0.1200, 24:0.1250, 36:0.1350, 48:0.1675 };
 
-          if (!isCardPayment) {
-            // Cash / bank: charge the net (discounted) amount
-            tx.amount = baseNetPrice;
+          const shippingToggle = document.getElementById('shipping-toggle-check');
+          const isShippingActive = shippingToggle ? (shippingToggle.type === 'hidden' ? shippingToggle.value === '1' : shippingToggle.checked) : false;
+          const currentShipFee = (isShippingActive && window.currentShippingFee) ? window.currentShippingFee : 0;
+
+          if (isShippingActive) {
+            const deptEl = document.getElementById('shipping-dept');
+            const muniEl = document.getElementById('shipping-muni');
+            const addrEl = document.getElementById('shipping-address');
+            const notesEl = document.getElementById('shipping-notes');
+            tx.shipping = {
+              required: true,
+              department: deptEl ? deptEl.value : '',
+              municipality: muniEl ? muniEl.value : '',
+              address: addrEl ? addrEl.value.trim() : '',
+              notes: notesEl ? notesEl.value.trim() : '',
+              fee: currentShipFee,
+              delivery_status: 'En proceso de entrega'
+            };
+            tx.delivery_status = 'En proceso de entrega';
           } else {
-            // Card contado or cuotas: list price with no extra surcharge
-            tx.amount = baseListPrice;
+            tx.shipping = { required: false, fee: 0, delivery_status: 'En proceso de entrega' };
+            tx.delivery_status = 'En proceso de entrega';
+          }
+
+          if (!isCardPayment) {
+            // Cash / bank: charge the net (discounted) amount + shipping
+            tx.amount = baseNetPrice + currentShipFee;
+          } else {
+            // Card contado or cuotas: list price with no extra surcharge + shipping
+            tx.amount = baseListPrice + currentShipFee;
           }
           
           if (activeMethod === 'Pago con banca') {
@@ -3099,6 +3900,7 @@
             timeStr
           ];
 
+          localStorage.setItem('ethospay_transactions', JSON.stringify(transactions));
           localStorage.setItem('aurapay_transactions', JSON.stringify(transactions));
           
           // Dispatch storage event manually in case it is in same window context
@@ -3110,12 +3912,268 @@
     }
   };
 
+  // ================= GEOGRAFÍA Y CÁLCULO DE ENVÍO GUATEMALA =================
+  const GUATEMALA_REGIONS = {
+    "Guatemala": {
+      tier: "metro",
+      label: "Área Metropolitana",
+      deliveryTime: "24 a 48 horas hábiles",
+      municipalities: [
+        "Guatemala (Ciudad)", "Mixco", "Villa Nueva", "San Miguel Petapa", "Santa Catarina Pinula",
+        "San José Pinula", "Fraijanes", "Amatitlán", "Chinautla", "San Pedro Ayampuc",
+        "San Pedro Sacatepéquez", "San Juan Sacatepéquez", "San Raymundo", "Chuarrancho",
+        "Palencia", "San José del Golfo", "Villa Canales"
+      ]
+    },
+    "Sacatepéquez": {
+      tier: "interior",
+      label: "Departamental / Central",
+      deliveryTime: "24 a 48 horas hábiles",
+      municipalities: [
+        "Antigua Guatemala", "Ciudad Vieja", "Jocotenango", "San Lucas Sacatepéquez", "Pastores",
+        "San Bartolomé Milpas Altas", "Santa Lucía Milpas Altas", "Magdalena Milpas Altas",
+        "Santa María de Jesús", "Santiago Sacatepéquez", "San Antonio Aguas Calientes",
+        "Santa Catarina Barahona", "San Miguel Dueñas", "Alotenango", "Santo Domingo Xenacoj"
+      ]
+    },
+    "Chimaltenango": {
+      tier: "interior",
+      label: "Departamental / Altiplano",
+      deliveryTime: "48 a 72 horas hábiles",
+      municipalities: [
+        "Chimaltenango", "San José Poaquil", "San Martín Jilotepeque", "San Juan Comalapa",
+        "Santa Apolonia", "Tecpán Guatemala", "Patzún", "Pochuta", "Patzicía",
+        "Santa Cruz Balanyá", "Acatenango", "Yepocapa", "San Andrés Itzapa", "Parramos", "Zaragoza", "El Tejar"
+      ]
+    },
+    "El Progreso": {
+      tier: "interior",
+      label: "Departamental / Oriente",
+      deliveryTime: "48 a 72 horas hábiles",
+      municipalities: ["Guastatoya", "Morazán", "San Agustín Acasaguastlán", "San Cristóbal Acasaguastlán", "El Jícaro", "Sansare", "Sanarate", "San Antonio La Paz"]
+    },
+    "Escuintla": {
+      tier: "interior",
+      label: "Departamental / Costa Sur",
+      deliveryTime: "48 a 72 horas hábiles",
+      municipalities: ["Escuintla", "Santa Lucía Cotzumalguapa", "La Democracia", "Siquinalá", "Masagua", "Tiquisate", "La Gomera", "Guanagazapa", "San José", "Iztapa", "Palín", "San Vicente Pacaya", "Nueva Concepción", "Sipacate"]
+    },
+    "Santa Rosa": {
+      tier: "interior",
+      label: "Departamental / Suroriente",
+      deliveryTime: "48 a 72 horas hábiles",
+      municipalities: ["Cuilapa", "Barberena", "San Rafael Las Flores", "Casillas", "Nueva Santa Rosa", "San Juan Tecuaco", "Chiquimulilla", "Taxisco", "Santa María Ixhuatán", "Guazacapán", "Santa Cruz Naranjo", "Pueblo Nuevo Viñas", "San Patricio"]
+    },
+    "Sololá": {
+      tier: "interior",
+      label: "Departamental / Altiplano",
+      deliveryTime: "48 a 72 horas hábiles",
+      municipalities: ["Sololá", "San José Chacayá", "Santa María Visitación", "Santa Lucía Utatlán", "Nahualá", "Santa Catarina Ixtahuacán", "Santa Clara La Laguna", "Concepción", "San Andrés Semetabaj", "Panajachel", "Santa Catarina Palopó", "San Antonio Palopó", "San Lucas Tolimán", "Santa Cruz La Laguna", "San Pablo La Laguna", "San Marcos La Laguna", "San Juan La Laguna", "San Pedro La Laguna", "Santiago Atitlán"]
+    },
+    "Totonicapán": {
+      tier: "interior",
+      label: "Departamental / Altiplano",
+      deliveryTime: "48 a 72 horas hábiles",
+      municipalities: ["Totonicapán", "San Cristóbal Totonicapán", "San Francisco El Alto", "San Andrés Xecul", "Momostenango", "Santa María Chiquimula", "Santa Lucía La Reforma", "San Bartolo Aguas Calientes"]
+    },
+    "Quetzaltenango": {
+      tier: "interior",
+      label: "Departamental / Occidente",
+      deliveryTime: "48 a 72 horas hábiles",
+      municipalities: ["Quetzaltenango (Xela)", "Salcajá", "Olintepeque", "San Carlos Sija", "Sibilia", "Cabricán", "Cantel", "Huitán", "Zunil", "Colomba Costa Cuca", "Almolonga", "El Palmar", "Coatepeque", "Génova", "Flores Costa Cuca", "La Esperanza", "Palestina de Los Altos"]
+    },
+    "Suchitepéquez": {
+      tier: "interior",
+      label: "Departamental / Suroccidente",
+      deliveryTime: "48 a 72 horas hábiles",
+      municipalities: ["Mazatenango", "Cuyotenango", "San Francisco Zapotitlán", "San Bernardino", "San José El Ídolo", "Santo Domingo Suchitepéquez", "San Lorenzo", "Samayac", "San Pablo Jocopilas", "San Antonio Suchitepéquez", "San Miguel Panán", "San Gabriel", "Chicacao", "Patulul", "Santa Bárbara", "San Juan Bautista", "Santo Tomás La Unión", "Zunilito", "Pueblo Nuevo", "Río Bravo"]
+    },
+    "Retalhuleu": {
+      tier: "interior",
+      label: "Departamental / Costa Sur",
+      deliveryTime: "48 a 72 horas hábiles",
+      municipalities: ["Retalhuleu", "San Sebastián", "Santa Cruz Muluá", "San Martín Zapotitlán", "San Felipe", "San Andrés Villa Seca", "Champerico", "Nuevo San Carlos", "El Asintal"]
+    },
+    "San Marcos": {
+      tier: "interior",
+      label: "Departamental / Frontera",
+      deliveryTime: "48 a 72 horas hábiles",
+      municipalities: ["San Marcos", "San Pedro Sacatepéquez", "San Antonio Sacatepéquez", "Comitancillo", "San Miguel Ixtahuacán", "Concepción Tutuapa", "Tacaná", "Sibinal", "Tajumulco", "Tejutla", "San Rafael Pie de la Cuesta", "Nuevo Progreso", "Malacatán", "Catarina", "Ayutla (Tecún Umán)", "Ocós", "San Pablo", "El Quetzal", "La Reforma", "Pajapita", "Ixchiguán", "San José Ojetenam", "San Cristóbal Cucho", "Esquipulas Palo Gordo", "Río Blanco", "San Lorenzo", "La Blanca"]
+    },
+    "Huehuetenango": {
+      tier: "interior",
+      label: "Departamental / Noroccidente",
+      deliveryTime: "48 a 72 horas hábiles",
+      municipalities: ["Huehuetenango", "Chiantla", "Malacatancito", "Cuilco", "Nentón", "San Pedro Necta", "Jacaltenango", "Soloma", "Ixtahuacán", "Santa Bárbara", "La Libertad", "La Democracia", "San Miguel Acatán", "San Rafael La Independencia", "Todos Santos Cuchumatán", "San Juan Atitán", "Santa Eulalia", "San Mateo Ixtatán", "Colotenango", "San Sebastián Huehuetenango", "Tectitán", "Concepción Huista", "San Juan Ixcoy", "San Antonio Huista", "San Sebastián Coatán", "Barillas", "Aguacatán", "San Rafael Petzal", "San Gaspar Ixchil", "Santiago Chimaltenango", "Santa Ana Huista", "Unión Cantinil", "Petatán"]
+    },
+    "Quiché": {
+      tier: "interior",
+      label: "Departamental / Noroccidente",
+      deliveryTime: "48 a 72 horas hábiles",
+      municipalities: ["Santa Cruz del Quiché", "Chiché", "Chinique", "Zacualpa", "Chajul", "Santo Tomás Chichicastenango", "Patzité", "San Antonio Ilotenango", "San Pedro Jocopilas", "Cunén", "San Juan Cotzal", "Joyabaj", "Nebaj", "San Andrés Sajcabajá", "Uspantán", "Sacapulas", "San Bartolomé Jocotenango", "Canillá", "Chicamán", "Ixcán", "Pachalum"]
+    },
+    "Baja Verapaz": {
+      tier: "interior",
+      label: "Departamental / Norte",
+      deliveryTime: "48 a 72 horas hábiles",
+      municipalities: ["Salamá", "San Miguel Chicaj", "Rabinal", "Cubulco", "Granados", "Santa Cruz El Chol", "San Jerónimo", "Purulhá"]
+    },
+    "Alta Verapaz": {
+      tier: "interior",
+      label: "Departamental / Norte",
+      deliveryTime: "48 a 72 horas hábiles",
+      municipalities: ["Cobán", "Santa Cruz Verapaz", "San Cristóbal Verapaz", "Tactic", "Tamahú", "Tucurú", "Panzós", "Senahú", "San Pedro Carchá", "San Juan Chamelco", "Lanquín", "Santa María Cahabón", "Chisec", "Chahal", "Fray Bartolomé de las Casas", "Santa Catarina La Tinta", "Raxruhá"]
+    },
+    "Petén": {
+      tier: "especial",
+      label: "Zona Especial / Norte Lejano",
+      deliveryTime: "72 a 96 horas hábiles",
+      municipalities: ["Flores", "San Benito", "San Andrés", "La Libertad", "San Francisco", "Santa Ana", "Dolores", "San Luis", "Sayaxché", "Melchor de Mencos", "Poptún", "Las Cruces", "El Chal"]
+    },
+    "Izabal": {
+      tier: "especial",
+      label: "Zona Especial / Costa Atlántica",
+      deliveryTime: "72 a 96 horas hábiles",
+      municipalities: ["Puerto Barrios", "Livingston", "El Estor", "Morales", "Los Amates"]
+    },
+    "Zacapa": {
+      tier: "interior",
+      label: "Departamental / Oriente",
+      deliveryTime: "48 a 72 horas hábiles",
+      municipalities: ["Zacapa", "Estanzuela", "Río Hondo", "Gualán", "Teculután", "Usumatlán", "Cabañas", "San Diego", "La Unión", "Huité", "San Jorge"]
+    },
+    "Chiquimula": {
+      tier: "interior",
+      label: "Departamental / Oriente",
+      deliveryTime: "48 a 72 horas hábiles",
+      municipalities: ["Chiquimula", "San José La Arada", "San Juan Ermita", "Jocotán", "Camotán", "Olopa", "Esquipulas", "Concepción Las Minas", "Quetzaltepeque", "San Jacinto", "Ipala"]
+    },
+    "Jalapa": {
+      tier: "interior",
+      label: "Departamental / Oriente",
+      deliveryTime: "48 a 72 horas hábiles",
+      municipalities: ["Jalapa", "San Pedro Pinula", "San Luis Jilotepeque", "Manuel Chaparrón", "San Carlos Alzatate", "Monjas", "Mataquescuintla"]
+    },
+    "Jutiapa": {
+      tier: "interior",
+      label: "Departamental / Suroriente",
+      deliveryTime: "48 a 72 horas hábiles",
+      municipalities: ["Jutiapa", "El Progreso", "Santa Catarina Mita", "Agua Blanca", "Asunción Mita", "Yupiltepeque", "Atescatempa", "Jerez", "El Adelanto", "Zapotitlán", "Comapa", "Jalpatagua", "Conguaco", "Moyuta", "Pasaco", "San José Acatempa", "Quesada"]
+    }
+  };
+
+  // Tarifas estándar determinadas automáticamente por el servicio de logística
+  const LOGISTICS_RATES = {
+    metro: 25.00,
+    interior: 45.00,
+    especial: 55.00
+  };
+
+  window.currentShippingFee = 0;
+  window.shippingConfig = {
+    enabled: true
+  };
+
+  window.toggleShippingSection = function(enabled) {
+    const body = document.getElementById('shipping-fields-body');
+    const badge = document.getElementById('shipping-badge');
+    if (body) {
+      body.style.display = enabled ? 'block' : 'none';
+    }
+    if (badge) {
+      badge.textContent = enabled ? 'Servicio de Logística Automático' : 'Entrega en tienda';
+    }
+    if (!enabled) {
+      window.currentShippingFee = 0;
+    } else {
+      const dept = document.getElementById('shipping-dept') ? document.getElementById('shipping-dept').value : '';
+      if (dept) {
+        window.calculateShippingFee(dept);
+      }
+    }
+    const activeMethod = document.querySelector('.method-item.active');
+    const m = activeMethod ? activeMethod.dataset.method : 'tarjeta';
+    if (typeof window.updateCheckoutPricing === 'function') {
+      window.updateCheckoutPricing(m);
+    }
+  };
+
+  window.calculateShippingFee = function(department) {
+    if (!department || !GUATEMALA_REGIONS[department]) {
+      window.currentShippingFee = 0;
+      const banner = document.getElementById('shipping-rate-banner');
+      if (banner) banner.style.display = 'none';
+      return 0;
+    }
+
+    const reg = GUATEMALA_REGIONS[department];
+    const fee = LOGISTICS_RATES[reg.tier] || 45.00;
+
+    window.currentShippingFee = fee;
+
+    // Update banner
+    const banner = document.getElementById('shipping-rate-banner');
+    const zoneEl = document.getElementById('shipping-rate-zone');
+    const timeEl = document.getElementById('shipping-rate-time');
+    const amtEl = document.getElementById('shipping-rate-amount');
+
+    if (banner && zoneEl && timeEl && amtEl) {
+      banner.style.display = 'flex';
+      zoneEl.textContent = `Servicio de Logística · ${reg.label} (${department})`;
+      timeEl.textContent = `Entrega estimada: ${reg.deliveryTime}`;
+      amtEl.textContent = `+ Q ${fee.toFixed(2)}`;
+    }
+
+    return fee;
+  };
+
+  window.onShippingDeptChanged = function(dept) {
+    const muniSelect = document.getElementById('shipping-muni');
+    if (muniSelect) {
+      muniSelect.innerHTML = '<option value="" disabled selected>Selecciona municipio</option>';
+      if (GUATEMALA_REGIONS[dept] && GUATEMALA_REGIONS[dept].municipalities) {
+        GUATEMALA_REGIONS[dept].municipalities.forEach(m => {
+          const opt = document.createElement('option');
+          opt.value = m;
+          opt.textContent = m;
+          muniSelect.appendChild(opt);
+        });
+      }
+    }
+
+    // Recalculate shipping fee
+    window.calculateShippingFee(dept);
+
+    // Update pricing
+    const activeMethod = document.querySelector('.method-item.active');
+    const m = activeMethod ? activeMethod.dataset.method : 'tarjeta';
+    if (typeof window.updateCheckoutPricing === 'function') {
+      window.updateCheckoutPricing(m);
+    }
+  };
+
+  window.onShippingMuniChanged = function(muni) {
+    const field = document.getElementById('shipping-muni') ? document.getElementById('shipping-muni').closest('.field') : null;
+    if (field) field.classList.remove('invalid');
+  };
+
+  window.onShippingAddressChanged = function() {
+    const addr = document.getElementById('shipping-address');
+    if (addr && addr.value.trim()) {
+      const field = addr.closest('.field');
+      if (field) field.classList.remove('invalid');
+    }
+  };
+
   // Parse URL query parameters to dynamically populate checkout details
   (function initQueryParameters(){
     try {
       const urlParams = new URLSearchParams(window.location.search);
       const txId = urlParams.get('id');
-      if (!txId) return;
+
+      // Initialize shipping parameters (configured by merchant on link creation)
+      const shippingParam = urlParams.get('shipping') || urlParams.get('requires_shipping');
+      let isShippingConfigured = (shippingParam === '1' || shippingParam === 'true');
 
       const amount = parseFloat(urlParams.get('amount'));
       const client = urlParams.get('client');
@@ -3145,26 +4203,54 @@
         }
       }
 
-      try {
-        const stored = localStorage.getItem('aurapay_transactions');
-        if (stored) {
-          const transactions = JSON.parse(stored);
-          const tx = transactions.find(t => t.transaction_id === txId);
-          if (tx) {
-            window.activeTransaction = tx;
-            if (tx.custom_image) {
-              customImage = tx.custom_image;
+      // Check if transaction ID was provided
+      if (txId) {
+        try {
+          const stored = localStorage.getItem('ethospay_transactions') || localStorage.getItem('aurapay_transactions');
+          if (stored) {
+            const transactions = JSON.parse(stored);
+            const tx = transactions.find(t => t.transaction_id === txId);
+            if (tx) {
+              window.activeTransaction = tx;
+              if (tx.custom_image) {
+                customImage = tx.custom_image;
+              }
+              if ((!transactionProducts || transactionProducts.length === 0) && tx.products && tx.products.length > 0) {
+                transactionProducts = tx.products;
+              }
+              if (tx.base_amount) window.checkoutBaseAmount = parseFloat(tx.base_amount);
+              if (tx.calculated_list_price) window.checkoutListPrice = parseFloat(tx.calculated_list_price);
+              if (!window.checkoutListPrice) window.checkoutListPrice = tx.amount;
+
+              if (tx.shipping_config && tx.shipping_config.required !== undefined) {
+                isShippingConfigured = !!tx.shipping_config.required;
+              }
             }
-            if ((!transactionProducts || transactionProducts.length === 0) && tx.products && tx.products.length > 0) {
-              transactionProducts = tx.products;
-            }
-            if (tx.base_amount) window.checkoutBaseAmount = parseFloat(tx.base_amount);
-            if (tx.calculated_list_price) window.checkoutListPrice = parseFloat(tx.calculated_list_price);
-            if (!window.checkoutListPrice) window.checkoutListPrice = tx.amount;
           }
+        } catch (err) {
+          console.error('Error reading custom data from localStorage:', err);
         }
-      } catch (err) {
-        console.error('Error reading custom data from localStorage:', err);
+      }
+
+      window.shippingConfig = {
+        enabled: isShippingConfigured
+      };
+
+      const shippingSection = document.getElementById('shipping-section');
+      const shippingToggleCheck = document.getElementById('shipping-toggle-check');
+      const step1Text = document.getElementById('step-text-1');
+
+      if (isShippingConfigured) {
+        // El comercio configuró que el link requiere entrega: mostrar campos directamente al cliente
+        if (shippingSection) shippingSection.style.display = 'block';
+        if (shippingToggleCheck) shippingToggleCheck.value = '1';
+        if (step1Text) step1Text.textContent = 'Datos y Envío';
+      } else {
+        // El comercio NO configuró entrega: ocultar sección de entrega por completo
+        if (shippingSection) shippingSection.style.display = 'none';
+        if (shippingToggleCheck) shippingToggleCheck.value = '0';
+        if (step1Text) step1Text.textContent = 'Tus Datos';
+        window.currentShippingFee = 0;
       }
 
       // Render products breakdown if present
@@ -3354,22 +4440,50 @@
           finalAmount = bAmount; // cash / bank transfers use base_amount
         }
 
+        // Add calculated shipping fee if delivery is active
+        const shippingToggle = document.getElementById('shipping-toggle-check');
+        const isShippingActive = shippingToggle ? (shippingToggle.type === 'hidden' ? shippingToggle.value === '1' : shippingToggle.checked) : false;
+        const currentShipFee = (isShippingActive && window.currentShippingFee) ? window.currentShippingFee : 0;
+        const grandTotal = finalAmount + currentShipFee;
         
         // Determine currency
         const urlParams = new URLSearchParams(window.location.search);
         const currency = urlParams.get('currency') || 'GTQ';
         const sym = currency === 'USD' ? '$' : 'Q';
-        const formattedAmount = `${sym} ${fmtMoney(finalAmount)}`;
-    
+        const formattedAmount = `${sym} ${fmtMoney(grandTotal)}`;
+        const formattedSubtotal = `${sym} ${fmtMoney(finalAmount)}`;
 
         // Update UI amount elements
-        document.querySelectorAll('.hero-caption .price').forEach(el => el.textContent = formattedAmount);
+        document.querySelectorAll('.hero-caption .price').forEach(el => el.textContent = formattedSubtotal);
         document.querySelectorAll('.total span:last-child').forEach(el => el.textContent = formattedAmount);
         document.querySelectorAll('.amount-fixed').forEach(el => {
           const lockIcon = el.querySelector('.lock-mini');
           el.textContent = formattedAmount;
           if (lockIcon) el.appendChild(lockIcon);
         });
+
+        // Mobile sticky summary bar live amount
+        const mobTotalEl = document.getElementById('mob-total-amount');
+        if (mobTotalEl) mobTotalEl.textContent = formattedAmount;
+
+        // Update shipping summary row in the sidebar
+        const shipRow = document.getElementById('checkout-shipping-summary-row');
+        const subtotalValEl = document.getElementById('checkout-subtotal-val');
+        const shipValEl = document.getElementById('checkout-shipping-val');
+        if (shipRow && subtotalValEl && shipValEl) {
+          if (isShippingActive) {
+            shipRow.style.display = 'block';
+            subtotalValEl.textContent = formattedSubtotal;
+            if (currentShipFee > 0) {
+              shipValEl.textContent = `+ ${sym} ${fmtMoney(currentShipFee)}`;
+            } else {
+              shipValEl.textContent = 'Por calcular';
+            }
+          } else {
+            shipRow.style.display = 'none';
+          }
+        }
+
         const discountAmount = cListPrice - bAmount;
         document.querySelectorAll('.discount-alert').forEach(el => el.remove());
         if (!isCard && discountAmount > 0) {
@@ -3428,7 +4542,7 @@
         // Calculate Guatemalan IVA breakdown (Decreto 27-92 Ley del IVA Guatemala)
         let felConfig = { regimen: 'PEQUEÑO_CONTRIBUYENTE' };
         try {
-          const storedConfig = localStorage.getItem('aurapay_fel_config');
+          const storedConfig = localStorage.getItem('ethospay_fel_config') || localStorage.getItem('aurapay_fel_config');
           if (storedConfig) felConfig = JSON.parse(storedConfig);
         } catch(e){}
 
@@ -3571,9 +4685,7 @@
         }
       };
 
-      if (!isNaN(amount)) {
-        window.updateCheckoutPricing('tarjeta');
-      }
+      window.updateCheckoutPricing('tarjeta');
 
       // Filter and toggle allowed payment methods based on query parameters
       const methodsParam = urlParams.get('methods');
@@ -3600,6 +4712,16 @@
         toggleBlock('[data-method="agente-bi"]', showCash);
         toggleBlock('[data-method="zigi"]', showCuik);
         toggleBlock('#express-pay', showWallet);
+
+        // Sync payment tab pills
+        document.querySelectorAll('.pay-tab-pill').forEach(pill => {
+          const tab = pill.dataset.tab;
+          if (tab === 'tarjeta') pill.style.display = showCard ? '' : 'none';
+          else if (tab === 'oneclick') pill.style.display = showOneclick ? '' : 'none';
+          else if (tab === 'bi-linea') pill.style.display = showVirtual ? '' : 'none';
+          else if (tab === 'agente-bi') pill.style.display = showCash ? '' : 'none';
+          else if (tab === 'zigi') pill.style.display = showCuik ? '' : 'none';
+        });
         
         // Reset active state for the first visible payment block
         const activeItems = document.querySelectorAll('.method-item');
@@ -3616,6 +4738,12 @@
               if (typeof window.updateCheckoutPricing === 'function') {
                 window.updateCheckoutPricing(item.dataset.method);
               }
+              // Sync active pill
+              document.querySelectorAll('.pay-tab-pill').forEach(p => {
+                const isSelected = p.dataset.tab === item.dataset.method;
+                p.classList.toggle('active', isSelected);
+                p.setAttribute('aria-selected', isSelected ? 'true' : 'false');
+              });
             } else {
               item.classList.remove('active');
               const header = item.querySelector('.method-header');
@@ -3630,7 +4758,7 @@
       }
 
       // If we load from localStorage, check if this transaction is already paid!
-      const stored = localStorage.getItem('aurapay_transactions');
+      const stored = localStorage.getItem('ethospay_transactions') || localStorage.getItem('aurapay_transactions');
       if (stored) {
         const transactions = JSON.parse(stored);
         const tx = transactions.find(t => t.transaction_id === txId);

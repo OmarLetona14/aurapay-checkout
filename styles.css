@@ -312,3 +312,62 @@
         overflow: visible !important;
       }
     }
+
+    /* ================= HIGH-CONTRAST TOGGLE SWITCHES ================= */
+    .ethos-toggle-switch {
+      position: relative;
+      display: inline-flex;
+      align-items: center;
+      cursor: pointer;
+      user-select: none;
+      flex-shrink: 0;
+      width: 44px;
+      height: 24px;
+    }
+    .ethos-toggle-switch input {
+      opacity: 0;
+      width: 0;
+      height: 0;
+      position: absolute;
+      pointer-events: none;
+    }
+    .ethos-toggle-track {
+      width: 44px;
+      height: 24px;
+      background-color: #cbd5e1;
+      border: 1.5px solid #94a3b8;
+      border-radius: 9999px;
+      transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+      box-sizing: border-box;
+    }
+    .ethos-toggle-switch:hover .ethos-toggle-track {
+      background-color: #94a3b8;
+      border-color: #64748b;
+    }
+    .ethos-toggle-switch input:checked + .ethos-toggle-track {
+      background-color: #191970 !important;
+      border-color: #191970 !important;
+    }
+    .ethos-toggle-knob {
+      position: absolute;
+      top: 3px;
+      left: 3px;
+      width: 18px;
+      height: 18px;
+      background-color: #ffffff;
+      border-radius: 50%;
+      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3), 0 1px 2px rgba(0, 0, 0, 0.2);
+      transition: transform 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+      pointer-events: none;
+    }
+    .ethos-toggle-switch input:checked ~ .ethos-toggle-knob {
+      transform: translateX(20px);
+    }
+    html[data-theme="dark"] .ethos-toggle-track {
+      background-color: #374151;
+      border-color: #4b5563;
+    }
+    html[data-theme="dark"] .ethos-toggle-switch input:checked + .ethos-toggle-track {
+      background-color: #3b82f6 !important;
+      border-color: #3b82f6 !important;
+    }

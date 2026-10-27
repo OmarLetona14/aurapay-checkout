@@ -118,6 +118,16 @@
         reference_number: 'REF-3w89ij-112',
         payment_date: '2026-07-10 11:15',
         payment_modality: 'Banca Virtual',
+        delivery_status: 'En proceso de entrega',
+        shipping: {
+          required: true,
+          department: 'Guatemala',
+          municipality: 'Guatemala (Zonas 1-25)',
+          address: 'Avenida Las Américas 14-20 Zona 13, Edificio Torre de Las Américas',
+          notes: 'Entregar en recepción con la asistente',
+          fee: 25.00,
+          delivery_status: 'En proceso de entrega'
+        },
         timeline: ['2026-07-10 11:10', '2026-07-10 11:12', '2026-07-10 11:15', '2026-07-10 11:18'] 
       },
       { 
@@ -151,6 +161,16 @@
           client_name: 'Ferretería El Progreso S.A.',
           order_number: 'ORD-9821',
           contact_email: 'facturacion@progreso.com.gt'
+        },
+        delivery_status: 'Entregado',
+        shipping: {
+          required: true,
+          department: 'Guatemala',
+          municipality: 'Mixco',
+          address: 'Calzada Roosevelt 22-43 Zona 11, Bodega 4',
+          notes: 'Recibido por encargado de almacén',
+          fee: 25.00,
+          delivery_status: 'Entregado'
         },
         timeline: ['2026-07-12 11:20', '2026-07-12 11:21', '2026-07-12 11:22', '2026-07-12 11:25'] 
       },
@@ -263,6 +283,16 @@
           client_name: 'María del Carmen Estrada',
           order_number: 'ORD-9823',
           contact_email: 'carmen@estrada.com'
+        },
+        delivery_status: 'En proceso de entrega',
+        shipping: {
+          required: true,
+          department: 'Quetzaltenango',
+          municipality: 'Quetzaltenango (Xela)',
+          address: '4ta Calle 12-34 Zona 1, Centro Histórico',
+          notes: 'Casa color crema portón negro frente a la farmacia',
+          fee: 45.00,
+          delivery_status: 'En proceso de entrega'
         },
         timeline: ['2026-07-11 16:30', '2026-07-11 16:32', '2026-07-11 16:35', '2026-07-11 16:38'] 
       },
@@ -410,15 +440,29 @@
     }
 
     // LocalStorage sync for transactions (versioned schema)
-    const TX_SCHEMA_VERSION = 'v3';
-    const storedTxVersion = StorageManager.get('aurapay_tx_version');
-    const storedTxs = StorageManager.get('aurapay_transactions');
+    const TX_SCHEMA_VERSION = 'v5';
+    const storedTxVersion = StorageManager.get('ethospay_tx_version') || StorageManager.get('aurapay_tx_version');
+    const storedTxs = StorageManager.get('ethospay_transactions') || StorageManager.get('aurapay_transactions');
     if (storedTxs && storedTxVersion === TX_SCHEMA_VERSION) {
       transactions = storedTxs;
     } else {
+      StorageManager.set('ethospay_transactions', transactions);
       StorageManager.set('aurapay_transactions', transactions);
-      StorageManager.set('aurapay_tx_version', TX_SCHEMA_VERSION);
+      StorageManager.set('ethospay_tx_version', TX_SCHEMA_VERSION);
     }
+
+    // Ensure every transaction strictly has a delivery_status ('Entregado' or 'En proceso de entrega')
+    transactions.forEach((tx, idx) => {
+      if (tx.delivery_status !== 'Entregado' && tx.delivery_status !== 'En proceso de entrega') {
+        const status = (tx.shipping && (tx.shipping.delivery_status === 'Entregado' || tx.shipping.delivery_status === 'En proceso de entrega'))
+          ? tx.shipping.delivery_status
+          : (tx.status === 'PAID' && (idx % 2 === 0 || tx.transaction_id === 'chk_a1b2c3') ? 'Entregado' : 'En proceso de entrega');
+        tx.delivery_status = status;
+      }
+      if (tx.shipping) {
+        tx.shipping.delivery_status = tx.delivery_status;
+      }
+    });
 
     // Helper function for Guatemalan IVA calculations (Decreto 27-92 Ley del IVA)
     function calculateIvaGuatemala(totalAmount, regimen = null) {
@@ -518,27 +562,32 @@
     ];
 
     // LocalStorage sync for products
-    const PROD_SCHEMA_VERSION = 'v2';
-    const storedProdVersion = StorageManager.get('aurapay_prod_version');
-    const storedProds = StorageManager.get('aurapay_products');
+    const PROD_SCHEMA_VERSION = 'v3';
+    const storedProdVersion = StorageManager.get('ethospay_prod_version') || StorageManager.get('aurapay_prod_version');
+    const storedProds = StorageManager.get('ethospay_products') || StorageManager.get('aurapay_products');
     if (storedProds && storedProdVersion === PROD_SCHEMA_VERSION) {
       productsCatalog = storedProds;
     } else {
+      StorageManager.set('ethospay_products', productsCatalog);
       StorageManager.set('aurapay_products', productsCatalog);
-      StorageManager.set('aurapay_prod_version', PROD_SCHEMA_VERSION);
+      StorageManager.set('ethospay_prod_version', PROD_SCHEMA_VERSION);
     }
 
     let users = [
-      { id: 'usr-1', name: 'Administrador General', email: 'admin@aurapay.com.gt', password: 'AuraPay2026*', role: 'admin', status: 'active', lastActive: 'Ahora mismo' },
-      { id: 'usr-2', name: 'Cajero de Caja A', email: 'cajero@aurapay.com.gt', password: 'AuraPay2026*', role: 'cajero', status: 'active', lastActive: 'Ayer, 18:22' },
-      { id: 'usr-4', name: 'Operador de Catálogo', email: 'operativo@aurapay.com.gt', password: 'AuraPay2026*', role: 'operativo', status: 'active', lastActive: 'Hace 2 horas' }
+      { id: 'usr-1', name: 'Administrador General', email: 'admin@ethospay.com.gt', password: 'EthosPay2026*', role: 'admin', status: 'active', lastActive: 'Ahora mismo' },
+      { id: 'usr-2', name: 'Cajero de Caja A', email: 'cajero@ethospay.com.gt', password: 'EthosPay2026*', role: 'cajero', status: 'active', lastActive: 'Ayer, 18:22' },
+      { id: 'usr-4', name: 'Operador de Catálogo', email: 'operativo@ethospay.com.gt', password: 'EthosPay2026*', role: 'operativo', status: 'active', lastActive: 'Hace 2 horas' }
     ];
     try {
-      const storedUsers = localStorage.getItem('aurapay_users');
+      const storedUsers = localStorage.getItem('ethospay_users') || localStorage.getItem('aurapay_users');
       if (storedUsers) {
         const parsed = JSON.parse(storedUsers);
         if (Array.isArray(parsed) && parsed.length > 0) {
-          users = parsed;
+          users = parsed.map(u => ({
+            ...u,
+            email: u.email.replace(/@aurapay\.com\.gt$/i, '@ethospay.com.gt'),
+            password: u.password.replace(/^AuraPay/i, 'EthosPay')
+          }));
         }
       }
     } catch(e) {}
@@ -592,11 +641,11 @@
 
     // Global audit logs array feed
     let systemLogs = [
-      { timestamp: '2026-07-11 22:45:10', event: 'Inicio de Sesión', actor: 'admin@aurapay.com.gt', category: 'seguridad', details: 'Acceso exitoso al panel administrativo con verificación 2FA.' },
-      { timestamp: '2026-07-11 22:40:15', event: 'Cobro Creado', actor: 'cajero@aurapay.com.gt', category: 'transaccion', details: 'Enlace chk_5y62bc emitido por Q 1,250.00.' },
-      { timestamp: '2026-07-11 22:15:33', event: 'Usuario Desbloqueado', actor: 'admin@aurapay.com.gt', category: 'vendedor', details: 'Se habilitó el acceso al sistema para Usuario de Caja A.' },
-      { timestamp: '2026-07-11 18:22:04', event: 'Cierre de Sesión', actor: 'cajero@aurapay.com.gt', category: 'seguridad', details: 'Desconexión del POS Virtual voluntaria.' },
-      { timestamp: '2026-07-11 14:05:00', event: 'Falla de Verificación', actor: 'auditor@aurapay.com.gt', category: 'seguridad', details: 'Intento de login fallido (Credenciales incorrectas).' }
+      { timestamp: '2026-07-11 22:45:10', event: 'Inicio de Sesión', actor: 'admin@ethospay.com.gt', category: 'seguridad', details: 'Acceso exitoso al panel administrativo con verificación 2FA.' },
+      { timestamp: '2026-07-11 22:40:15', event: 'Cobro Creado', actor: 'cajero@ethospay.com.gt', category: 'transaccion', details: 'Enlace chk_5y62bc emitido por Q 1,250.00.' },
+      { timestamp: '2026-07-11 22:15:33', event: 'Usuario Desbloqueado', actor: 'admin@ethospay.com.gt', category: 'vendedor', details: 'Se habilitó el acceso al sistema para Usuario de Caja A.' },
+      { timestamp: '2026-07-11 18:22:04', event: 'Cierre de Sesión', actor: 'cajero@ethospay.com.gt', category: 'seguridad', details: 'Desconexión del POS Virtual voluntaria.' },
+      { timestamp: '2026-07-11 14:05:00', event: 'Falla de Verificación', actor: 'auditor@ethospay.com.gt', category: 'seguridad', details: 'Intento de login fallido (Credenciales incorrectas).' }
     ];
 
     let logCategoryFilter = 'all';
@@ -711,12 +760,12 @@
       const passInput = document.getElementById('login-password');
       
       let email = '';
-      if (role === 'admin') email = 'admin@aurapay.com.gt';
-      else if (role === 'cajero') email = 'cajero@aurapay.com.gt';
-      else if (role === 'operativo') email = 'operativo@aurapay.com.gt';
+      if (role === 'admin') email = 'admin@ethospay.com.gt';
+      else if (role === 'cajero') email = 'cajero@ethospay.com.gt';
+      else if (role === 'operativo') email = 'operativo@ethospay.com.gt';
       
       emailInput.value = email;
-      passInput.value = 'AuraPay2026*';
+      passInput.value = 'EthosPay2026*';
       
       // Auto focus password for smooth UX
       setTimeout(() => passInput.focus(), 150);
@@ -857,6 +906,8 @@
 
         document.getElementById('app-login').classList.add('hidden');
         document.getElementById('app-dashboard').classList.remove('hidden');
+        loadMerchantBranding();
+        renderTable();
 
         showToast('⚡ Autenticación Biométrica Exitosa', `Bienvenido ${currentUser.name} (Acceso Passkey Sin Contraseña)`, 'success');
         addSystemLog('Login Passkey Biométrico', 'seguridad', `Acceso concedido mediante Passkey / Face ID para ${currentUser.email}`);
@@ -963,6 +1014,8 @@
         // Hide login, show dashboard
         document.getElementById('app-login').classList.add('hidden');
         document.getElementById('app-dashboard').classList.remove('hidden');
+        loadMerchantBranding();
+        renderTable();
         // Show mobile FAB now that user is authenticated
         const fab = document.getElementById('mobile-fab');
         if (fab) fab.classList.remove('hidden');
@@ -1011,7 +1064,7 @@
       const fab = document.getElementById('mobile-fab');
       if (fab) fab.classList.add('hidden');
       switchTab('dashboard'); // reset tab state
-      showToast('Sesión Cerrada', 'Has salido del panel AuraPay con éxito.');
+      showToast('Sesión Cerrada', 'Has salido del panel EthosPay con éxito.');
     }
 
     // ================= METRICS CALCULATIONS & RENDER =================
@@ -1291,7 +1344,7 @@
       const link = document.createElement('a');
       const url = URL.createObjectURL(blob);
       link.setAttribute('href', url);
-      link.setAttribute('download', `reporte_transacciones_aurapay_${formatDate(new Date()).split(' ')[0]}.csv`);
+      link.setAttribute('download', `reporte_transacciones_ethospay_${formatDate(new Date()).split(' ')[0]}.csv`);
       link.style.visibility = 'hidden';
       document.body.appendChild(link);
       link.click();
@@ -1362,52 +1415,63 @@
       const salePriceEl = document.getElementById('product-tax-sale-price');
       const totalIvaLabelEl = document.getElementById('product-tax-total-iva-label');
       const totalIvaEl = document.getElementById('product-tax-total-iva');
+      const retentionLabelEl = document.getElementById('product-tax-retention-label');
       const retentionEl = document.getElementById('product-tax-platform-retention');
+      const dueLabelEl = document.getElementById('product-tax-due-label');
       const merchantDueEl = document.getElementById('product-tax-merchant-due');
       const helperTextEl = document.getElementById('product-tax-helper-text');
 
       if (salePriceEl) salePriceEl.innerText = formatCurrency(salePrice, 'GTQ');
 
-      // Platform Retention Rate = 5% (5% de retención de la plataforma)
-      const platformRetentionAmt = salePrice * 0.05;
-      if (retentionEl) retentionEl.innerText = formatCurrency(platformRetentionAmt, 'GTQ');
-
       if (regimen === 'REGIMEN_GENERAL') {
         const baseWithoutIva = salePrice / 1.12;
         const totalIva12 = salePrice - baseWithoutIva;
-        const merchantRemanent = Math.max(0, totalIva12 - platformRetentionAmt);
+        // Retención legal operadoras de tarjeta en Régimen General: 15% del IVA (Decreto 20-2006)
+        const generalRetentionAmt = totalIva12 * 0.15;
+        const merchantRemanent = Math.max(0, totalIva12 - generalRetentionAmt);
 
         if (regimenTitleEl) regimenTitleEl.innerText = 'Régimen General (12% IVA)';
         if (rateBadgeEl) rateBadgeEl.innerText = '12% IVA General';
-        if (totalIvaLabelEl) totalIvaLabelEl.innerText = 'Monto IVA Total (12%):';
+        if (totalIvaLabelEl) totalIvaLabelEl.innerText = 'Débito Fiscal IVA Total (12%):';
         if (totalIvaEl) totalIvaEl.innerText = formatCurrency(totalIva12, 'GTQ');
+        if (retentionLabelEl) retentionLabelEl.innerText = '(-) Retención SAT Operadora (15% del IVA):';
+        if (retentionEl) retentionEl.innerText = formatCurrency(generalRetentionAmt, 'GTQ');
+        if (dueLabelEl) dueLabelEl.innerText = '(=) Remanente IVA a Declarar en SAT:';
         if (merchantDueEl) merchantDueEl.innerText = formatCurrency(merchantRemanent, 'GTQ');
-        if (helperTextEl) helperTextEl.innerText = 'La plataforma retendrá el 5% de retención legal en cada cobro. El comercio sólo deberá declarar y pagar el remanente (7%) ante la SAT en Declaraguate.';
+        if (helperTextEl) helperTextEl.innerText = 'Conforme al Decreto 20-2006, la operadora retiene el 15% del débito fiscal IVA generado en cobros con tarjeta. El comercio compensa con sus créditos fiscales y liquida el remanente en su declaración mensual Declaraguate SAT-2237.';
       } else if (regimen === 'PEQUEÑO_ELECTRONICO') {
         const totalIva4 = salePrice * 0.04;
         if (regimenTitleEl) regimenTitleEl.innerText = 'Pequeño Contribuyente Electrónico (4%)';
         if (rateBadgeEl) rateBadgeEl.innerText = '4% Tarifa Reducida';
-        if (totalIvaLabelEl) totalIvaLabelEl.innerText = 'Monto IVA Total (4%):';
+        if (totalIvaLabelEl) totalIvaLabelEl.innerText = 'Impuesto SAT Calculado (4% sobre Facturado):';
         if (totalIvaEl) totalIvaEl.innerText = formatCurrency(totalIva4, 'GTQ');
+        if (retentionLabelEl) retentionLabelEl.innerText = '(-) Retención SAT (4% sobre Facturado - Pago Definitivo):';
+        if (retentionEl) retentionEl.innerText = formatCurrency(totalIva4, 'GTQ');
+        if (dueLabelEl) dueLabelEl.innerText = '(=) Saldo de IVA a Liquidar ante SAT:';
         if (merchantDueEl) merchantDueEl.innerText = formatCurrency(0, 'GTQ');
-        if (helperTextEl) helperTextEl.innerText = 'La plataforma retendrá automáticamente el 4% del impuesto por cada transacción realizada. Quedas 100% libre de trámite adicional.';
+        if (helperTextEl) helperTextEl.innerText = '✓ Conforme al Decreto 7-2019, la plataforma retiene el 4% sobre el monto total facturado como pago definitivo del impuesto. Quedas 100% solvente sin trámites adicionales.';
       } else if (regimen === 'EXENTO') {
         if (regimenTitleEl) regimenTitleEl.innerText = 'Exento de IVA (0%)';
         if (rateBadgeEl) rateBadgeEl.innerText = '0% Exento';
         if (totalIvaLabelEl) totalIvaLabelEl.innerText = 'Monto IVA Total (0%):';
         if (totalIvaEl) totalIvaEl.innerText = formatCurrency(0, 'GTQ');
+        if (retentionLabelEl) retentionLabelEl.innerText = '(-) Retención SAT (0% Exento):';
         if (retentionEl) retentionEl.innerText = formatCurrency(0, 'GTQ');
+        if (dueLabelEl) dueLabelEl.innerText = '(=) Saldo de IVA a Liquidar ante SAT:';
         if (merchantDueEl) merchantDueEl.innerText = formatCurrency(0, 'GTQ');
-        if (helperTextEl) helperTextEl.innerText = 'Operación exenta del Impuesto al Valor Agregado según Art. 7 de la Ley del IVA.';
+        if (helperTextEl) helperTextEl.innerText = 'Operación exenta del Impuesto al Valor Agregado según Art. 7 de la Ley del IVA. No aplica retención.';
       } else {
         // Default Pequeño Contribuyente 5%
         const totalIva5 = salePrice * 0.05;
         if (regimenTitleEl) regimenTitleEl.innerText = 'Pequeño Contribuyente (5% IVA)';
         if (rateBadgeEl) rateBadgeEl.innerText = '5% IVA Fijo';
-        if (totalIvaLabelEl) totalIvaLabelEl.innerText = 'Monto IVA Total (5%):';
+        if (totalIvaLabelEl) totalIvaLabelEl.innerText = 'Impuesto SAT Calculado (5% sobre Facturado):';
         if (totalIvaEl) totalIvaEl.innerText = formatCurrency(totalIva5, 'GTQ');
+        if (retentionLabelEl) retentionLabelEl.innerText = '(-) Retención SAT (5% sobre Facturado - Pago Definitivo):';
+        if (retentionEl) retentionEl.innerText = formatCurrency(totalIva5, 'GTQ');
+        if (dueLabelEl) dueLabelEl.innerText = '(=) Saldo de IVA a Liquidar ante SAT:';
         if (merchantDueEl) merchantDueEl.innerText = formatCurrency(0, 'GTQ');
-        if (helperTextEl) helperTextEl.innerText = '✓ La plataforma retendrá automáticamente el 5% de retención del impuesto en cada venta. ¡El 100% de tu IVA queda solventado automáticamente ante la SAT!';
+        if (helperTextEl) helperTextEl.innerText = '✓ Conforme al Art. 48 de la Ley del IVA (Decreto 27-92), los emisores y operadores retienen el 5% sobre el monto total facturado como pago definitivo. ¡El 100% de tu IVA queda solventado automáticamente ante la SAT!';
       }
     }
 
@@ -1506,7 +1570,7 @@
       const url = URL.createObjectURL(blob);
       const link = document.createElement("a");
       link.setAttribute("href", url);
-      link.setAttribute("download", `productos_aurapay_${new Date().toISOString().slice(0,10)}.csv`);
+      link.setAttribute("download", `productos_ethospay_${new Date().toISOString().slice(0,10)}.csv`);
       document.body.appendChild(link);
       link.click();
       document.body.removeChild(link);
@@ -2588,8 +2652,23 @@
         // Reset modal view back to form for next open
         document.getElementById('create-modal-form-view').classList.remove('hidden');
         document.getElementById('create-modal-success-view').classList.add('hidden');
+        toggleShippingConfig(false);
       }, 200);
     }
+
+    function toggleShippingConfig(checked) {
+      const info = document.getElementById('shipping-service-info');
+      const chk = document.getElementById('link-require-shipping');
+      if (chk) chk.checked = checked;
+      if (info) {
+        if (checked) {
+          info.classList.remove('hidden');
+        } else {
+          info.classList.add('hidden');
+        }
+      }
+    }
+    window.toggleShippingConfig = toggleShippingConfig;
 
     // Global variable to store active success checkout URL
     window.activeSuccessUrl = '';
@@ -2722,6 +2801,8 @@
       let placeholder = 'CoffeeBagIcon';
       let subtext = 'Tostaduría de especialidad y café gourmet';
 
+      const requireShipping = document.getElementById('link-require-shipping') ? document.getElementById('link-require-shipping').checked : false;
+
       const newTransaction = {
         transaction_id: generateTransactionId(),
         date: formatDate(new Date()),
@@ -2745,6 +2826,10 @@
           title: productTitle,
           description: customDesc
         },
+        shipping_config: {
+          required: requireShipping,
+          auto_logistics: true
+        },
         image_preset: customImgData ? 'custom' : 'generic',
         custom_image: customImgData,
         products: JSON.parse(JSON.stringify(selectedProductsForLink)), // store all products info
@@ -2756,7 +2841,7 @@
       transactions.unshift(newTransaction);
       // Update LocalStorage cache
       try {
-        localStorage.setItem('aurapay_transactions', JSON.stringify(transactions));
+        localStorage.setItem('ethospay_transactions', JSON.stringify(transactions));
         localStorage.setItem('aurapay_transactions', JSON.stringify(transactions));
       } catch (e) {
         console.error('Failed to sync transactions to localStorage:', e);
@@ -2791,11 +2876,15 @@
         methods: newTransaction.allowed_methods.join(',')
       });
 
+      if (requireShipping) {
+        queryParams.set('shipping', '1');
+      }
+
       if (selectedProductsForLink && selectedProductsForLink.length > 0) {
         queryParams.set('products', JSON.stringify(selectedProductsForLink));
       }
 
-      const fullUrl = `aurapay-checkout.html?${queryParams.toString()}`;
+      const fullUrl = `ethospay-checkout.html?${queryParams.toString()}`;
       
       document.getElementById('generated-link-input').value = fullUrl;
       window.activeSuccessUrl = fullUrl;
@@ -2967,6 +3056,42 @@
       document.getElementById('detail-billing-name').innerText = billing.client_name || 'N/A';
       document.getElementById('detail-contact-email').innerText = billing.contact_email || 'N/A';
 
+      // Populate shipping details
+      const shipping = transaction.shipping || {};
+      const shippingCard = document.getElementById('detail-shipping-card');
+      if (shippingCard) {
+        if (shipping.required || shipping.department || shipping.address) {
+          shippingCard.classList.remove('hidden');
+          const deptEl = document.getElementById('detail-shipping-dept');
+          const muniEl = document.getElementById('detail-shipping-muni');
+          const addrEl = document.getElementById('detail-shipping-address');
+          const notesEl = document.getElementById('detail-shipping-notes');
+          const feeEl = document.getElementById('detail-shipping-fee');
+          if (deptEl) deptEl.innerText = shipping.department || 'Guatemala';
+          if (muniEl) muniEl.innerText = shipping.municipality || 'N/A';
+          if (addrEl) addrEl.innerText = shipping.address || 'N/A';
+          if (notesEl) notesEl.innerText = shipping.notes || 'Sin indicaciones adicionales';
+          if (feeEl) feeEl.innerText = shipping.fee ? formatCurrency(shipping.fee) : 'Q 0.00';
+        } else if (transaction.shipping_config && transaction.shipping_config.required) {
+          shippingCard.classList.remove('hidden');
+          const deptEl = document.getElementById('detail-shipping-dept');
+          const muniEl = document.getElementById('detail-shipping-muni');
+          const addrEl = document.getElementById('detail-shipping-address');
+          const notesEl = document.getElementById('detail-shipping-notes');
+          const feeEl = document.getElementById('detail-shipping-fee');
+          if (deptEl) deptEl.innerText = 'Pendiente de cotización por logística';
+          if (muniEl) muniEl.innerText = '-';
+          if (addrEl) addrEl.innerText = 'El cliente ingresará su dirección en el enlace de pago.';
+          if (notesEl) notesEl.innerText = '-';
+          if (feeEl) feeEl.innerText = 'Cotización Automática';
+        } else {
+          shippingCard.classList.add('hidden');
+        }
+      }
+
+      // Render package delivery status strictly as 'Entregado' or 'En proceso de entrega'
+      renderDeliveryStatusUI(getDeliveryStatus(transaction));
+
       // Populate GT IVA breakdown
       const ivaInfo = calculateIvaGuatemala(transaction.amount);
       const ivaLabelEl = document.getElementById('detail-gt-iva-label');
@@ -3047,6 +3172,122 @@
         selectedTransaction = null;
       }, 300);
     }
+
+    // Helper functions for Package Delivery Status
+    function getDeliveryStatus(transaction) {
+      if (!transaction) return 'En proceso de entrega';
+      if (transaction.delivery_status === 'Entregado' || (transaction.shipping && transaction.shipping.delivery_status === 'Entregado')) {
+        return 'Entregado';
+      }
+      return 'En proceso de entrega';
+    }
+
+    function renderDeliveryStatusUI(status) {
+      const isDelivered = (status === 'Entregado');
+      const statusText = isDelivered ? 'Entregado' : 'En proceso de entrega';
+
+      // 1. Drawer Header Badge
+      const headerBadge = document.getElementById('drawer-delivery-badge');
+      const headerBadgeDot = document.getElementById('drawer-delivery-badge-dot');
+      const headerBadgeText = document.getElementById('drawer-delivery-badge-text');
+      if (headerBadge && headerBadgeText) {
+        headerBadgeText.innerText = statusText;
+        if (isDelivered) {
+          headerBadge.className = 'inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[10px] font-semibold border shadow-xs bg-emerald-50 text-emerald-800 border-emerald-200';
+          if (headerBadgeDot) headerBadgeDot.className = 'w-1.5 h-1.5 rounded-full bg-emerald-500';
+        } else {
+          headerBadge.className = 'inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[10px] font-semibold border shadow-xs bg-amber-50 text-amber-800 border-amber-200';
+          if (headerBadgeDot) headerBadgeDot.className = 'w-1.5 h-1.5 rounded-full bg-amber-500 animate-pulse';
+        }
+      }
+
+      // 2. Drawer Card in Operation Details
+      const detailCard = document.getElementById('drawer-delivery-status-card');
+      const detailText = document.getElementById('detail-delivery-status-text');
+      const detailIconWrap = document.getElementById('detail-delivery-status-icon-wrap');
+      const toggleBtn = document.getElementById('detail-delivery-status-toggle-btn');
+      const toggleBtnText = document.getElementById('detail-delivery-toggle-btn-text');
+
+      if (detailText) {
+        detailText.innerText = statusText;
+        if (isDelivered) {
+          detailText.className = 'text-xs font-bold block mt-0.5 truncate text-emerald-800';
+          if (detailIconWrap) {
+            detailIconWrap.className = 'w-8 h-8 rounded-lg flex items-center justify-center bg-emerald-100 text-emerald-700 flex-shrink-0';
+            detailIconWrap.innerHTML = '<svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2.2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M4.5 12.75l6 6 9-13.5" /></svg>';
+          }
+          if (detailCard) {
+            detailCard.className = 'col-span-2 bg-emerald-50/70 border border-emerald-200/90 rounded-lg p-3 flex items-center justify-between transition-colors mt-1';
+          }
+          if (toggleBtn && toggleBtnText) {
+            toggleBtn.className = 'px-2.5 py-1 text-[11px] font-semibold rounded-md border transition-all shadow-xs flex items-center gap-1.5 active:scale-95 focus:outline-none flex-shrink-0 bg-white text-gray-700 border-gray-300 hover:bg-gray-50';
+            toggleBtnText.innerText = 'Cambiar a En proceso de entrega';
+          }
+        } else {
+          detailText.className = 'text-xs font-bold block mt-0.5 truncate text-amber-900';
+          if (detailIconWrap) {
+            detailIconWrap.className = 'w-8 h-8 rounded-lg flex items-center justify-center bg-amber-100 text-amber-700 flex-shrink-0';
+            detailIconWrap.innerHTML = '<svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M8.25 18.75a1.5 1.5 0 01-3 0m3 0a1.5 1.5 0 00-3 0m3 0h6m-9 0H3.375a1.125 1.125 0 01-1.125-1.125V14.25m17.25 4.5a1.5 1.5 0 01-3 0m3 0a1.5 1.5 0 00-3 0m3 0h1.125c.621 0 1.129-.504 1.09-1.124a17.902 17.902 0 00-3.213-9.193 2.056 2.056 0 00-1.58-.86H14.25M16.5 18.75h-2.25m0-11.25V3.75A1.125 1.125 0 0013.125 2.625h-7.5A1.125 1.125 0 004.5 3.75v10.5m9.75-8.25h3.375c.621 0 1.125.504 1.125 1.125v4.5M4.5 14.25h15" /></svg>';
+          }
+          if (detailCard) {
+            detailCard.className = 'col-span-2 bg-amber-50/70 border border-amber-200/90 rounded-lg p-3 flex items-center justify-between transition-colors mt-1';
+          }
+          if (toggleBtn && toggleBtnText) {
+            toggleBtn.className = 'px-2.5 py-1 text-[11px] font-semibold rounded-md border transition-all shadow-xs flex items-center gap-1.5 active:scale-95 focus:outline-none flex-shrink-0 bg-emerald-600 text-white border-emerald-600 hover:bg-emerald-700 shadow-sm';
+            toggleBtnText.innerText = 'Marcar como Entregado';
+          }
+        }
+      }
+
+      // 3. Status label inside the Shipping Details card
+      const shippingStatusLabel = document.getElementById('detail-shipping-status-label');
+      if (shippingStatusLabel) {
+        shippingStatusLabel.innerText = statusText;
+        if (isDelivered) {
+          shippingStatusLabel.className = 'px-2 py-0.5 rounded-full text-[10px] font-bold border bg-emerald-50 text-emerald-800 border-emerald-200';
+        } else {
+          shippingStatusLabel.className = 'px-2 py-0.5 rounded-full text-[10px] font-bold border bg-amber-50 text-amber-800 border-amber-200';
+        }
+      }
+    }
+
+    function toggleCurrentDeliveryStatus() {
+      if (!selectedTransaction) return;
+
+      const currentStatus = getDeliveryStatus(selectedTransaction);
+      const nextStatus = (currentStatus === 'Entregado') ? 'En proceso de entrega' : 'Entregado';
+
+      selectedTransaction.delivery_status = nextStatus;
+      if (!selectedTransaction.shipping) {
+        selectedTransaction.shipping = { required: true };
+      }
+      selectedTransaction.shipping.delivery_status = nextStatus;
+
+      const idx = transactions.findIndex(t => t.transaction_id === selectedTransaction.transaction_id);
+      if (idx !== -1) {
+        transactions[idx].delivery_status = nextStatus;
+        if (!transactions[idx].shipping) transactions[idx].shipping = { required: true };
+        transactions[idx].shipping.delivery_status = nextStatus;
+      }
+
+      try {
+        localStorage.setItem('ethospay_transactions', JSON.stringify(transactions));
+        localStorage.setItem('aurapay_transactions', JSON.stringify(transactions));
+      } catch (e) {
+        console.error('Error saving updated delivery status:', e);
+      }
+
+      renderDeliveryStatusUI(nextStatus);
+
+      showToast(
+        'Estatus Actualizado',
+        `Estatus del paquete para ${selectedTransaction.transaction_id}: "${nextStatus}"`,
+        nextStatus === 'Entregado' ? 'success' : 'info'
+      );
+    }
+    window.toggleCurrentDeliveryStatus = toggleCurrentDeliveryStatus;
+    window.getDeliveryStatus = getDeliveryStatus;
+    window.renderDeliveryStatusUI = renderDeliveryStatusUI;
 
 
 
@@ -3404,7 +3645,7 @@
       const url = URL.createObjectURL(blob);
       const link = document.createElement("a");
       link.setAttribute("href", url);
-      link.setAttribute("download", `aurapay_bitacora_${formatDate(new Date()).replace(/ /g, '_')}.csv`);
+      link.setAttribute("download", `ethospay_bitacora_${formatDate(new Date()).replace(/ /g, '_')}.csv`);
       document.body.appendChild(link);
       link.click();
       document.body.removeChild(link);
@@ -3465,7 +3706,7 @@
       const url = URL.createObjectURL(blob);
       const link = document.createElement("a");
       link.setAttribute("href", url);
-      link.setAttribute("download", `aurapay_operaciones_${formatDate(new Date()).replace(/ /g, '_')}.csv`);
+      link.setAttribute("download", `ethospay_operaciones_${formatDate(new Date()).replace(/ /g, '_')}.csv`);
       document.body.appendChild(link);
       link.click();
       document.body.removeChild(link);
@@ -3526,7 +3767,7 @@
 
     function loadMerchantBranding() {
       try {
-        const stored = localStorage.getItem('aurapay_merchant_branding');
+        const stored = localStorage.getItem('ethospay_merchant_branding') || localStorage.getItem('aurapay_merchant_branding');
         if (stored) {
           merchantBranding = { ...defaultBranding, ...JSON.parse(stored) };
         }
@@ -3536,6 +3777,17 @@
       applyAdminBrandingTheme(merchantBranding.primary_color);
       updateMerchantLogoDisplay();
       updateEthosAdaptiveLogos();
+
+      // Ensure merchant name & NIT consistency
+      const sidebarName = document.getElementById('sidebar-merchant-name');
+      const headerNit = document.getElementById('header-merchant-nit');
+      const infoAccountMerchant = document.getElementById('info-account-merchant-name');
+      const settingsMerchant = document.getElementById('settings-general-merchant-name');
+      
+      if (sidebarName) sidebarName.innerText = 'Café Don Arturo';
+      if (headerNit) headerNit.innerText = 'NIT: 8492019-3';
+      if (infoAccountMerchant) infoAccountMerchant.innerText = 'Café Don Arturo, S.A.';
+      if (settingsMerchant) settingsMerchant.value = 'Café Don Arturo, S.A.';
     }
 
     function updateMerchantLogoDisplay() {
@@ -3668,7 +3920,7 @@
         termsInput.value = `TÉRMINOS Y CONDICIONES DE VENTA\n\n1. ACEPTACIÓN Y PROCESAMIENTO: Toda compra realizada a través de esta pasarela constituye un acuerdo de venta final. Los pedidos son procesados de inmediato una vez autorizada la transacción.\n\n2. POLÍTICA DE DEVOLUCIONES Y CAMBIOS: Los cambios de producto o solicitudes de garantía se atienden dentro de los 30 días posteriores a la fecha de emisión del comprobante, presentando la factura original de compra.\n\n3. ENTREGAS Y SERVICIOS: La entrega de bienes y servicios está sujeta a la disponibilidad confirmada por el comercio.`;
       }
       if (privacyInput) {
-        privacyInput.value = `AVISO DE PRIVACIDAD Y PROTECCIÓN DE DATOS\n\nSus datos personales son tratados con estricta confidencialidad bajo los estándares de seguridad de AuraPay. La información recopilada se utiliza exclusivamente para la gestión de su pedido, procesamiento del pago y envío de comprobantes digitales. La pasarela no almacena datos sensibles de tarjetas de crédito.`;
+        privacyInput.value = `AVISO DE PRIVACIDAD Y PROTECCIÓN DE DATOS\n\nSus datos personales son tratados con estricta confidencialidad bajo los estándares de seguridad de EthosPay. La información recopilada se utiliza exclusivamente para la gestión de su pedido, procesamiento del pago y envío de comprobantes digitales. La pasarela no almacena datos sensibles de tarjetas de crédito.`;
       }
       showToast('Plantilla Cargada', 'Se han insertado los términos y aviso de privacidad estándar.', 'info');
     }
@@ -3745,7 +3997,7 @@
         livemode: false,
         data: {
           ping: "pong",
-          merchant_id: "mrc_aura_9921",
+          merchant_id: "mrc_ethos_9921",
           status: "active"
         }
       };
@@ -4537,7 +4789,7 @@
         img: imgPreset,
         methods: methodsStr
       });
-      window.open(`aurapay-checkout.html?${params.toString()}`, '_blank');
+      window.open(`ethospay-checkout.html?${params.toString()}`, '_blank');
     }
 
     // ================= THEME TOGGLE (LIGHT / DARK) =================
