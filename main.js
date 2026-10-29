@@ -31,7 +31,7 @@
         currency: 'GTQ',
         idempotency_key: 'idemp-22918-b', 
         phone: '4433-2211', 
-        type: 'Aura Virtual',
+        type: 'Banca en Línea',
         merchant: {
           name: 'TecnoGuate',
           subtext: 'Equipos y repuestos de computación',
@@ -46,7 +46,7 @@
         audit_number: '000104',
         reference_number: 'REF-5y62bc-409',
         payment_date: '2026-07-11 09:33',
-        payment_modality: 'Banca Virtual',
+        payment_modality: 'Banca en Línea',
         timeline: ['2026-07-11 09:30', '2026-07-11 09:31', '2026-07-11 09:33', '2026-07-11 09:35'] 
       },
       { 
@@ -58,7 +58,7 @@
         currency: 'GTQ',
         idempotency_key: 'idemp-11029-e', 
         phone: '3322-1100', 
-        type: 'Caja Rural',
+        type: 'Efectivo',
         merchant: {
           name: 'AgroInsumos El Sol',
           subtext: 'Distribución agroindustrial',
@@ -102,7 +102,7 @@
         currency: 'GTQ',
         idempotency_key: 'idemp-55910-y', 
         phone: '5522-8899', 
-        type: 'Aura Virtual',
+        type: 'Banca en Línea',
         merchant: {
           name: 'Café Tools',
           subtext: 'Herramientas y accesorios de barismo',
@@ -117,7 +117,7 @@
         audit_number: '000355',
         reference_number: 'REF-3w89ij-112',
         payment_date: '2026-07-10 11:15',
-        payment_modality: 'Banca Virtual',
+        payment_modality: 'Banca en Línea',
         delivery_status: 'En proceso de entrega',
         shipping: {
           required: true,
@@ -465,7 +465,7 @@
     });
 
     // Re-synchronize transactions from storage reactively (focus / storage event)
-    function refreshTransactionsFromStorage() {
+    function refreshTransactionsFromStorage(skipRender = false) {
       try {
         const stored = StorageManager.get('ethospay_transactions') || StorageManager.get('aurapay_transactions');
         if (stored && Array.isArray(stored) && stored.length > 0) {
@@ -482,7 +482,10 @@
             }
           });
           if (typeof calculateKPIs === 'function') calculateKPIs();
-          if (typeof renderTable === 'function') renderTable();
+          if (!skipRender) {
+            if (typeof calculateKPIs === 'function') calculateKPIs();
+            if (typeof renderTable === 'function') renderTable();
+          }
         }
       } catch(e) {
         console.error('Error refreshing transactions from storage:', e);
@@ -1236,6 +1239,47 @@
       document.getElementById('kpi-conversion-subtext').innerText = `${paidCount} de ${total} cobros pagados`;
       document.getElementById('conversion-progress-bar').style.width = `${rate}%`;
 
+      // 7. Update Analytics Cards (Conversión, Mix por Método, Ticket Promedio)
+      const convBadge = document.getElementById('analytics-conversion-badge');
+      const linksSent = document.getElementById('analytics-links-sent');
+      const linksPaid = document.getElementById('analytics-links-paid');
+      const linksPending = document.getElementById('analytics-links-pending');
+      const convBar = document.getElementById('analytics-conversion-bar');
+      if (convBadge) convBadge.textContent = `${rate}% Conversión`;
+      if (linksSent) linksSent.textContent = total;
+      if (linksPaid) linksPaid.textContent = paidCount;
+      if (linksPending) linksPending.textContent = data.filter(t => t.status === 'PENDING').length;
+      if (convBar) convBar.style.width = `${rate}%`;
+
+      // Mix por método
+      const cardMixPct = paidCount > 0 ? ((cardTrans.length / paidCount) * 100).toFixed(0) : '0';
+      const cashMixPct = paidCount > 0 ? ((cashTrans.length / paidCount) * 100).toFixed(0) : '0';
+      const bankTrans = paidTrans.filter(t => {
+        const raw = (t.payment_modality || t.type || '').toLowerCase();
+        return raw.includes('banca') || raw.includes('virtual') || raw.includes('transferencia');
+      });
+      const bankMixPct = paidCount > 0 ? ((bankTrans.length / paidCount) * 100).toFixed(0) : '0';
+
+      const mixCardVal = document.getElementById('analytics-mix-card-val');
+      const mixCardBar = document.getElementById('analytics-mix-card-bar');
+      const mixBankVal = document.getElementById('analytics-mix-bank-val');
+      const mixBankBar = document.getElementById('analytics-mix-bank-bar');
+      const mixCashVal = document.getElementById('analytics-mix-cash-val');
+      const mixCashBar = document.getElementById('analytics-mix-cash-bar');
+
+      if (mixCardVal) mixCardVal.textContent = `${cardMixPct}% · ${formatCurrency(cardTotal)}`;
+      if (mixCardBar) mixCardBar.style.width = `${cardMixPct}%`;
+      if (mixBankVal) mixBankVal.textContent = `${bankMixPct}% · ${formatCurrency(bankTrans.reduce((s,t) => s + getAmtInGTQ(t), 0))}`;
+      if (mixBankBar) mixBankBar.style.width = `${bankMixPct}%`;
+      if (mixCashVal) mixCashVal.textContent = `${cashMixPct}% · ${formatCurrency(cashTotal)}`;
+      if (mixCashBar) mixCashBar.style.width = `${cashMixPct}%`;
+
+      // Rendimiento financiero
+      const anAvgTicket = document.getElementById('analytics-avg-ticket');
+      const anAvgNet = document.getElementById('analytics-avg-net');
+      if (anAvgTicket) anAvgTicket.textContent = formatCurrency(avgTicket);
+      if (anAvgNet) anAvgNet.textContent = formatCurrency(avgTicket * (1 - 0.045 - 0.05));
+
       // Update global badges (always from full transaction set)
       const globalPending = transactions.filter(t => t.status === 'PENDING').length;
       const badge = document.getElementById('badge-pending-count');
@@ -1248,6 +1292,66 @@
       if (paidBadge) {
         if (globalPaid > 0) { paidBadge.innerText = globalPaid; paidBadge.classList.remove('hidden'); }
         else { paidBadge.classList.add('hidden'); }
+      }
+    }
+
+    // Unify naming and badge formatting between dashboard and checkout:
+    // "Tarjeta", "1-Clic", "Banca en Línea", "Billetera Móvil", "Efectivo"
+    function formatPaymentTypeBadge(tx) {
+      if (tx.status === 'PAID') {
+        const raw = (tx.payment_modality || tx.type || 'Tarjeta').toLowerCase();
+        let label = 'Tarjeta';
+        let style = 'bg-blue-50 text-blue-700 border-blue-200';
+
+        if (raw.includes('oneclick') || raw.includes('un clic') || raw.includes('1-clic')) {
+          label = '1-Clic';
+          style = 'bg-indigo-50 text-indigo-700 border-indigo-200';
+        } else if (raw.includes('cuotas')) {
+          label = tx.payment_modality ? tx.payment_modality.replace('Tarjeta - ', '') : 'Cuotas';
+          style = 'bg-blue-50 text-blue-700 border-blue-200';
+        } else if (raw.includes('virtual') || raw.includes('banca') || raw.includes('bi-linea') || raw.includes('bi en línea')) {
+          label = 'Banca en Línea';
+          style = 'bg-emerald-50 text-emerald-700 border-emerald-200';
+        } else if (raw.includes('cuik') || raw.includes('zigi') || raw.includes('billetera') || raw.includes('wallet')) {
+          label = 'Billetera Móvil';
+          style = 'bg-purple-50 text-purple-700 border-purple-200';
+        } else if (raw.includes('rural') || raw.includes('efectivo') || raw.includes('cash') || raw.includes('agente')) {
+          label = 'Efectivo';
+          style = 'bg-amber-50 text-amber-700 border-amber-200';
+        } else if (raw.includes('apple') || raw.includes('google')) {
+          label = 'Billetera Digital';
+          style = 'bg-gray-100 text-gray-800 border-gray-300';
+        }
+
+        return `<span class="px-2.5 py-0.5 rounded border text-[10.5px] font-semibold ${style}">${label}</span>`;
+      } else {
+        // Pending / Expired link: show compact count + tooltip instead of overflowing list
+        let methodsList = [];
+        if (tx.allowed_methods && Array.isArray(tx.allowed_methods) && tx.allowed_methods.length > 0) {
+          const nameMap = {
+            card: 'Tarjeta',
+            virtual: 'Banca en Línea',
+            cash: 'Efectivo',
+            cuik: 'Billetera Móvil',
+            wallet: 'Billeteras Digitales'
+          };
+          methodsList = tx.allowed_methods.map(m => nameMap[m] || m);
+        } else if (tx.type && tx.type.includes(',')) {
+          methodsList = tx.type.split(',').map(s => s.trim());
+        }
+
+        if (methodsList.length > 1) {
+          const tooltip = methodsList.join(' · ');
+          return `<span class="px-2 py-0.5 rounded border text-[10.5px] font-semibold bg-gray-50 text-gray-700 border-gray-200 cursor-help" title="${tooltip}">${methodsList.length} métodos ▾</span>`;
+        } else if (methodsList.length === 1) {
+          return `<span class="px-2 py-0.5 rounded border text-[10.5px] font-semibold bg-gray-50 text-gray-700 border-gray-200">${methodsList[0]}</span>`;
+        } else {
+          let singleType = tx.type || 'Multimétodo';
+          if (singleType === 'Aura Virtual') singleType = 'Banca en Línea';
+          if (singleType === 'Caja Rural') singleType = 'Efectivo';
+          if (singleType === 'Cuik') singleType = 'Billetera Móvil';
+          return `<span class="px-2.5 py-0.5 rounded border text-[10.5px] font-semibold bg-gray-50 text-gray-700 border-gray-200">${singleType}</span>`;
+        }
       }
     }
 
@@ -1307,21 +1411,23 @@
           badgeStyle = 'bg-gray-100 text-gray-400 border-gray-200 line-through';
         }
 
-        let typeStyle = '';
-        if (t.type === 'Conversacional') {
-          typeStyle = 'bg-slate-100 text-slate-700 border-slate-200/50';
-        } else if (t.type === 'Aura Virtual' || t.type.includes('Virtual') || t.type.includes('AuraPay')) {
-          typeStyle = 'bg-amber-50 text-aura-goldText border-amber-200/50';
-        } else {
-          typeStyle = 'bg-slate-100 text-slate-700 border-slate-200/50';
-        }
+        // Unified terminology and badge formatting
+        const typeBadgeHtml = formatPaymentTypeBadge(t);
 
         tr.innerHTML = `
-          <td class="px-6 py-4 font-semibold font-mono text-xs text-gray-900 whitespace-nowrap">${t.transaction_id}</td>
+          <td class="px-6 py-4 font-semibold font-mono text-xs text-gray-900 whitespace-nowrap">
+            <div class="flex items-center gap-1.5">
+              <span>${t.transaction_id}</span>
+              <button type="button" onclick="event.stopPropagation(); openLinkQrModal('${t.transaction_id}')" class="p-1 hover:bg-gray-100 rounded text-gray-400 hover:text-aura-primary transition-colors" title="Ver y descargar código QR de este link">
+                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M3.75 4.875c0-.621.504-1.125 1.125-1.125h4.5c.621 0 1.125.504 1.125 1.125v4.5c0 .621-.504 1.125-1.125 1.125h-4.5A1.125 1.125 0 013.75 9.375v-4.5zM3.75 14.625c0-.621.504-1.125 1.125-1.125h4.5c.621 0 1.125.504 1.125 1.125v4.5c0 .621-.504 1.125-1.125 1.125h-4.5a1.125 1.125 0 01-1.125-1.125v-4.5zM13.5 4.875c0-.621.504-1.125 1.125-1.125h4.5c.621 0 1.125.504 1.125 1.125v4.5c0 .621-.504 1.125-1.125 1.125h-4.5A1.125 1.125 0 0113.5 9.375v-4.5zM6.75 6.75h.008v.008H6.75V6.75zM6.75 16.5h.008v.008H6.75V16.5zM16.5 6.75h.008v.008H16.5V6.75zM13.5 13.5h.008v.008H13.5V13.5zM13.5 19.5h.008v.008H13.5V19.5zM19.5 13.5h.008v.008H19.5V13.5zM19.5 19.5h.008v.008H19.5V19.5zM16.5 16.5h.008v.008H16.5V16.5z" /></svg>
+              </button>
+            </div>
+          </td>
           <td class="px-6 py-4 text-xs text-gray-400 font-medium whitespace-nowrap">${t.date}</td>
           <td class="px-6 py-4 font-semibold text-gray-800 text-xs whitespace-nowrap">${t.client}</td>
           <td class="px-6 py-4 whitespace-nowrap">
-            <span class="px-2.5 py-0.5 rounded border text-[10px] font-semibold ${typeStyle}">${t.type}</span>
+            ${typeBadgeHtml}
+            ${t.is_recurring ? '<span class="ml-1 px-1.5 py-0.5 rounded border text-[9px] font-bold bg-blue-50 text-blue-700 border-blue-200 inline-flex items-center gap-0.5" title="Suscripción periódica con tarjeta de crédito">🔄 Recurrente</span>' : ''}
           </td>
           <td class="px-6 py-4 text-right font-semibold text-gray-900 text-xs whitespace-nowrap">${formatCurrency(t.amount, t.currency)}</td>
           <td class="px-6 py-4 text-center whitespace-nowrap">
@@ -1372,7 +1478,8 @@
 
       paidTxs.forEach(t => {
         const tr = document.createElement('tr');
-        tr.className = 'hover:bg-gray-50/70 transition-colors border-b border-gray-100';
+        tr.className = 'hover:bg-gray-50/70 transition-colors border-b border-gray-100 cursor-pointer';
+        tr.onclick = () => openDrawer(t);
 
         const auth = t.auth_number || 'N/A';
         const audit = t.audit_number || 'N/A';
@@ -1384,7 +1491,12 @@
           <td class="px-6 py-4 font-semibold font-mono text-xs text-gray-900 whitespace-nowrap">${audit}</td>
           <td class="px-6 py-4 text-xs font-mono text-gray-500 whitespace-nowrap">${ref}</td>
           <td class="px-6 py-4 whitespace-nowrap">
-            <button onclick="openDrawerFromReport('${t.transaction_id}')" class="text-xs text-aura-primary font-bold hover:underline font-mono focus:outline-none">${t.transaction_id}</button>
+            <div class="flex items-center gap-1.5">
+              <button type="button" onclick="event.stopPropagation(); openDrawerFromReport('${t.transaction_id}')" class="text-xs text-aura-primary font-bold hover:underline font-mono focus:outline-none">${t.transaction_id}</button>
+              <button type="button" onclick="event.stopPropagation(); openLinkQrModal('${t.transaction_id}')" class="p-1 hover:bg-gray-100 rounded text-gray-400 hover:text-aura-primary transition-colors cursor-pointer" title="Ver y compartir código QR de este pedido">
+                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M3.75 4.875c0-.621.504-1.125 1.125-1.125h4.5c.621 0 1.125.504 1.125 1.125v4.5c0 .621-.504 1.125-1.125 1.125h-4.5A1.125 1.125 0 013.75 9.375v-4.5zM3.75 14.625c0-.621.504-1.125 1.125-1.125h4.5c.621 0 1.125.504 1.125 1.125v4.5c0 .621-.504 1.125-1.125 1.125h-4.5a1.125 1.125 0 01-1.125-1.125v-4.5zM13.5 4.875c0-.621.504-1.125 1.125-1.125h4.5c.621 0 1.125.504 1.125 1.125v4.5c0 .621-.504 1.125-1.125 1.125h-4.5A1.125 1.125 0 0113.5 9.375v-4.5zM6.75 6.75h.008v.008H6.75V6.75zM6.75 16.5h.008v.008H6.75V16.5zM16.5 6.75h.008v.008H16.5V6.75zM13.5 13.5h.008v.008H13.5V13.5zM13.5 19.5h.008v.008H13.5V19.5zM19.5 13.5h.008v.008H19.5V13.5zM19.5 19.5h.008v.008H19.5V19.5zM16.5 16.5h.008v.008H16.5V16.5z"/></svg>
+              </button>
+            </div>
           </td>
           <td class="px-6 py-4 font-semibold text-gray-800 text-xs whitespace-nowrap">${t.client}</td>
           <td class="px-6 py-4 text-right font-semibold text-gray-900 text-xs whitespace-nowrap">${formatCurrency(t.amount, t.currency)}</td>
@@ -1571,16 +1683,29 @@
         const card = document.createElement('div');
         card.className = 'bg-white border border-gray-200 rounded-xl shadow-xs overflow-hidden flex flex-col justify-between transition-all hover:shadow-md';
 
-        // Image container
+        // Compact image container with initials fallback
         let imgHtml = '';
         if (p.image) {
           imgHtml = `<img src="${p.image}" class="w-full h-full object-cover" alt="${p.name}">`;
         } else {
+          const words = (p.name || 'P').trim().split(/\s+/);
+          const initials = (words[0][0] + (words[1] ? words[1][0] : (words[0][1] || ''))).toUpperCase();
+          const colors = [
+            'bg-indigo-600 text-white',
+            'bg-emerald-600 text-white',
+            'bg-amber-600 text-white',
+            'bg-sky-600 text-white',
+            'bg-rose-600 text-white',
+            'bg-slate-700 text-white'
+          ];
+          const colorIdx = (p.name || '').charCodeAt(0) % colors.length;
+          const avatarColor = colors[colorIdx];
+
           imgHtml = `
-            <div class="w-full h-full bg-gradient-to-br from-amber-50/50 to-aura-primary/5 flex items-center justify-center text-aura-primary">
-              <svg class="w-8 h-8 opacity-75" fill="none" stroke="currentColor" stroke-width="1.2" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" d="M20.25 7.5l-.625 10.632a2.25 2.25 0 01-2.247 2.118H6.622a2.25 2.25 0 01-2.247-2.118L3.75 7.5M10 11.25h4M3.375 7.5h17.25c.621 0 1.125-.504 1.125-1.125v-1.5c0-.621-.504-1.125-1.125-1.125H3.375c-.621 0-1.125.504-1.125 1.125v1.5c0 .621.504 1.125 1.125 1.125z" />
-              </svg>
+            <div class="w-full h-full bg-gray-50 flex items-center justify-center">
+              <div class="w-9 h-9 rounded-lg ${avatarColor} flex items-center justify-center text-xs font-extrabold shadow-2xs">
+                ${initials}
+              </div>
             </div>
           `;
         }
@@ -1588,7 +1713,13 @@
         let stockLabel = '';
         const isService = (p.item_type === 'servicio' || p.stock === null || p.stock === undefined);
         if (isService) {
-          stockLabel = '<span class="bg-blue-50 text-blue-700 text-[9.5px] px-2 py-0.5 rounded font-bold border border-blue-200" title="Servicio intangible · Sin envío">🛠️ Servicio</span>';
+          if (p.is_recurring) {
+            const freqNames = { monthly: 'Mensual', weekly: 'Semanal', biweekly: 'Quincenal', quarterly: 'Trimestral', semiannual: 'Semestral', annual: 'Anual' };
+            const fLabel = freqNames[p.recurring_frequency] || 'Mensual';
+            stockLabel = `<span class="bg-blue-50 text-blue-700 text-[9.5px] px-2 py-0.5 rounded font-bold border border-blue-200 flex items-center gap-1" title="Suscripción periódica con tarjeta de crédito">🔄 Recurrente (${fLabel})</span>`;
+          } else {
+            stockLabel = '<span class="bg-blue-50 text-blue-700 text-[9.5px] px-2 py-0.5 rounded font-bold border border-blue-200" title="Servicio intangible · Sin envío">🛠️ Servicio</span>';
+          }
         } else {
           const mainStock = p.stock > 0 ? `<span class="bg-amber-50 text-aura-goldText text-[9.5px] px-2 py-0.5 rounded font-bold border border-amber-200/50" title="Inventario disponible">${p.stock} en stock</span>` : `<span class="bg-slate-50 text-slate-550 text-[9.5px] px-2 py-0.5 rounded font-bold border border-slate-200">Agotado</span>`;
           const reservedStock = (p.reserved && p.reserved > 0) ? `<span class="bg-gray-100 text-gray-600 text-[9.5px] px-2 py-0.5 rounded font-bold border border-gray-200" title="Apartados en links pendientes">${p.reserved} apartados</span>` : '';
@@ -1600,21 +1731,21 @@
         const weightPill = (!isService && p.weight) ? `<span class="bg-amber-50 text-aura-goldText text-[9px] px-1.5 py-0.2 rounded font-medium border border-amber-200/50" title="Peso de envío: ${p.weight} lb">📦 ${p.weight} lb</span>` : '';
 
         card.innerHTML = `
-          <div class="h-32 w-full border-b border-gray-150 overflow-hidden relative bg-gray-50">
+          <div class="h-20 w-full border-b border-gray-150 overflow-hidden relative bg-gray-50">
             ${imgHtml}
-            <div class="absolute top-2.5 right-2.5">
+            <div class="absolute top-2 right-2">
               ${stockLabel}
             </div>
           </div>
-          <div class="p-4 flex-1 flex flex-col justify-between space-y-3">
-            <div class="space-y-1.5">
+          <div class="p-3.5 flex-1 flex flex-col justify-between space-y-2.5">
+            <div class="space-y-1">
               <div class="flex items-start justify-between gap-2">
-                <h3 class="font-bold text-xs text-gray-950 line-clamp-1 flex-1" title="${p.name}">${p.name}</h3>
+                <h3 class="font-bold text-xs text-gray-950 line-clamp-2 leading-snug flex-1" title="${p.name}">${p.name}</h3>
                 <div class="flex items-center gap-1 flex-shrink-0">${refPill}${weightPill}</div>
               </div>
-              <p class="text-[10.5px] text-gray-550 leading-relaxed line-clamp-2">${descText}</p>
+              <p class="text-[10px] text-gray-500 leading-relaxed line-clamp-2">${descText}</p>
             </div>
-            <div class="flex items-center justify-between pt-2.5 border-t border-gray-100">
+            <div class="flex items-center justify-between pt-2 border-t border-gray-100">
               <span class="text-xs font-extrabold text-gray-900">${formatCurrency(p.price)}</span>
               <div class="flex gap-1.5">
                 ${(currentUser && (currentUser.role === 'admin' || currentUser.role === 'operativo')) ? `
@@ -1805,6 +1936,13 @@
           updateCalculatedProductPrice();
           document.getElementById('product-desc').value = prod.description || '';
 
+          const prodRecurring = !!prod.is_recurring;
+          const recurringChk = document.getElementById('product-is-recurring');
+          if (recurringChk) recurringChk.checked = prodRecurring;
+          const recurringFreq = document.getElementById('product-recurring-frequency');
+          if (recurringFreq) recurringFreq.value = prod.recurring_frequency || 'monthly';
+          toggleProductModalRecurring(prodRecurring);
+
           if (prod.image) {
             currentProductImageBase64 = prod.image;
             if (prod.image.startsWith('http://') || prod.image.startsWith('https://')) {
@@ -1849,6 +1987,11 @@
         if (heightEl) heightEl.value = '';
         document.getElementById('product-base-amount').value = '';
         document.getElementById('product-desc').value = '';
+        const recurringChk = document.getElementById('product-is-recurring');
+        if (recurringChk) recurringChk.checked = false;
+        const recurringFreq = document.getElementById('product-recurring-frequency');
+        if (recurringFreq) recurringFreq.value = 'monthly';
+        toggleProductModalRecurring(false);
         updateCalculatedProductPrice();
       }
 
@@ -1956,6 +2099,8 @@
       const serviceHint = document.getElementById('product-service-hint');
       const dimensionsContainer = document.getElementById('product-dimensions-container');
 
+      const recurringContainer = document.getElementById('product-recurring-container');
+
       if (isService) {
         if (prodBtn) {
           prodBtn.className = 'py-1.5 px-2.5 rounded-md text-xs font-semibold border flex items-center justify-center gap-1.5 transition-all bg-gray-50 text-gray-600 border-gray-200 hover:bg-gray-100';
@@ -1966,6 +2111,7 @@
         if (stockContainer) stockContainer.classList.add('hidden');
         if (serviceHint) serviceHint.classList.remove('hidden');
         if (dimensionsContainer) dimensionsContainer.classList.add('hidden');
+        if (recurringContainer) recurringContainer.classList.remove('hidden');
         const stockInput = document.getElementById('product-stock');
         if (stockInput) stockInput.value = '';
       } else {
@@ -1978,15 +2124,32 @@
         if (stockContainer) stockContainer.classList.remove('hidden');
         if (serviceHint) serviceHint.classList.add('hidden');
         if (dimensionsContainer) dimensionsContainer.classList.remove('hidden');
+        if (recurringContainer) recurringContainer.classList.add('hidden');
+        const recurringChk = document.getElementById('product-is-recurring');
+        if (recurringChk && recurringChk.checked) {
+          recurringChk.checked = false;
+          toggleProductModalRecurring(false);
+        }
       }
     }
     window.setProductModalType = setProductModalType;
+
+    function toggleProductModalRecurring(checked) {
+      const freqRow = document.getElementById('product-recurring-frequency-row');
+      if (freqRow) {
+        if (checked) freqRow.classList.remove('hidden');
+        else freqRow.classList.add('hidden');
+      }
+    }
+    window.toggleProductModalRecurring = toggleProductModalRecurring;
 
     function handleSaveProduct(e) {
       e.preventDefault();
 
       const itemType = document.getElementById('product-item-type') ? document.getElementById('product-item-type').value : 'producto';
       const isService = (itemType === 'servicio');
+      const isRecurring = isService && !!document.getElementById('product-is-recurring')?.checked;
+      const recurringFrequency = isRecurring ? (document.getElementById('product-recurring-frequency')?.value || 'monthly') : null;
 
       const name = document.getElementById('product-name').value.trim();
       const ref = document.getElementById('product-ref').value.trim() || null;
@@ -2032,6 +2195,8 @@
             name,
             ref,
             item_type: itemType,
+            is_recurring: isRecurring,
+            recurring_frequency: recurringFrequency,
             stock,
             weight,
             dimensions,
@@ -2054,6 +2219,8 @@
           name,
           ref,
           item_type: itemType,
+          is_recurring: isRecurring,
+          recurring_frequency: recurringFrequency,
           stock,
           weight,
           dimensions,
@@ -2133,19 +2300,107 @@
 
       const prodBtn = document.getElementById('link-type-product-btn');
       const servBtn = document.getElementById('link-type-service-btn');
+      const recurringRow = document.getElementById('link-recurring-config-row');
 
       if (isService) {
         if (prodBtn) prodBtn.className = 'py-1.5 px-3 rounded-md text-xs font-semibold border flex items-center justify-center gap-1.5 transition-all bg-gray-50 text-gray-600 border-gray-200 hover:bg-gray-100';
         if (servBtn) servBtn.className = 'py-1.5 px-3 rounded-md text-xs font-semibold border flex items-center justify-center gap-1.5 transition-all bg-blue-600 text-white border-blue-600 shadow-xs';
+        if (recurringRow) recurringRow.classList.remove('hidden');
       } else {
         if (prodBtn) prodBtn.className = 'py-1.5 px-3 rounded-md text-xs font-semibold border flex items-center justify-center gap-1.5 transition-all bg-aura-primary text-white border-aura-primary shadow-xs';
         if (servBtn) servBtn.className = 'py-1.5 px-3 rounded-md text-xs font-semibold border flex items-center justify-center gap-1.5 transition-all bg-gray-50 text-gray-600 border-gray-200 hover:bg-gray-100';
+        if (recurringRow) recurringRow.classList.add('hidden');
+        // Desactivar cobro recurrente al volver a productos físicos
+        const chk = document.getElementById('link-is-recurring');
+        if (chk && chk.checked) {
+          toggleRecurringConfig(false);
+        }
       }
 
       updateShippingVisibilityForLinkType();
       populateLinkProductDropdown();
     }
     window.setLinkType = setLinkType;
+
+    function toggleRecurringConfig(checked) {
+      const options = document.getElementById('link-recurring-options');
+      const chk = document.getElementById('link-is-recurring');
+      if (chk) chk.checked = checked;
+      if (options) {
+        if (checked) {
+          options.classList.remove('hidden');
+        } else {
+          options.classList.add('hidden');
+        }
+      }
+
+      // Restricción crítica: ÚNICAMENTE pagos con tarjeta de crédito
+      const methodCard = document.getElementById('method-card');
+      const methodVirtual = document.getElementById('method-virtual');
+      const methodCash = document.getElementById('method-cash');
+      const methodCuik = document.getElementById('method-cuik');
+      const methodWallet = document.getElementById('method-wallet');
+      const installmentsSelect = document.getElementById('link-max-installments');
+      const installmentsContainer = document.getElementById('link-installments-container');
+
+      if (checked) {
+        // Tarjeta de crédito fija y obligatoria
+        if (methodCard) {
+          methodCard.checked = true;
+          methodCard.disabled = true;
+        }
+        // Deshabilitar y desmarcar todos los demás métodos
+        [methodVirtual, methodCash, methodCuik, methodWallet].forEach(el => {
+          if (el) {
+            el.checked = false;
+            el.disabled = true;
+            if (el.parentElement) {
+              el.parentElement.classList.add('opacity-40', 'cursor-not-allowed');
+              el.parentElement.title = 'Los pagos recurrentes únicamente admiten tarjeta de crédito';
+            }
+          }
+        });
+
+        // En cobros periódicos se cobra el monto neto por ciclo (no aplican cuotas sobre la mensualidad)
+        if (installmentsSelect) {
+          installmentsSelect.value = '1';
+          installmentsSelect.disabled = true;
+        }
+        if (installmentsContainer) {
+          installmentsContainer.classList.add('opacity-60');
+          const lbl = installmentsContainer.querySelector('label');
+          if (lbl) lbl.innerText = 'Cobro por Ciclo (1 Mes)';
+        }
+
+        showToast('Modo Recurrente', 'Suscripción configurada. Método exclusivo: Tarjeta de Crédito.', 'info');
+      } else {
+        if (methodCard) {
+          methodCard.disabled = false;
+        }
+        [methodVirtual, methodCash, methodCuik, methodWallet].forEach(el => {
+          if (el) {
+            el.disabled = false;
+            el.checked = true;
+            if (el.parentElement) {
+              el.parentElement.classList.remove('opacity-40', 'cursor-not-allowed');
+              el.parentElement.removeAttribute('title');
+            }
+          }
+        });
+
+        if (installmentsSelect) {
+          installmentsSelect.disabled = false;
+        }
+        if (installmentsContainer) {
+          installmentsContainer.classList.remove('opacity-60');
+          const lbl = installmentsContainer.querySelector('label');
+          if (lbl) lbl.innerText = 'Plazo Máximo';
+        }
+      }
+
+      updateCalculatedLinkPrice();
+    }
+    window.toggleRecurringConfig = toggleRecurringConfig;
 
     function updateShippingVisibilityForLinkType() {
       const shippingRow = document.getElementById('link-shipping-config-row');
@@ -2300,6 +2555,15 @@
       if (isService) {
         if (prodBtn) prodBtn.className = 'py-1.5 px-3 rounded-md text-xs font-semibold border flex items-center justify-center gap-1.5 transition-all bg-gray-50 text-gray-600 border-gray-200 hover:bg-gray-100';
         if (servBtn) servBtn.className = 'py-1.5 px-3 rounded-md text-xs font-semibold border flex items-center justify-center gap-1.5 transition-all bg-blue-600 text-white border-blue-600 shadow-xs';
+        const recurringRow = document.getElementById('link-recurring-config-row');
+        if (recurringRow) recurringRow.classList.remove('hidden');
+        if (prod.is_recurring) {
+          toggleRecurringConfig(true);
+          const freqSelect = document.getElementById('link-recurring-frequency');
+          if (freqSelect && prod.recurring_frequency) {
+            freqSelect.value = prod.recurring_frequency;
+          }
+        }
       } else {
         if (prodBtn) prodBtn.className = 'py-1.5 px-3 rounded-md text-xs font-semibold border flex items-center justify-center gap-1.5 transition-all bg-aura-primary text-white border-aura-primary shadow-xs';
         if (servBtn) servBtn.className = 'py-1.5 px-3 rounded-md text-xs font-semibold border flex items-center justify-center gap-1.5 transition-all bg-gray-50 text-gray-600 border-gray-200 hover:bg-gray-100';
@@ -2996,6 +3260,16 @@
         if (detailsEl) detailsEl.removeAttribute('open');
       } catch(e){}
 
+      if (closeCreateModalTimer) {
+        clearTimeout(closeCreateModalTimer);
+        closeCreateModalTimer = null;
+      }
+      // Ensure form view is visible and success view hidden on every open
+      const formView = document.getElementById('create-modal-form-view');
+      const successView = document.getElementById('create-modal-success-view');
+      if (formView) formView.classList.remove('hidden');
+      if (successView) successView.classList.add('hidden');
+
       const modal = document.getElementById('modal-backdrop');
       const content = document.getElementById('create-modal-content');
       modal.classList.remove('hidden');
@@ -3007,6 +3281,7 @@
       }, 10);
     }
 
+    let closeCreateModalTimer = null;
     function closeCreateModal() {
       const modal = document.getElementById('modal-backdrop');
       const content = document.getElementById('create-modal-content');
@@ -3015,16 +3290,19 @@
       modal.classList.add('opacity-0');
       content.classList.remove('scale-100');
       content.classList.add('scale-95');
-      setTimeout(() => {
+
+      if (closeCreateModalTimer) clearTimeout(closeCreateModalTimer);
+      closeCreateModalTimer = setTimeout(() => {
         modal.classList.add('hidden');
-        document.getElementById('create-link-form').reset();
+        document.getElementById('create-link-form')?.reset();
         clearLinkProductSelection();
         
         // Reset modal view back to form for next open
-        document.getElementById('create-modal-form-view').classList.remove('hidden');
-        document.getElementById('create-modal-success-view').classList.add('hidden');
+        document.getElementById('create-modal-form-view')?.classList.remove('hidden');
+        document.getElementById('create-modal-success-view')?.classList.add('hidden');
         toggleShippingConfig(false);
-      }, 200);
+        closeCreateModalTimer = null;
+      }, 150);
     }
 
     function toggleShippingConfig(checked) {
@@ -3156,13 +3434,23 @@
         populateLinkProductDropdown();
       }
       
+      // Detect recurring subscription configuration (ONLY for services)
+      const isRecurring = isServiceLink && !!document.getElementById('link-is-recurring')?.checked;
+      const recurringFrequency = isRecurring ? (document.getElementById('link-recurring-frequency')?.value || 'monthly') : null;
+      const recurringCycles = isRecurring ? parseInt(document.getElementById('link-recurring-cycles')?.value || '0', 10) : 0;
+
       // Read selected payment methods
-      const allowedMethods = [];
-      if (document.getElementById('method-card').checked) allowedMethods.push('card');
-      if (document.getElementById('method-virtual').checked) allowedMethods.push('virtual');
-      if (document.getElementById('method-cash').checked) allowedMethods.push('cash');
-      if (document.getElementById('method-cuik').checked) allowedMethods.push('cuik');
-      if (document.getElementById('method-wallet').checked) allowedMethods.push('wallet');
+      let allowedMethods = [];
+      if (isRecurring) {
+        // REGLA CRÍTICA ESTRICTA: Pagos recurrentes ÚNICAMENTE a través de pagos con tarjeta de crédito
+        allowedMethods = ['card'];
+      } else {
+        if (document.getElementById('method-card').checked) allowedMethods.push('card');
+        if (document.getElementById('method-virtual').checked) allowedMethods.push('virtual');
+        if (document.getElementById('method-cash').checked) allowedMethods.push('cash');
+        if (document.getElementById('method-cuik').checked) allowedMethods.push('cuik');
+        if (document.getElementById('method-wallet').checked) allowedMethods.push('wallet');
+      }
       
       // Fallback to card if none selected
       if (allowedMethods.length === 0) {
@@ -3171,7 +3459,7 @@
       }
       
       const methodLabels = {
-        card: 'Tarjeta',
+        card: isRecurring ? 'Tarjeta de Crédito (Cobro Recurrente)' : 'Tarjeta',
         virtual: 'Pago con banca',
         cash: 'Pagos en efectivo',
         cuik: 'Billetera electrónica',
@@ -3195,7 +3483,7 @@
         client: client,
         status: 'PENDING',
         base_amount: amount,
-        max_installments: maxInstallments,
+        max_installments: isRecurring ? 1 : maxInstallments,
         fee_percentage_applied: feePercentageApplied,
         calculated_list_price: calculatedListPrice,
         amount: calculatedListPrice,
@@ -3203,6 +3491,10 @@
         idempotency_key: generateIdempotencyKey(),
         phone: phone,
         type: typeDisplay,
+        is_recurring: isRecurring,
+        recurring_frequency: recurringFrequency,
+        recurring_cycles: recurringCycles,
+        subscription_status: isRecurring ? 'PENDING' : null,
         merchant: {
           name: merchantName,
           subtext: subtext,
@@ -3270,6 +3562,13 @@
 
       if (isServiceLink) {
         queryParams.set('is_service', '1');
+      }
+
+      if (isRecurring) {
+        queryParams.set('recurring', '1');
+        queryParams.set('frequency', recurringFrequency);
+        queryParams.set('cycles', recurringCycles.toString());
+        queryParams.set('methods', 'card');
       }
 
       if (selectedProductsForLink && selectedProductsForLink.length > 0) {
@@ -3408,9 +3707,17 @@
 
     // ================= DRAWER ACTIONS =================
 
+    let drawerCloseTimeoutId = null;
+
     function openDrawer(transaction) {
-      // Refresh latest transactions state from storage to reflect recent payments immediately
-      refreshTransactionsFromStorage();
+      if (drawerCloseTimeoutId) {
+        clearTimeout(drawerCloseTimeoutId);
+        drawerCloseTimeoutId = null;
+      }
+      if (!transaction) return;
+
+      // Refresh latest transactions state from storage without re-rendering table DOM
+      refreshTransactionsFromStorage(true);
       const txnId = (typeof transaction === 'object' && transaction) ? transaction.transaction_id : transaction;
       const fresh = transactions.find(t => t.transaction_id === txnId);
       if (fresh) transaction = fresh;
@@ -3418,7 +3725,24 @@
 
       const isPaid = (transaction.status === 'PAID' || transaction.status === 'COMPLETED' || transaction.status === 'APROBADA');
 
-      document.getElementById('drawer-title').innerText = transaction.transaction_id;
+      const titleEl = document.getElementById('drawer-title');
+      if (titleEl) titleEl.innerText = transaction.transaction_id || '-';
+
+      // Populate Order QR code & sharing section in drawer
+      const drawerQrImg = document.getElementById('drawer-qr-img');
+      const drawerQrAmount = document.getElementById('drawer-qr-amount');
+      const drawerQrId = document.getElementById('drawer-qr-id');
+      const txOrderUrl = getCheckoutUrlForTx(transaction);
+      
+      if (drawerQrImg) {
+        setQrImageWithFallback(drawerQrImg, txOrderUrl);
+      }
+      if (drawerQrAmount) {
+        drawerQrAmount.innerText = formatCurrency(transaction.amount, transaction.currency || 'GTQ');
+      }
+      if (drawerQrId) {
+        drawerQrId.innerText = transaction.transaction_id || '-';
+      }
 
       // Update Drawer Header Payment Status Badge
       const paymentBadge = document.getElementById('drawer-payment-badge');
@@ -3463,10 +3787,11 @@
           freeBtnFooter.classList.add('hidden');
         }
       }
-      document.getElementById('drawer-subtitle').innerText = `Establecimiento: ${transaction.merchant.name}`;
-      document.getElementById('detail-client').innerText = transaction.client;
-      document.getElementById('detail-phone').innerText = transaction.phone;
-      document.getElementById('detail-desc').innerText = transaction.product.title;
+      const mName = (transaction.merchant && transaction.merchant.name) ? transaction.merchant.name : 'Café Don Arturo, S.A.';
+      document.getElementById('drawer-subtitle').innerText = `Establecimiento: ${mName}`;
+      document.getElementById('detail-client').innerText = transaction.client || 'Consumidor';
+      document.getElementById('detail-phone').innerText = transaction.phone || 'N/A';
+      document.getElementById('detail-desc').innerText = (transaction.product && transaction.product.title) ? transaction.product.title : (transaction.description || 'Cobro de Comercio');
       
       const detailImgContainer = document.getElementById('detail-product-img-container');
       if (detailImgContainer) {
@@ -3479,7 +3804,7 @@
         }
       }
 
-      document.getElementById('detail-merchant').innerText = transaction.merchant.name;
+      document.getElementById('detail-merchant').innerText = (transaction.merchant && transaction.merchant.name) ? transaction.merchant.name : 'Café Don Arturo, S.A.';
       document.getElementById('detail-currency').innerText = transaction.currency;
       document.getElementById('detail-amount').innerText = formatCurrency(transaction.amount);
       document.getElementById('detail-idempotency').innerText = transaction.idempotency_key;
@@ -3569,6 +3894,107 @@
         tokenEl.innerText = 'No se ha registrado tarjeta/transferencia para el pago';
       }
 
+      // Populate recurring subscription details
+      const subCard = document.getElementById('detail-subscription-card');
+      if (subCard) {
+        if (transaction.is_recurring) {
+          subCard.classList.remove('hidden');
+          const freqNames = { monthly: 'Mensual (Cada mes)', weekly: 'Semanal (Cada semana)', biweekly: 'Quincenal (Cada 15 días)', quarterly: 'Trimestral (Cada 3 meses)', semiannual: 'Semestral (Cada 6 meses)', annual: 'Anual (Cada año)' };
+          const freqText = freqNames[transaction.recurring_frequency] || 'Mensual';
+          const freqEl = document.getElementById('detail-sub-frequency');
+          if (freqEl) freqEl.innerText = freqText;
+
+          const statusBadge = document.getElementById('detail-sub-status-badge');
+          const statusText = document.getElementById('detail-sub-status-text');
+          const btnCancel = document.getElementById('btn-cancel-subscription');
+
+          const subStatus = transaction.subscription_status || (isPaid ? 'ACTIVE' : 'PENDING');
+          if (subStatus === 'CANCELLED') {
+            if (statusBadge) {
+              statusBadge.className = 'inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold border bg-red-50 text-red-800 border-red-200';
+            }
+            if (statusText) statusText.innerText = 'Cancelada';
+            if (btnCancel) {
+              btnCancel.disabled = true;
+              btnCancel.className = 'text-xs font-semibold text-gray-400 cursor-not-allowed';
+              btnCancel.innerText = 'Suscripción Cancelada';
+            }
+          } else if (subStatus === 'ACTIVE' || isPaid) {
+            if (statusBadge) {
+              statusBadge.className = 'inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold border bg-emerald-50 text-emerald-800 border-emerald-200';
+            }
+            if (statusText) statusText.innerText = 'Activa';
+            if (btnCancel) {
+              btnCancel.disabled = false;
+              btnCancel.className = 'text-xs font-semibold text-red-650 hover:text-red-800 hover:underline focus:outline-none cursor-pointer';
+              btnCancel.innerText = 'Cancelar Suscripción';
+            }
+          } else {
+            if (statusBadge) {
+              statusBadge.className = 'inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold border bg-amber-50 text-amber-800 border-amber-200';
+            }
+            if (statusText) statusText.innerText = 'Pendiente Primer Cobro';
+            if (btnCancel) {
+              btnCancel.disabled = true;
+              btnCancel.className = 'text-xs font-semibold text-gray-400 cursor-not-allowed';
+              btnCancel.innerText = 'Pendiente de Activar';
+            }
+          }
+
+          // Next billing date
+          const nextDateEl = document.getElementById('detail-sub-next-date');
+          if (nextDateEl) {
+            if (subStatus === 'CANCELLED') {
+              nextDateEl.innerText = 'Ninguno (Suscripción Cancelada)';
+              nextDateEl.className = 'font-semibold text-gray-400';
+            } else if (transaction.next_billing_date) {
+              nextDateEl.innerText = transaction.next_billing_date;
+              nextDateEl.className = 'font-semibold text-blue-900';
+            } else if (isPaid) {
+              const d = new Date();
+              d.setMonth(d.getMonth() + 1);
+              nextDateEl.innerText = formatDate(d);
+              nextDateEl.className = 'font-semibold text-blue-900';
+            } else {
+              nextDateEl.innerText = 'Programado tras el 1er pago exitoso';
+              nextDateEl.className = 'font-semibold text-gray-500';
+            }
+          }
+
+          // Tokenized card
+          const cardEl = document.getElementById('detail-sub-card');
+          if (cardEl) {
+            if (transaction.card_last4) {
+              cardEl.innerText = `${transaction.card_brand || 'Tarjeta'} •••• ${transaction.card_last4}`;
+            } else if (isPaid) {
+              cardEl.innerText = 'Visa •••• 4242 (Token Activo)';
+            } else {
+              cardEl.innerText = 'Se registrará en el checkout';
+            }
+          }
+        } else {
+          subCard.classList.add('hidden');
+        }
+      }
+
+      // Populate Bank Authorization & Settlement Section
+      const authSection = document.getElementById('detail-bank-auth-section');
+      const authNumEl = document.getElementById('detail-auth-number');
+      const auditNumEl = document.getElementById('detail-audit-number');
+      const refNumEl = document.getElementById('detail-reference-number');
+      const payDateEl = document.getElementById('detail-payment-date');
+      if (authSection) {
+        if (isPaid && (transaction.auth_number || transaction.reference_number || transaction.payment_date)) {
+          authSection.classList.remove('hidden');
+          if (authNumEl) authNumEl.innerText = transaction.auth_number || 'AUT-161344';
+          if (auditNumEl) auditNumEl.innerText = transaction.audit_number || '000104';
+          if (refNumEl) refNumEl.innerText = transaction.reference_number || `REF-${transaction.transaction_id || 'TX'}-409`;
+          if (payDateEl) payDateEl.innerText = transaction.payment_date || transaction.date || 'Reciente';
+        } else {
+          authSection.classList.add('hidden');
+        }
+      }
+
       updateTimelineUI(transaction);
 
       // Render product itemized list inside the drawer if there are products
@@ -3616,16 +4042,42 @@
     function closeDrawer() {
       const backdrop = document.getElementById('drawer-backdrop');
       const container = document.getElementById('drawer-container');
+      if (!backdrop || !container) return;
       
       backdrop.classList.remove('opacity-100');
       backdrop.classList.add('opacity-0');
       container.classList.remove('translate-x-0');
       container.classList.add('translate-x-full');
-      setTimeout(() => {
+      
+      if (drawerCloseTimeoutId) clearTimeout(drawerCloseTimeoutId);
+      drawerCloseTimeoutId = setTimeout(() => {
         backdrop.classList.add('hidden');
         selectedTransaction = null;
+        drawerCloseTimeoutId = null;
       }, 300);
     }
+
+    function cancelSubscriptionFromDrawer() {
+      if (!selectedTransaction || !selectedTransaction.is_recurring) return;
+      showCustomConfirm(
+        'Cancelar Suscripción Recurrente',
+        `¿Deseas dar de baja la suscripción de "${selectedTransaction.client}"? Ya no se procesarán cobros automáticos periódicos a su tarjeta de crédito.`,
+        () => {
+          selectedTransaction.subscription_status = 'CANCELLED';
+          try {
+            localStorage.setItem('ethospay_transactions', JSON.stringify(transactions));
+            localStorage.setItem('aurapay_transactions', JSON.stringify(transactions));
+          } catch (e) {
+            console.error(e);
+          }
+          showToast('Suscripción Cancelada', 'Se detuvieron los cobros periódicos para este cliente.', 'warning');
+          addSystemLog('Suscripción Cancelada', 'seguridad', `Suscripción de ${selectedTransaction.client} (${selectedTransaction.transaction_id}) fue cancelada por el comercio.`);
+          openDrawer(selectedTransaction);
+          renderTable();
+        }
+      );
+    }
+    window.cancelSubscriptionFromDrawer = cancelSubscriptionFromDrawer;
 
     // Helper functions for Package Delivery Status
     function getDeliveryStatus(transaction) {
@@ -3756,7 +4208,8 @@
         nodes[i].node.className = 'absolute -left-[24.5px] top-1 w-2 h-2 rounded-full border-2 border-white bg-gray-300';
       }
 
-      nodes[0].time.innerText = t.timeline[0] || t.date;
+      const tl = (t && Array.isArray(t.timeline)) ? t.timeline : [(t && t.date) || ''];
+      if (nodes[0].time) nodes[0].time.innerText = tl[0] || (t && t.date) || '';
 
       if (t.status === 'PAID') {
         nodes[1].node.className = 'absolute -left-[24.5px] top-1 w-2 h-2 rounded-full border-2 border-white bg-aura-emerald ring-1 ring-aura-emerald';
@@ -5020,13 +5473,13 @@
     function switchTab(viewName) {
       try {
         const allowedViews = {
-          admin: ['dashboard', 'links', 'transacciones', 'productos', 'facturacion', 'informacion', 'usuarios', 'logs', 'ajustes'],
-          cajero: ['dashboard', 'links', 'transacciones', 'productos', 'facturacion'],
-          operativo: ['dashboard', 'links', 'transacciones', 'productos', 'facturacion']
+          admin: ['dashboard', 'links', 'transacciones', 'liquidaciones', 'productos', 'facturacion', 'informacion', 'usuarios', 'logs', 'ajustes'],
+          cajero: ['dashboard', 'links', 'transacciones', 'liquidaciones', 'productos', 'facturacion'],
+          operativo: ['dashboard', 'links', 'transacciones', 'liquidaciones', 'productos', 'facturacion']
         };
 
         const userRole = currentUser ? currentUser.role : 'cajero';
-        const allowed = allowedViews[userRole] || ['dashboard', 'links', 'transacciones', 'productos', 'facturacion'];
+        const allowed = allowedViews[userRole] || ['dashboard', 'links', 'transacciones', 'liquidaciones', 'productos', 'facturacion'];
         if (!allowed.includes(viewName)) {
           showToast('Acceso Restringido', 'Tu rol no tiene acceso a esta sección.', 'warning');
           return;
@@ -5035,6 +5488,7 @@
         const dashboardMenu = document.getElementById('menu-dashboard');
         const linksMenu = document.getElementById('menu-links');
         const transMenu = document.getElementById('menu-transacciones');
+        const liquidacionesMenu = document.getElementById('menu-liquidaciones');
         const usersMenu = document.getElementById('menu-usuarios');
         const logsMenu = document.getElementById('menu-logs');
         const infoMenu = document.getElementById('menu-informacion');
@@ -5042,7 +5496,7 @@
         const facturacionMenu = document.getElementById('menu-facturacion');
         const ajustMenu = document.getElementById('menu-ajustes');
         
-        const allMenus = [dashboardMenu, linksMenu, transMenu, usersMenu, logsMenu, infoMenu, prodMenu, facturacionMenu, ajustMenu];
+        const allMenus = [dashboardMenu, linksMenu, transMenu, liquidacionesMenu, usersMenu, logsMenu, infoMenu, prodMenu, facturacionMenu, ajustMenu];
         const inactiveClass = 'flex items-center gap-3 px-3 py-2 text-sm font-medium rounded-md transition-colors text-gray-500 hover:text-gray-900 hover:bg-gray-50';
         const inactiveBadgeClass = 'flex items-center justify-between px-3 py-2 text-sm font-medium rounded-md transition-colors text-gray-500 hover:text-gray-900 hover:bg-gray-50';
         const activeClass = 'flex items-center gap-3 px-3 py-2 text-sm font-semibold rounded-md transition-colors text-aura-goldText bg-amber-50';
@@ -5062,6 +5516,7 @@
         const tableContainer = document.getElementById('table-container');
         const kpis = document.getElementById('kpi-container');
         const transView = document.getElementById('transacciones-view');
+        const liquidacionesView = document.getElementById('liquidaciones-view');
         const usuariosView = document.getElementById('usuarios-view');
         const logsView = document.getElementById('logs-view');
         const productosView = document.getElementById('productos-view');
@@ -5074,6 +5529,7 @@
         // Hide all content containers first
         if (dashboardView) dashboardView.classList.add('hidden');
         if (transView) transView.classList.add('hidden');
+        if (liquidacionesView) liquidacionesView.classList.add('hidden');
         if (usuariosView) usuariosView.classList.add('hidden');
         if (logsView) logsView.classList.add('hidden');
         if (productosView) productosView.classList.add('hidden');
@@ -5108,6 +5564,11 @@
           if (transView) transView.classList.remove('hidden');
           if (topbarCreateBtn) topbarCreateBtn.classList.add('hidden');
           renderTransactionsReport();
+        } else if (viewName === 'liquidaciones') {
+          activateMenu(liquidacionesMenu);
+          if (liquidacionesView) liquidacionesView.classList.remove('hidden');
+          if (topbarCreateBtn) topbarCreateBtn.classList.add('hidden');
+          renderLiquidaciones();
         } else if (viewName === 'usuarios') {
           activateMenu(usersMenu);
           if (usuariosView) usuariosView.classList.remove('hidden');
@@ -5146,6 +5607,410 @@
       }
     }
 
+    // ================= LIQUIDACIONES LOGIC =================
+    function renderLiquidaciones() {
+      const paidTrans = transactions.filter(t => t.status === 'PAID');
+      const totalGross = paidTrans.reduce((sum, t) => sum + (t.currency === 'USD' ? t.amount * exchange_rate_usd_to_gtq : t.amount), 0);
+      const totalFee = totalGross * 0.045; // 4.5% tarifa base
+      const totalSat = totalGross * 0.05;  // 5% retención SAT Pequeño Contribuyente
+      const totalNet = totalGross - totalFee - totalSat;
+
+      const grossEl = document.getElementById('liq-total-gross');
+      const feeEl = document.getElementById('liq-total-fee');
+      const satEl = document.getElementById('liq-total-sat');
+      const netEl = document.getElementById('liq-total-net');
+      if (grossEl) grossEl.textContent = formatCurrency(totalGross);
+      if (feeEl) feeEl.textContent = `- ${formatCurrency(totalFee)}`;
+      if (satEl) satEl.textContent = `- ${formatCurrency(totalSat)}`;
+      if (netEl) netEl.textContent = formatCurrency(totalNet);
+
+      const tbody = document.getElementById('liquidaciones-table-body');
+      if (!tbody) return;
+      tbody.innerHTML = '';
+
+      const batches = [
+        {
+          id: 'LIQ-2026-W42',
+          cutoff: '2026-10-25',
+          gross: totalGross > 0 ? totalGross : 1845.00,
+          feeRate: 0.045,
+          satRate: 0.05,
+          depositDate: '2026-10-28',
+          status: 'SCHEDULED'
+        },
+        {
+          id: 'LIQ-2026-W41',
+          cutoff: '2026-10-18',
+          gross: 2450.00,
+          feeRate: 0.045,
+          satRate: 0.05,
+          depositDate: '2026-10-21',
+          status: 'DEPOSITED'
+        },
+        {
+          id: 'LIQ-2026-W40',
+          cutoff: '2026-10-11',
+          gross: 3120.00,
+          feeRate: 0.045,
+          satRate: 0.05,
+          depositDate: '2026-10-14',
+          status: 'DEPOSITED'
+        }
+      ];
+
+      batches.forEach(b => {
+        const fee = b.gross * b.feeRate;
+        const sat = b.gross * b.satRate;
+        const net = b.gross - fee - sat;
+
+        const statusBadge = b.status === 'DEPOSITED'
+          ? '<span class="bg-emerald-50 text-emerald-700 font-bold px-2 py-0.5 rounded border border-emerald-200">Depositado ACH</span>'
+          : '<span class="bg-amber-50 text-amber-800 font-bold px-2 py-0.5 rounded border border-amber-200">Programado Miércoles</span>';
+
+        const tr = document.createElement('tr');
+        tr.className = 'hover:bg-gray-50/70 transition-colors border-b border-gray-100';
+        tr.innerHTML = `
+          <td class="px-6 py-3.5 font-bold text-gray-900">${b.id}</td>
+          <td class="px-6 py-3.5 text-gray-500">${b.cutoff}</td>
+          <td class="px-6 py-3.5 text-right font-semibold text-gray-900">${formatCurrency(b.gross)}</td>
+          <td class="px-6 py-3.5 text-right text-amber-700">- ${formatCurrency(fee)}</td>
+          <td class="px-6 py-3.5 text-right text-blue-700">- ${formatCurrency(sat)}</td>
+          <td class="px-6 py-3.5 text-right font-extrabold text-emerald-700">${formatCurrency(net)}</td>
+          <td class="px-6 py-3.5 font-semibold text-gray-700">${b.depositDate}</td>
+          <td class="px-6 py-3.5 text-center">${statusBadge}</td>
+        `;
+        tbody.appendChild(tr);
+      });
+    }
+    window.renderLiquidaciones = renderLiquidaciones;
+
+    function exportLiquidacionesExcel() {
+      let csvContent = 'data:text/csv;charset=utf-8,';
+      csvContent += 'ESTADO DE LIQUIDACIONES Y DEPOSITOS - ETHOSPAY\n';
+      csvContent += 'Comercio: Café Don Arturo, S.A. - NIT: 8492019-3\n';
+      csvContent += 'Cuenta Destino: Banco Industrial Monetaria No. ****8912\n';
+      csvContent += 'Fecha Emision: ' + new Date().toLocaleString() + '\n\n';
+      csvContent += 'ID Liquidacion,Fecha Corte,Bruto (Q),Comision 4.5% (Q),Retencion SAT 5% (Q),Neto Depositado (Q),Fecha Deposito,Estado\n';
+      csvContent += '"LIQ-2026-W42","2026-10-25",1845.00,83.03,92.25,1669.72,"2026-10-28","Programado"\n';
+      csvContent += '"LIQ-2026-W41","2026-10-18",2450.00,110.25,122.50,2217.25,"2026-10-21","Depositado ACH"\n';
+      csvContent += '"LIQ-2026-W40","2026-10-11",3120.00,140.40,156.00,2823.60,"2026-10-14","Depositado ACH"\n';
+
+      const encodedUri = encodeURI(csvContent);
+      const link = document.createElement('a');
+      link.setAttribute('href', encodedUri);
+      link.setAttribute('download', `Liquidaciones_EthosPay_${new Date().toISOString().substring(0,10)}.csv`);
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      showToast('Liquidaciones Exportadas', 'Se descargó el archivo CSV de liquidaciones y transferencias.', 'success');
+    }
+    window.exportLiquidacionesExcel = exportLiquidacionesExcel;
+
+        // ================= QR CODE & CHECKOUT LINK HELPERS =================
+    let currentQrTransaction = null;
+
+    function getCheckoutUrlForTx(txOrId) {
+      if (!txOrId) return window.location.href;
+      const tx = (typeof txOrId === 'object' && txOrId) ? txOrId : (transactions.find(t => t.transaction_id === txOrId) || { transaction_id: txOrId });
+      const baseUrl = window.location.href.split('index.html')[0];
+      const params = new URLSearchParams();
+      params.set('id', tx.transaction_id || '');
+      if (tx.amount) params.set('amount', tx.amount);
+      if (tx.client) params.set('client', tx.client);
+      if (tx.product && tx.product.title) params.set('concept', tx.product.title);
+      if (tx.merchant && tx.merchant.name) params.set('merchant', tx.merchant.name);
+      if (tx.phone) params.set('phone', tx.phone);
+      return `${baseUrl}ethospay-checkout.html?${params.toString()}`;
+    }
+    window.getCheckoutUrlForTx = getCheckoutUrlForTx;
+
+    async function copyQrImageToClipboard(targetImgIdOrEl, btnEl) {
+      try {
+        let img = null;
+        if (typeof targetImgIdOrEl === 'string') {
+          img = document.getElementById(targetImgIdOrEl);
+        } else if (targetImgIdOrEl instanceof HTMLElement) {
+          img = targetImgIdOrEl;
+        }
+        if (!img) {
+          img = document.getElementById('drawer-qr-img') || document.getElementById('qr-modal-img');
+        }
+        if (!img || !img.src) {
+          showToast('Error', 'No se ha generado la imagen del QR.', 'warning');
+          return;
+        }
+
+        const canvas = document.createElement('canvas');
+        const size = 420;
+        canvas.width = size;
+        canvas.height = size;
+        const ctx = canvas.getContext('2d');
+
+        ctx.fillStyle = '#ffffff';
+        ctx.fillRect(0, 0, size, size);
+
+        const qrImg = new Image();
+        qrImg.crossOrigin = 'anonymous';
+
+        const doCopy = () => {
+          ctx.drawImage(qrImg, 20, 20, size - 40, size - 40);
+          canvas.toBlob(async (blob) => {
+            if (!blob) {
+              fallbackCopyLinkAndDownload();
+              return;
+            }
+            try {
+              if (navigator.clipboard && window.ClipboardItem) {
+                const item = new ClipboardItem({ 'image/png': blob });
+                await navigator.clipboard.write([item]);
+                if (btnEl) {
+                  const origHtml = btnEl.innerHTML;
+                  btnEl.innerHTML = `<span class="text-emerald-300 font-bold">✓ ¡Imagen QR Copiada!</span>`;
+                  setTimeout(() => { btnEl.innerHTML = origHtml; }, 2200);
+                }
+                showToast('¡Imagen QR Copiada!', 'La imagen del QR está en tu portapapeles. Pégala directamente (Ctrl+V) en WhatsApp, correo o redes sociales.', 'success');
+              } else {
+                fallbackCopyLinkAndDownload();
+              }
+            } catch (err) {
+              console.warn('Direct image clipboard write failed:', err);
+              fallbackCopyLinkAndDownload();
+            }
+          }, 'image/png');
+        };
+
+        function fallbackCopyLinkAndDownload() {
+          const url = (selectedTransaction ? getCheckoutUrlForTx(selectedTransaction) : currentQrUrl) || window.location.href;
+          if (navigator.clipboard && navigator.clipboard.writeText) {
+            navigator.clipboard.writeText(url);
+          }
+          downloadDrawerQrImage();
+          if (btnEl) {
+            const origHtml = btnEl.innerHTML;
+            btnEl.innerHTML = `<span class="text-amber-300 font-bold">✓ QR Descargado</span>`;
+            setTimeout(() => { btnEl.innerHTML = origHtml; }, 2200);
+          }
+          showToast('QR Descargado & Enlace Copiado', 'Tu navegador no admite copiado directo de imágenes; se descargó el archivo PNG y se copió el link para compartir.', 'info');
+        }
+
+        qrImg.onload = doCopy;
+        qrImg.onerror = () => {
+          fallbackCopyLinkAndDownload();
+        };
+        qrImg.src = img.src;
+      } catch (e) {
+        console.error('Error copying QR image:', e);
+        showToast('Aviso', 'Se descargó el QR para compartirlo.', 'info');
+      }
+    }
+    window.copyQrImageToClipboard = copyQrImageToClipboard;
+
+    function copyDrawerQrImage(btn) {
+      copyQrImageToClipboard('drawer-qr-img', btn);
+    }
+    window.copyDrawerQrImage = copyDrawerQrImage;
+
+    function copyDrawerCheckoutUrl(btn) {
+      if (!selectedTransaction) return;
+      const url = getCheckoutUrlForTx(selectedTransaction);
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(url);
+      }
+      if (btn) {
+        const orig = btn.innerHTML;
+        btn.innerHTML = `<span class="text-emerald-600 font-bold">✓ ¡Copiado!</span>`;
+        setTimeout(() => { btn.innerHTML = orig; }, 2000);
+      }
+      showToast('Enlace Copiado', 'El enlace de pago del pedido se copió al portapapeles.', 'success');
+    }
+    window.copyDrawerCheckoutUrl = copyDrawerCheckoutUrl;
+
+    function sendDrawerViaWhatsApp() {
+      if (!selectedTransaction) return;
+      shareQrViaWhatsApp(selectedTransaction);
+    }
+    window.sendDrawerViaWhatsApp = sendDrawerViaWhatsApp;
+
+    function shareQrViaWhatsApp(txOrId) {
+      const tx = (typeof txOrId === 'object' && txOrId) ? txOrId : (transactions.find(t => t.transaction_id === txOrId) || currentQrTransaction || selectedTransaction);
+      const url = (tx ? getCheckoutUrlForTx(tx) : currentQrUrl) || window.location.href;
+      
+      const client = (tx && tx.client) ? tx.client : 'Estimado cliente';
+      const concept = (tx && tx.product && tx.product.title) ? tx.product.title : (tx && tx.product ? tx.product : 'tu pedido');
+      const amountStr = (tx && tx.amount) ? formatCurrency(tx.amount, tx.currency || 'GTQ') : '';
+      const txId = (tx && tx.transaction_id) ? tx.transaction_id : '';
+      
+      const msg = `¡Hola ${client}! Te comparto tu código y enlace de pago seguro para ${concept} (${amountStr}) [Ref: ${txId}]:\n\n${url}\n\n¡Puedes escanear el código QR o abrir el enlace para pagar en segundos con tarjeta, banca en línea o billetera móvil!`;
+      
+      const waUrl = `https://api.whatsapp.com/send?text=${encodeURIComponent(msg)}`;
+      window.open(waUrl, '_blank');
+      showToast('WhatsApp Abierto', 'Se ha preparado el mensaje con el enlace de pago listo para enviar.', 'success');
+    }
+    window.shareQrViaWhatsApp = shareQrViaWhatsApp;
+
+    function downloadDrawerQrImage() {
+      const tx = selectedTransaction || currentQrTransaction;
+      const txId = tx ? tx.transaction_id : 'pedido';
+      downloadQrImage(document.getElementById('drawer-qr-img') || document.getElementById('qr-modal-img'), `QR_${txId}.png`);
+    }
+    window.downloadDrawerQrImage = downloadDrawerQrImage;
+
+    function downloadQrImage(imgEl, filename = 'codigo_qr.png') {
+      if (!imgEl) imgEl = document.getElementById('qr-modal-img') || document.getElementById('drawer-qr-img');
+      if (!imgEl || !imgEl.src) {
+        showToast('Error', 'No se ha generado el código QR.', 'warning');
+        return;
+      }
+      
+      const canvas = document.createElement('canvas');
+      const size = 420;
+      canvas.width = size;
+      canvas.height = size;
+      const ctx = canvas.getContext('2d');
+      ctx.fillStyle = '#ffffff';
+      ctx.fillRect(0, 0, size, size);
+
+      const img = new Image();
+      img.crossOrigin = 'anonymous';
+      img.onload = () => {
+        ctx.drawImage(img, 20, 20, size - 40, size - 40);
+        const dataUrl = canvas.toDataURL('image/png');
+        const a = document.createElement('a');
+        a.href = dataUrl;
+        a.download = filename;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        showToast('Código QR Descargado', `Se guardó "${filename}" en tus descargas.`, 'success');
+      };
+      img.onerror = () => {
+        const a = document.createElement('a');
+        a.href = imgEl.src;
+        a.download = filename;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        showToast('Código QR Descargado', `Se guardó "${filename}".`, 'success');
+      };
+      img.src = imgEl.src;
+    }
+    window.downloadQrImage = downloadQrImage;
+
+    // ================= QR MODAL LOGIC =================
+    let currentQrUrl = '';
+
+    function setQrImageWithFallback(imgEl, urlToEncode) {
+      if (!imgEl) return;
+      const svgFallback = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 210 210" width="200" height="200"><rect fill="#fff" width="210" height="210"/><defs><pattern id="qrP" width="10" height="10" patternUnits="userSpaceOnUse"><rect width="5" height="5" fill="#111827"/><rect x="5" y="5" width="5" height="5" fill="#111827"/></pattern></defs><rect x="80" y="0" width="130" height="70" fill="url(#qrP)"/><rect x="0" y="80" width="210" height="60" fill="url(#qrP)"/><rect x="80" y="140" width="130" height="70" fill="url(#qrP)"/><g><rect width="70" height="70" fill="#111827"/><rect x="10" y="10" width="50" height="50" fill="#fff"/><rect x="20" y="20" width="30" height="30" fill="#111827"/></g><g transform="translate(140,0)"><rect width="70" height="70" fill="#111827"/><rect x="10" y="10" width="50" height="50" fill="#fff"/><rect x="20" y="20" width="30" height="30" fill="#111827"/></g><g transform="translate(0,140)"><rect width="70" height="70" fill="#111827"/><rect x="10" y="10" width="50" height="50" fill="#fff"/><rect x="20" y="20" width="30" height="30" fill="#111827"/></g></svg>`;
+      const fallbackDataUrl = 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(svgFallback);
+      imgEl.onerror = function() {
+        this.onerror = null;
+        this.src = fallbackDataUrl;
+      };
+      imgEl.src = `https://api.qrserver.com/v1/create-qr-code/?size=250x250&data=${encodeURIComponent(urlToEncode)}`;
+    }
+
+    function openBusinessQrModal() {
+      const baseUrl = window.location.href.split('index.html')[0] + 'aurapay-checkout.html?open_amount=1&merchant=' + encodeURIComponent('Café Don Arturo, S.A.');
+      currentQrUrl = baseUrl;
+      
+      const title = document.getElementById('qr-modal-title');
+      const sub = document.getElementById('qr-modal-subtitle');
+      const urlInp = document.getElementById('qr-link-url-input');
+      const img = document.getElementById('qr-modal-img');
+      
+      if (title) title.textContent = 'Código QR del Negocio (Monto Abierto)';
+      if (sub) sub.textContent = 'El cliente escanea en mostrador o factura e ingresa el monto acordado';
+      if (urlInp) urlInp.value = baseUrl;
+      if (img) setQrImageWithFallback(img, baseUrl);
+      
+      showQrModal();
+    }
+    window.openBusinessQrModal = openBusinessQrModal;
+
+    function openLinkQrModal(txId) {
+      if (!txId && selectedTransaction) txId = selectedTransaction.transaction_id;
+      const tx = (typeof txId === 'object' && txId) ? txId : (transactions.find(t => t.transaction_id === txId) || selectedTransaction);
+      const checkoutUrl = getCheckoutUrlForTx(tx || txId);
+      currentQrUrl = checkoutUrl;
+      currentQrTransaction = tx;
+      
+      const title = document.getElementById('qr-modal-title');
+      const sub = document.getElementById('qr-modal-subtitle');
+      const urlInp = document.getElementById('qr-link-url-input');
+      const img = document.getElementById('qr-modal-img');
+      
+      const clientName = tx ? tx.client : 'Cliente';
+      const amountStr = tx ? formatCurrency(tx.amount, tx.currency) : '';
+      
+      const txIdStr = (tx && tx.transaction_id) ? tx.transaction_id : (typeof txId === 'string' ? txId : '');
+      if (title) title.textContent = `Código QR · Enlace ${txIdStr}`;
+      if (sub) sub.textContent = `Cobro de ${amountStr} para ${clientName}`;
+      if (urlInp) urlInp.value = checkoutUrl;
+      if (img) setQrImageWithFallback(img, checkoutUrl);
+      
+      showQrModal();
+    }
+    window.openLinkQrModal = openLinkQrModal;
+
+    function showQrModal() {
+      const modal = document.getElementById('modal-qr-backdrop');
+      const content = document.getElementById('qr-modal-content');
+      if (!modal || !content) return;
+      modal.classList.remove('hidden');
+      setTimeout(() => {
+        modal.classList.add('opacity-100');
+        modal.classList.remove('opacity-0');
+        content.classList.remove('scale-95');
+        content.classList.add('scale-100');
+      }, 10);
+    }
+
+    function closeQrModal() {
+      const modal = document.getElementById('modal-qr-backdrop');
+      const content = document.getElementById('qr-modal-content');
+      if (!modal || !content) return;
+      modal.classList.remove('opacity-100');
+      modal.classList.add('opacity-0');
+      content.classList.remove('scale-100');
+      content.classList.add('scale-95');
+      setTimeout(() => { modal.classList.add('hidden'); }, 200);
+    }
+    window.closeQrModal = closeQrModal;
+
+    function copyQrLinkUrl(btn) {
+      const inp = document.getElementById('qr-link-url-input');
+      if (!inp) return;
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(inp.value);
+      }
+      const orig = btn.textContent;
+      btn.textContent = '¡Copiado!';
+      setTimeout(() => { btn.textContent = orig; }, 1600);
+    }
+    window.copyQrLinkUrl = copyQrLinkUrl;
+
+    function downloadQrCodeImage() {
+      const img = document.getElementById('qr-modal-img');
+      if (!img || !img.src) return;
+      const a = document.createElement('a');
+      a.href = img.src;
+      a.download = `QR_EthosPay_${Date.now()}.png`;
+      a.target = '_blank';
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      showToast('Código QR Descargado', 'Guarda o imprime este QR para colocar en tu mostrador o factura.', 'success');
+    }
+    window.downloadQrCodeImage = downloadQrCodeImage;
+
+    function openQrCheckoutPreview() {
+      if (currentQrUrl) {
+        window.open(currentQrUrl, '_blank');
+      }
+    }
+    window.openQrCheckoutPreview = openQrCheckoutPreview;
+
     // Dismiss notifications list on external click
     document.addEventListener('click', (e) => {
       const notifMenu = document.getElementById('notifications-menu');
@@ -5161,7 +6026,7 @@
 
     // Listen to localStorage updates to sync payment states in real time
     window.addEventListener('storage', (e) => {
-      if (e.key === 'aurapay_transactions' || e.key === 'aurapay_transactions') {
+      if (e.key === 'aurapay_transactions' || e.key === 'ethospay_transactions') {
         try {
           const updatedTxs = JSON.parse(e.newValue);
           if (updatedTxs && Array.isArray(updatedTxs)) {
@@ -5195,14 +6060,18 @@
                 // Update details drawer UI
                 document.getElementById('detail-token').innerText = selectedTransaction.token || 'No se ha registrado tarjeta/transferencia para el pago';
                 updateTimelineUI(selectedTransaction);
-                setupSimulatorUI(selectedTransaction);
+                if (typeof setupSimulatorUI === 'function') {
+                  setupSimulatorUI(selectedTransaction);
+                }
                 
                 // Update drawer tab pending badge
                 const simBadge = document.getElementById('drawer-tab-pending-badge');
-                if (selectedTransaction.status === 'PENDING') {
-                  simBadge.classList.remove('hidden');
-                } else {
-                  simBadge.classList.add('hidden');
+                if (simBadge) {
+                  if (selectedTransaction.status === 'PENDING') {
+                    simBadge.classList.remove('hidden');
+                  } else {
+                    simBadge.classList.add('hidden');
+                  }
                 }
               }
             }
