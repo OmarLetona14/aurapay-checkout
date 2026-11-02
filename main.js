@@ -239,7 +239,7 @@
         currency: 'GTQ',
         idempotency_key: 'idemp-44910-w', 
         phone: '3022-9988', 
-        type: 'Caja Rural',
+        type: 'Efectivo',
         merchant: {
           name: 'AgroInsumos El Sol',
           subtext: 'Distribución agroindustrial',
@@ -1205,7 +1205,7 @@
       document.getElementById('kpi-card-total').innerText = formatCurrency(cardTotal);
       document.getElementById('kpi-card-count').innerText = `${cardTrans.length} transacción${cardTrans.length !== 1 ? 'es' : ''}`;
 
-      // 3. Cobros Banca Virtual / Caja Rural
+      // 3. Cobros Banca Virtual / Efectivo
       const cashTrans = paidTrans.filter(isBankPayment);
       const cashTotal = cashTrans.reduce((sum, t) => sum + getAmtInGTQ(t), 0);
       document.getElementById('kpi-cash-total').innerText = formatCurrency(cashTotal);
@@ -1315,7 +1315,7 @@
         } else if (raw.includes('cuik') || raw.includes('zigi') || raw.includes('billetera') || raw.includes('wallet')) {
           label = 'Billetera Móvil';
           style = 'bg-purple-50 text-purple-700 border-purple-200';
-        } else if (raw.includes('rural') || raw.includes('efectivo') || raw.includes('cash') || raw.includes('agente')) {
+        } else if (raw.includes('efectivo') || raw.includes('cash') || raw.includes('agente')) {
           label = 'Efectivo';
           style = 'bg-amber-50 text-amber-700 border-amber-200';
         } else if (raw.includes('apple') || raw.includes('google')) {
@@ -1348,8 +1348,7 @@
         } else {
           let singleType = tx.type || 'Multimétodo';
           if (singleType === 'Aura Virtual') singleType = 'Banca en Línea';
-          if (singleType === 'Caja Rural') singleType = 'Efectivo';
-          if (singleType === 'Cuik') singleType = 'Billetera Móvil';
+                    if (singleType === 'Cuik') singleType = 'Billetera Móvil';
           return `<span class="px-2.5 py-0.5 rounded border text-[10.5px] font-semibold bg-gray-50 text-gray-700 border-gray-200">${singleType}</span>`;
         }
       }
@@ -3655,7 +3654,6 @@
       const modality = t.payment_modality || t.type || 'Al contado';
       
       const isEfectivo = modality.includes('Virtual') || 
-                         modality.includes('Rural') || 
                          modality.includes('Cuik') || 
                          modality.includes('Efectivo') || 
                          modality.includes('Banca');

@@ -1522,7 +1522,7 @@
       display: none;
     }
 
-    /* ---- Código de pago en efectivo (Caja Rural) ---- */
+    /* ---- Código de pago en efectivo (Puntos autorizados) ---- */
     .agent-code-box {
       text-align: center;
       border: 1px dashed #c7cfd9;
@@ -4457,7 +4457,7 @@
                       pago con un clic pedirá un código de verificación por SMS (OTP).</span>
                     <div class="cof-consent" hidden="" id="cof-consent">
                       <p>Al guardar tu tarjeta autorizas a <b>Cumbre Café</b> a almacenarla de forma segura (tokenizada
-                        por Pay Rural) para procesar los pagos que inicies en el futuro. No se hará ningún cargo sin tu
+                        por la pasarela) para procesar los pagos que inicies en el futuro. No se hará ningún cargo sin tu
                         autorización y podrás eliminarla cuando quieras. Consulta los <a href="#"
                           onclick="showInfo('terms');return false;">Términos y Condiciones</a> y la <a href="#"
                           onclick="showInfo('privacy');return false;">Política de privacidad</a>.</p>
@@ -4935,7 +4935,7 @@
                     </div>
                     <div class="bank-box">
                       <div class="t">Cómo pagar</div>
-                      <div class="s">Acude a cualquier Caja Rural, indica que pagarás un servicio con código, muestra
+                      <div class="s">Acude a cualquier agencia o punto autorizado (Agentes Bi y Cajas Bi), indica que pagarás un convenio con código de servicio, muestra
                         este número y entrega el efectivo exacto.</div>
                     </div>
                     <button class="btn-outline" onclick="copyAgentCode(this)" type="button">Copiar código</button>
@@ -5081,13 +5081,12 @@
             <span id="cash-amount-display" class="receipt-val-bold">Q 145.00</span>
           </div>
           <div class="row">
-            <span>Convenios Bancarios</span>
-            <span style="font-weight:600;font-size:11px;">Banco Industrial: #4892 · Banrural: #8831</span>
+            <span>Convenio Bancario</span>
+            <span style="font-weight:600;font-size:11px;">Banco Industrial: #4892</span>
           </div>
           <div class="row">
             <span>Puntos de cobro</span>
-            <span style="font-size:11px; color:var(--ink-700);">Agentes Bi, Cajas Bi, Agentes Banrural y Caja
-              Rural</span>
+            <span style="font-size:11px; color:var(--ink-700);">Agentes Bi, Cajas Bi y agencias autorizadas</span>
           </div>
         </div>
 
@@ -5444,16 +5443,16 @@
       'Te llevaremos directo a tu app EthosPay Móvil para iniciar sesión y autorizar el pago desde tu teléfono.': "We'll take you straight to your EthosPay Móvil app to log in and authorize the payment from your phone.",
       'Continuar a EthosPay Virtual': 'Continue to EthosPay Virtual',
       'Abrir app EthosPay Móvil': 'Open EthosPay Móvil app',
-      // Caja Rural
-      'Pago en efectivo con Caja Rural': 'Cash payment with Caja Rural',
+      // Pagos en efectivo
+      'Pago en efectivo': 'Cash payment',
       'Genera tu código de pago.': 'Generate your payment code.',
-      'Acude a un Caja Rural cercano con tu código.': 'Go to a nearby Caja Rural with your code.',
+      'Acude a un punto de pago autorizado con tu código.': 'Go to a nearby authorized payment point with your code.',
       'Paga en efectivo antes de la fecha límite.': 'Pay in cash before the deadline.',
       'Generar código de pago': 'Generate payment code',
       'Tu código de pago': 'Your payment code',
       'Válido hasta el': 'Valid until',
       'Cómo pagar': 'How to pay',
-      'Acude a cualquier Caja Rural, indica que pagarás un servicio con código, muestra este número y entrega el efectivo exacto.': 'Go to any Caja Rural, say you will pay a service with a code, show this number and hand over the exact cash.',
+      'Acude a cualquier agencia o punto autorizado (Agentes Bi y Cajas Bi), indica que pagarás un convenio con código de servicio, muestra este número y entrega el efectivo exacto.': 'Go to any authorized agency or banking point, say you will pay a service agreement with a code, show this number and hand over the exact cash.',
       'Copiar código': 'Copy code',
       'Te avisaremos por correo cuando confirmemos tu pago en efectivo.': "We'll email you once we confirm your cash payment.",
       // Cuik
@@ -6558,7 +6557,7 @@
       }, 1100);
     }
 
-    // Caja Rural: esto NO es un pago instantáneo (aprobado/rechazado), es la
+    // Pagos en efectivo: esto NO es un pago instantáneo (aprobado/rechazado), es la
     // generación de un token que el comprador usará después, en efectivo, en
     // una agencia física. Por eso no dispara el overlay de resultado.
     function generateAgentCode(btn) {
@@ -6946,7 +6945,7 @@
         `*Código de convenio y referencia:* ${code}\n` +
         `*Monto exacto a pagar:* ${amount}\n` +
         `*${expiry}*\n\n` +
-        `*Puntos de cobro:* Agentes Bi, Cajas Bi, Banrural y Caja Rural.\n\n` +
+        `*Puntos de cobro:* Agentes Bi, Cajas Bi y agencias autorizadas.\n\n` +
         `_Procesado de forma segura con EthosPay_`;
 
       const url = `https://api.whatsapp.com/send?text=${encodeURIComponent(text)}`;
@@ -7265,7 +7264,7 @@
       terms: {
         title: 'Términos y Condiciones', body:
           '<h3>Términos y Condiciones</h3>' +
-          '<p>Esta compra es procesada por Cumbre Café a través de la pasarela Pay Rural. Al completar el pago aceptas estos términos.</p>' +
+          '<p>Esta compra es procesada por Cumbre Café a través de la pasarela EthosPay. Al completar el pago aceptas estos términos.</p>' +
           '<p><b>Producto y precio:</b> el monto mostrado incluye impuestos. La disponibilidad está sujeta a existencias.</p>' +
           '<p><b>Devoluciones:</b> puedes solicitar reembolso dentro de los plazos indicados en tu comprobante, según la política del comercio.</p>' +
           '<p><b>Tarjetas guardadas:</b> si autorizas guardar tu tarjeta, se almacena tokenizada para pagos que tú inicies; puedes eliminarla cuando quieras.</p>' +
